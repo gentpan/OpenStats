@@ -1,0 +1,3 @@
+import OpenStatsUI
+
+OpenStatsApplication.main()
