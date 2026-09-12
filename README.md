@@ -119,6 +119,7 @@
 brew install xcodegen
 make run                 # 生成工程、编译并启动（Debug）
 make run CONFIG=Release  # Release 构建
+make install             # Release 构建并安装到 /Applications 后启动
 make test                # 单元测试
 make snapshot            # 用本机实时数据渲染各页面截图到 build/snapshots
 make open                # 生成并用 Xcode 打开工程
