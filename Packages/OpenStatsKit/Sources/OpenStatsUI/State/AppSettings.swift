@@ -152,7 +152,7 @@ public final class AppSettings {
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         let items = defaults.stringArray(forKey: Keys.menuBarItems)?.compactMap(MenuBarItem.init(rawValue:))
-        menuBarItems = Set(items ?? [.cpu])
+        menuBarItems = Set(items ?? [.cpu, .memory, .network])
         let storedStyles = defaults.dictionary(forKey: Keys.gaugeStyles) as? [String: String] ?? [:]
         gaugeStyles = Dictionary(uniqueKeysWithValues: storedStyles.compactMap { key, value in
             guard let item = MenuBarItem(rawValue: key), let style = GaugeStyle(rawValue: value) else { return nil }
