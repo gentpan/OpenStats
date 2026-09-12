@@ -29,9 +29,12 @@ make install          # Release into /Applications
 make test             # swift test in the package
 ```
 
-Builds are ad-hoc signed (`CODE_SIGN_IDENTITY: "-"` in `project.yml`). For a release,
-switch to a Developer ID identity, keep hardened runtime on, notarize, and set
-`HelperConstants.teamIdentifier` so the helper's code-signing requirement includes the team.
+`project.yml` defaults to ad-hoc signing so the project opens anywhere. The Makefile passes
+the first Developer ID Application identity from the keychain (and `--timestamp` for Release)
+when there is one. `make release` runs `Scripts/release.sh`: build, verify team, timestamp and
+hardened runtime on both binaries, notarize and staple the app, build and notarize the DMG,
+and write a Homebrew cask. The helper derives its client requirement from its own signing
+team at run time, so no team ID is hard-coded.
 
 ## Sampling
 

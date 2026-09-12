@@ -16,6 +16,8 @@ final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProto
     private let listener = NSXPCListener(machServiceName: HelperConstants.machServiceName)
     private let stateURL = URL(fileURLWithPath: "/Library/Application Support/OpenStats/helper-state.plist")
     private let idleTimeout: TimeInterval = 30
+    /// 只接受与辅助工具自身同一团队签名的调用方
+    private let clientRequirement = HelperConstants.clientRequirement(teamIdentifier: CodeSigningInfo.currentTeamIdentifier())
 
     private var connections: Set<ObjectIdentifier> = []
     private var fans: FanControl?
@@ -38,7 +40,7 @@ final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProto
 
     func listener(_ listener: NSXPCListener, shouldAcceptNewConnection connection: NSXPCConnection) -> Bool {
         // 系统在收到消息前校验调用方签名，不符合要求的连接会被直接失效
-        connection.setCodeSigningRequirement(HelperConstants.clientRequirement)
+        connection.setCodeSigningRequirement(clientRequirement)
         connection.exportedInterface = NSXPCInterface(with: OpenStatsHelperProtocol.self)
         connection.exportedObject = self
 

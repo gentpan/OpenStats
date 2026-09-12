@@ -15,18 +15,30 @@ extension View {
     }
 }
 
-/// 面板窗口的玻璃底板，SwiftUI 内容放在其中
+/// 面板窗口的底板，SwiftUI 内容放在其中。
+/// 默认是圆角裁切的普通容器，由 SwiftUI 画实色背景；开启玻璃时使用系统液态玻璃或毛玻璃
 @MainActor
 enum GlassBackdrop {
-    static func make(containing content: NSView, cornerRadius: CGFloat) -> NSView {
+    /// 容器必须从内容的尺寸开始：若从 0 开始，窗口把它撑满时自动调整会把内容再放大一倍
+    static func make(containing content: NSView, cornerRadius: CGFloat, glass: Bool) -> NSView {
+        guard glass else {
+            let container = NSView(frame: content.frame)
+            container.wantsLayer = true
+            container.layer?.cornerRadius = cornerRadius
+            container.layer?.cornerCurve = .continuous
+            container.layer?.masksToBounds = true
+            content.autoresizingMask = [.width, .height]
+            container.addSubview(content)
+            return container
+        }
         if #available(macOS 26.0, *) {
-            let glass = NSGlassEffectView()
+            let glass = NSGlassEffectView(frame: content.frame)
             glass.cornerRadius = cornerRadius
             glass.style = .regular
             glass.contentView = content
             return glass
         }
-        let effect = NSVisualEffectView()
+        let effect = NSVisualEffectView(frame: content.frame)
         effect.material = .popover
         effect.blendingMode = .behindWindow
         effect.state = .active

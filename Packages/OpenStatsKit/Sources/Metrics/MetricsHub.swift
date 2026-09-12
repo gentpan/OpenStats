@@ -27,6 +27,8 @@ public actor MetricsHub {
     private var handler: (@MainActor @Sendable (MetricsSnapshot) -> Void)?
     private var loop: Task<Void, Never>?
     private var paused = false
+    /// 启动后第一次采集全部指标，面板首次打开时各页面已有数据，高度一次测准
+    private var primed = false
 
     private var lastDisk = Date.distantPast
     private var lastBattery = Date.distantPast
@@ -66,6 +68,20 @@ public actor MetricsHub {
         handler = nil
     }
 
+    private static func everything(interval: Duration) -> MetricsDemand {
+        var demand = MetricsDemand()
+        demand.interval = interval
+        demand.memory = true
+        demand.network = true
+        demand.gpu = true
+        demand.disk = true
+        demand.battery = true
+        demand.processes = true
+        demand.temperatures = Set(TemperatureGroup.allCases)
+        demand.fans = true
+        return demand
+    }
+
     private func restart() {
         loop?.cancel()
         guard !paused, handler != nil else {
@@ -87,6 +103,8 @@ public actor MetricsHub {
     private func collect() -> MetricsSnapshot {
         let now = Date()
         var snapshot = MetricsSnapshot()
+        let demand = primed ? self.demand : Self.everything(interval: self.demand.interval)
+        primed = true
         snapshot.cpu = cpu.sample()
 
         if demand.memory { snapshot.memory = memory.sample() }

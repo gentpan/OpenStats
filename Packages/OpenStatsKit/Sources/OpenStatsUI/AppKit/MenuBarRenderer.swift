@@ -1,70 +1,156 @@
 import AppKit
 import Metrics
 
+/// 菜单栏上要画的读数，与数据来源解耦，设置页预览可以用示例数据绘制
+struct MenuBarReading {
+    var cpu: Double?
+    var cpuHistory: [Double] = []
+    var gpu: Double?
+    var gpuHistory: [Double] = []
+    var memory: Double?
+    var memoryHistory: [Double] = []
+    var upload: Double?
+    var download: Double?
+    var temperature: Double?
+    var fanRPM: Double?
+    var keepAwake = false
+
+    @MainActor
+    init(model: AppModel) {
+        let store = model.store
+        cpu = store.cpu?.total
+        cpuHistory = store.cpuTotal.elements
+        gpu = store.gpu?.utilization
+        gpuHistory = store.gpuHistory.elements
+        memory = store.memory?.usedFraction
+        memoryHistory = store.memoryHistory.elements
+        upload = store.network?.uploadBytesPerSecond
+        download = store.network?.downloadBytesPerSecond
+        temperature = store.sensors?.temperature(.cpu)?.maximum
+        fanRPM = store.fastestFan?.current
+        keepAwake = model.keepAwake.isActive
+    }
+
+    init() {}
+
+    /// 设置页预览用的示例读数
+    static let sample: MenuBarReading = {
+        var reading = MenuBarReading()
+        reading.cpu = 0.34
+        reading.cpuHistory = [0.18, 0.22, 0.41, 0.36, 0.28, 0.52, 0.47, 0.31, 0.29, 0.34]
+        reading.gpu = 0.22
+        reading.gpuHistory = [0.05, 0.12, 0.30, 0.18, 0.10, 0.26, 0.40, 0.21, 0.15, 0.22]
+        reading.memory = 0.68
+        reading.memoryHistory = Array(repeating: 0.68, count: 10)
+        reading.upload = 12 * 1024
+        reading.download = 1.4 * 1024 * 1024
+        reading.temperature = 52
+        reading.fanRPM = 1840
+        return reading
+    }()
+
+    func percent(_ item: MenuBarItem) -> (value: Double?, history: [Double]) {
+        switch item {
+        case .cpu: (cpu, cpuHistory)
+        case .gpu: (gpu, gpuHistory)
+        case .memory: (memory, memoryHistory)
+        default: (nil, [])
+        }
+    }
+
+    /// 鼠标悬停时的完整读数
+    func tooltip(items: [MenuBarItem], fahrenheit: Bool) -> String {
+        items.compactMap { item -> String? in
+            switch item {
+            case .cpu: cpu.map { "CPU \(Format.percent($0))" }
+            case .gpu: gpu.map { "GPU \(Format.percent($0))" }
+            case .memory: memory.map { "内存 \(Format.percent($0))" }
+            case .network:
+                upload.flatMap { up in download.map { "上传 \(Format.menuBarRate(up)) · 下载 \(Format.menuBarRate($0))" } }
+            case .temperature: temperature.map { "CPU 温度 \(Format.temperature($0, fahrenheit: fahrenheit))" }
+            case .fan: fanRPM.map { "风扇 \(Format.rpm($0))" }
+            }
+        }
+        .joined(separator: "\n")
+    }
+}
+
 /// 菜单栏图标自绘：每次刷新只生成一张小图，避免在菜单栏里重建 SwiftUI 视图
 @MainActor
 enum MenuBarRenderer {
-    /// 菜单栏只有 22pt 高，字号与基线对齐 Stats 的迷你样式：标签 7pt 细体、数值 12pt 常规、网速两行 9pt 细体
+    /// 菜单栏只有 22pt 高，字号刻意小于面板的字号体系，与 Stats 等菜单栏工具同一量级。
+    /// 每种风格内部只用这一套排版：两行布局是 7pt 标签 + 10pt 数值，单行布局 11pt，网速两行 9pt。
     private enum Metrics {
-        @MainActor static let labelFont = NSFont.systemFont(ofSize: 7, weight: .light)
-        @MainActor static let valueFont = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
-        @MainActor static let networkFont = NSFont.monospacedDigitSystemFont(ofSize: 9, weight: .light)
-        static let upperBaseline: CGFloat = 12       // 上行基线（距底部）
-        static let lowerBaseline: CGFloat = 1        // 下行基线
+        @MainActor static let labelFont = NSFont.systemFont(ofSize: 7, weight: .medium)
+        @MainActor static let stackedValueFont = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .medium)
+        @MainActor static let inlineLabelFont = NSFont.systemFont(ofSize: 10, weight: .regular)
+        @MainActor static let inlineValueFont = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .medium)
+        @MainActor static let networkFont = NSFont.monospacedDigitSystemFont(ofSize: 9, weight: .regular)
+        static let barHeight: CGFloat = 22
+        static let upperBaseline: CGFloat = 13
+        static let lowerBaseline: CGFloat = 3
         static let symbolSize: CGFloat = 11
         static let itemGap = DS.Space.s3
         static let innerGap = DS.Space.s1
-        static let barCount = 10
-        static let barWidth: CGFloat = 2
-        static let barGap: CGFloat = 1
-        static let chartHeight: CGFloat = 16
-        static let smallChartHeight: CGFloat = 9
-        static let gaugeDiameter: CGFloat = 14
-        static let ringWidth: CGFloat = 2.5
-        static let networkDot: CGFloat = 6
+        static let historyCount = 10
+        static let historyBarWidth: CGFloat = 2
+        static let historyBarGap: CGFloat = 1
+        static let chartHeight: CGFloat = 13
+        static let gaugeDiameter: CGFloat = 13
+        static let ringWidth: CGFloat = 2
+        static let meterSize = NSSize(width: 5, height: 13)
+        static let dotSize: CGFloat = 5
         static let trackAlpha: CGFloat = 0.25
-        static let highLoad = 0.85
+        static let warningLevel = 0.6
+        static let highLevel = 0.85
     }
 
     private struct Segment {
         let width: CGFloat
+        /// 是否含有彩色元素（需要非模板图）
+        var colored = false
         let draw: (NSRect) -> Void
     }
 
     static func image(for model: AppModel) -> NSImage {
         let settings = model.settings
-        let height = NSStatusBar.system.thickness
+        return image(reading: MenuBarReading(model: model),
+                     items: settings.orderedMenuBarItems,
+                     style: { settings.style(for: $0) },
+                     networkStyle: settings.networkStyle,
+                     colorizeHighLoad: settings.colorizeHighLoad,
+                     fahrenheit: settings.useFahrenheit)
+    }
 
+    static func image(reading: MenuBarReading,
+                      items: [MenuBarItem],
+                      style: (MenuBarItem) -> MenuBarStyle,
+                      networkStyle: NetworkMenuStyle,
+                      colorizeHighLoad: Bool,
+                      fahrenheit: Bool) -> NSImage {
         var segments: [Segment] = []
-        if model.keepAwake.isActive {
-            segments.append(symbolSegment("cup.and.saucer.fill"))
+        if reading.keepAwake { segments.append(symbolSegment("cup.and.saucer.fill")) }
+        for item in items {
+            segments.append(segment(for: item, reading: reading, style: style(item), networkStyle: networkStyle,
+                                    colorizeHighLoad: colorizeHighLoad, fahrenheit: fahrenheit))
         }
-        var usesColor = false
-        for item in settings.orderedMenuBarItems {
-            let (segment, colored) = self.segment(for: item, model: model)
-            segments.append(segment)
-            usesColor = usesColor || colored
-        }
-        if segments.isEmpty {
-            segments.append(symbolSegment("waveform.path.ecg"))
-        }
+        if segments.isEmpty { segments.append(symbolSegment("waveform.path.ecg")) }
 
-        let totalWidth = segments.reduce(0) { $0 + $1.width } + CGFloat(segments.count - 1) * Metrics.itemGap
-        let image = NSImage(size: NSSize(width: ceil(totalWidth), height: height), flipped: false) { rect in
+        let width = segments.reduce(0) { $0 + $1.width } + CGFloat(segments.count - 1) * Metrics.itemGap
+        let image = NSImage(size: NSSize(width: ceil(width), height: Metrics.barHeight), flipped: false) { rect in
             var x: CGFloat = 0
             for segment in segments {
-                segment.draw(NSRect(x: x, y: 0, width: segment.width, height: rect.height))
+                segment.draw(NSRect(x: x, y: rect.minY, width: segment.width, height: rect.height))
                 x += segment.width + Metrics.itemGap
             }
             return true
         }
-        // 模板图自动适配浅色 / 深色菜单栏；含彩色元素时保留真实颜色，文字用 labelColor 跟随外观
-        image.isTemplate = !usesColor
-        image.accessibilityDescription = accessibilityText(for: model)
+        // 模板图自动适配浅色 / 深色菜单栏；含彩色元素时保留真实颜色，文字仍用动态的 labelColor
+        image.isTemplate = !segments.contains(where: \.colored)
         return image
     }
 
-    /// 设置页预览用：按指定的浅色 / 深色菜单栏外观绘制
+    /// 设置页预览：按指定外观绘制到不透明底色上
     static func preview(_ image: NSImage, dark: Bool) -> NSImage {
         let appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         return NSImage(size: image.size, flipped: false) { rect in
@@ -82,137 +168,128 @@ enum MenuBarRenderer {
 
     // MARK: 各指标
 
-    private static func segment(for item: MenuBarItem, model: AppModel) -> (Segment, colored: Bool) {
-        let store = model.store
-        let settings = model.settings
+    private static func segment(for item: MenuBarItem, reading: MenuBarReading, style: MenuBarStyle,
+                                networkStyle: NetworkMenuStyle, colorizeHighLoad: Bool, fahrenheit: Bool) -> Segment {
         switch item {
         case .cpu, .gpu, .memory:
-            let value: Double?
-            let history: [Double]
-            switch item {
-            case .cpu: (value, history) = (store.cpu?.total, store.cpuTotal.elements)
-            case .gpu: (value, history) = (store.gpu?.utilization, store.gpuHistory.elements)
-            default: (value, history) = (store.memory?.usedFraction, store.memoryHistory.elements)
-            }
-            let alert = settings.colorizeHighLoad && (value ?? 0) >= Metrics.highLoad
-            return (gaugeSegment(label: item.menuBarLabel, value: value, history: history,
-                                 style: settings.gaugeStyle(for: item), alert: alert), alert)
+            let (value, history) = reading.percent(item)
+            return percentSegment(item: item, value: value, history: history, style: style, colorizeHighLoad: colorizeHighLoad)
         case .network:
-            return (networkSegment(store.network), true)
+            return networkSegment(upload: reading.upload, download: reading.download, style: networkStyle)
         case .temperature:
-            let text = store.sensors?.temperature(.cpu).map { reading -> String in
-                let celsius = reading.maximum
-                let degrees = settings.useFahrenheit ? celsius * 9 / 5 + 32 : celsius
+            let text = reading.temperature.map { celsius -> String in
+                let degrees = fahrenheit ? celsius * 9 / 5 + 32 : celsius
                 return "\(Int(degrees.rounded()))°"
             } ?? "—"
-            return (stackedSegment(label: item.menuBarLabel, value: text, sample: "100°"), false)
+            return textSegment(item: item, value: text, sample: "100°", style: style)
         case .fan:
-            let text = store.fastestFan.map { "\(Int($0.current))" } ?? "—"
-            return (stackedSegment(label: item.menuBarLabel, value: text, sample: "8888"), false)
+            return textSegment(item: item, value: reading.fanRPM.map { "\(Int($0))" } ?? "—", sample: "8888", style: style)
         }
     }
 
-    private static func gaugeSegment(label: String, value: Double?, history: [Double], style: GaugeStyle, alert: Bool) -> Segment {
+    private static func percentSegment(item: MenuBarItem, value: Double?, history: [Double],
+                                       style: MenuBarStyle, colorizeHighLoad: Bool) -> Segment {
+        let fraction = min(1, max(0, value ?? 0))
         let text = value.map { Format.percent($0) } ?? "—"
-        let fraction = value ?? 0
-        let stacked = stackedSegment(label: label, value: text, sample: "100%", alert: alert)
+        let alert = colorizeHighLoad && fraction >= Metrics.highLevel
+        let stacked = stackedText(label: item.menuBarLabel, value: text, sample: "100%", alert: alert)
+
         switch style {
-        case .value:
+        case .stacked:
             return stacked
-        case .bars:
-            return barsWithLabel(label: label, history: history, alert: alert)
-        case .barsAndValue:
-            return combine([barsSegment(history: history, height: Metrics.chartHeight, alert: alert), stacked])
+        case .inline:
+            return inlineText(label: item.menuBarLabel, value: text, sample: "100%", alert: alert)
+        case .icon:
+            return combine([symbolSegment(item.symbol), inlineValue(text, sample: "100%", alert: alert)])
         case .ring:
-            return combine([ringSegment(fraction: fraction, alert: alert), stacked])
+            return combine([ring(fraction: fraction, alert: alert), stacked])
         case .pie:
-            return combine([pieSegment(fraction: fraction, alert: alert), stacked])
+            return combine([pie(fraction: fraction, alert: alert), stacked])
+        case .history:
+            return combine([historyBars(history, alert: alert), stacked])
+        case .meter:
+            return combine([meter(fraction: fraction, alert: alert), stacked])
+        case .dot:
+            return combine([levelDot(fraction: fraction), stacked])
         }
     }
 
-    // MARK: 基础片段
+    /// 温度、风扇没有百分比图形：两行风格用标签 + 数值，单行风格与图标风格保持单行
+    private static func textSegment(item: MenuBarItem, value: String, sample: String, style: MenuBarStyle) -> Segment {
+        switch style {
+        case .inline: inlineText(label: item.menuBarLabel, value: value, sample: sample, alert: false)
+        case .icon: combine([symbolSegment(item.symbol), inlineValue(value, sample: sample, alert: false)])
+        default: stackedText(label: item.menuBarLabel, value: value, sample: sample, alert: false)
+        }
+    }
+
+    // MARK: 文字
 
     private static func foreground(_ alert: Bool) -> NSColor {
         alert ? .systemRed : .labelColor
     }
 
-    /// 颜色必须保持动态（labelColor），在绘制时才按菜单栏外观解析；
-    /// 提前调用 withAlphaComponent 会按应用外观固定颜色，深色菜单栏上就会发黑
-    private static var labelAttributes: [NSAttributedString.Key: Any] {
-        [.font: Metrics.labelFont, .foregroundColor: NSColor.labelColor]
-    }
-
-    /// 上方小标签、下方数值，右对齐
-    private static func stackedSegment(label: String, value: String, sample: String, alert: Bool = false) -> Segment {
-        let labelAttributes = labelAttributes
-        let valueAttributes: [NSAttributedString.Key: Any] = [.font: Metrics.valueFont, .foregroundColor: foreground(alert)]
-        let width = ceil([
-            (label as NSString).size(withAttributes: labelAttributes).width,
-            (value as NSString).size(withAttributes: valueAttributes).width,
-            (sample as NSString).size(withAttributes: valueAttributes).width,
-        ].max() ?? 0)
-
+    /// 颜色保持动态（labelColor / secondaryLabelColor），在绘制时才按菜单栏外观解析
+    private static func stackedText(label: String, value: String, sample: String, alert: Bool) -> Segment {
+        let labelAttributes: [NSAttributedString.Key: Any] = [.font: Metrics.labelFont, .foregroundColor: NSColor.secondaryLabelColor]
+        let valueAttributes: [NSAttributedString.Key: Any] = [.font: Metrics.stackedValueFont, .foregroundColor: foreground(alert)]
+        let width = ceil(max(textWidth(label, labelAttributes), textWidth(value, valueAttributes), textWidth(sample, valueAttributes)))
         return Segment(width: width) { rect in
-            drawText(label, attributes: labelAttributes, rightEdge: rect.maxX, baseline: rect.minY + Metrics.upperBaseline)
-            drawText(value, attributes: valueAttributes, rightEdge: rect.maxX, baseline: rect.minY + Metrics.lowerBaseline)
+            let base = baselineOrigin(in: rect)
+            drawText(label, labelAttributes, rightEdge: rect.maxX, baseline: base + Metrics.upperBaseline)
+            drawText(value, valueAttributes, rightEdge: rect.maxX, baseline: base + Metrics.lowerBaseline)
         }
     }
 
-    /// 以基线定位（与 Stats 相同的 draw(with:) 方式），右对齐
-    private static func drawText(_ text: String, attributes: [NSAttributedString.Key: Any],
-                                 rightEdge: CGFloat, baseline: CGFloat) {
+    private static func inlineText(label: String, value: String, sample: String, alert: Bool) -> Segment {
+        let labelAttributes: [NSAttributedString.Key: Any] = [.font: Metrics.inlineLabelFont, .foregroundColor: NSColor.secondaryLabelColor]
+        let labelWidth = ceil(textWidth(label, labelAttributes))
+        let valueSegment = inlineValue(value, sample: sample, alert: alert)
+        return Segment(width: labelWidth + Metrics.innerGap + valueSegment.width) { rect in
+            drawText(label, labelAttributes, rightEdge: rect.minX + labelWidth,
+                     baseline: rect.midY - Metrics.inlineLabelFont.capHeight / 2)
+            valueSegment.draw(NSRect(x: rect.maxX - valueSegment.width, y: rect.minY, width: valueSegment.width, height: rect.height))
+        }
+    }
+
+    private static func inlineValue(_ value: String, sample: String, alert: Bool) -> Segment {
+        let attributes: [NSAttributedString.Key: Any] = [.font: Metrics.inlineValueFont, .foregroundColor: foreground(alert)]
+        let width = ceil(max(textWidth(value, attributes), textWidth(sample, attributes)))
+        return Segment(width: width) { rect in
+            drawText(value, attributes, rightEdge: rect.maxX, baseline: rect.midY - Metrics.inlineValueFont.capHeight / 2)
+        }
+    }
+
+    private static func textWidth(_ text: String, _ attributes: [NSAttributedString.Key: Any]) -> CGFloat {
+        (text as NSString).size(withAttributes: attributes).width
+    }
+
+    private static func drawText(_ text: String, _ attributes: [NSAttributedString.Key: Any], rightEdge: CGFloat, baseline: CGFloat) {
         let string = NSAttributedString(string: text, attributes: attributes)
         let width = string.size().width
         string.draw(with: NSRect(x: rightEdge - width, y: baseline, width: width, height: 0))
     }
 
-    private static func barsSegment(history: [Double], height: CGFloat, alert: Bool) -> Segment {
-        let recent = Array(history.suffix(Metrics.barCount))
-        let padded = Array(repeating: 0, count: Metrics.barCount - recent.count) + recent
-        let width = CGFloat(Metrics.barCount) * Metrics.barWidth + CGFloat(Metrics.barCount - 1) * Metrics.barGap
-        return Segment(width: width) { rect in
-            let baseline = rect.midY - height / 2
-            for (index, value) in padded.enumerated() {
-                let x = rect.minX + CGFloat(index) * (Metrics.barWidth + Metrics.barGap)
-                NSColor.labelColor.withAlphaComponent(Metrics.trackAlpha).setFill()
-                NSBezierPath(rect: NSRect(x: x, y: baseline, width: Metrics.barWidth, height: height)).fill()
-                foreground(alert && value >= Metrics.highLoad).setFill()
-                NSBezierPath(rect: NSRect(x: x, y: baseline, width: Metrics.barWidth,
-                                          height: height * min(1, max(0, value)))).fill()
-            }
-        }
+    /// 刘海屏的菜单栏更高，两行内容整体在按钮内垂直居中
+    private static func baselineOrigin(in rect: NSRect) -> CGFloat {
+        rect.midY - Metrics.barHeight / 2
     }
 
-    /// 柱状图模式：上方小标签，下方矮柱
-    private static func barsWithLabel(label: String, history: [Double], alert: Bool) -> Segment {
-        let labelAttributes = labelAttributes
-        let bars = barsSegment(history: history, height: Metrics.smallChartHeight, alert: alert)
-        let width = max(bars.width, ceil((label as NSString).size(withAttributes: labelAttributes).width))
-        return Segment(width: width) { rect in
-            drawText(label, attributes: labelAttributes, rightEdge: rect.maxX, baseline: rect.minY + Metrics.upperBaseline)
-            // 矮柱放在标签下方的区域内
-            let area = NSRect(x: rect.maxX - bars.width, y: rect.minY, width: bars.width,
-                              height: Metrics.upperBaseline - 1)
-            bars.draw(area)
-        }
-    }
+    // MARK: 图形
 
-    private static func ringSegment(fraction: Double, alert: Bool) -> Segment {
+    private static func ring(fraction: Double, alert: Bool) -> Segment {
         Segment(width: Metrics.gaugeDiameter) { rect in
             let inset = Metrics.ringWidth / 2
             let circle = NSRect(x: rect.minX + inset, y: rect.midY - Metrics.gaugeDiameter / 2 + inset,
-                                width: Metrics.gaugeDiameter - Metrics.ringWidth,
-                                height: Metrics.gaugeDiameter - Metrics.ringWidth)
+                                width: Metrics.gaugeDiameter - Metrics.ringWidth, height: Metrics.gaugeDiameter - Metrics.ringWidth)
             let track = NSBezierPath(ovalIn: circle)
             track.lineWidth = Metrics.ringWidth
             NSColor.labelColor.withAlphaComponent(Metrics.trackAlpha).setStroke()
             track.stroke()
-
-            let clamped = min(1, max(0, fraction))
-            guard clamped > 0 else { return }
+            guard fraction > 0 else { return }
             let arc = NSBezierPath()
             arc.appendArc(withCenter: NSPoint(x: circle.midX, y: circle.midY), radius: circle.width / 2,
-                          startAngle: 90, endAngle: 90 - 360 * clamped, clockwise: true)
+                          startAngle: 90, endAngle: 90 - 360 * fraction, clockwise: true)
             arc.lineWidth = Metrics.ringWidth
             arc.lineCapStyle = .round
             foreground(alert).setStroke()
@@ -220,73 +297,131 @@ enum MenuBarRenderer {
         }
     }
 
-    private static func pieSegment(fraction: Double, alert: Bool) -> Segment {
+    private static func pie(fraction: Double, alert: Bool) -> Segment {
         Segment(width: Metrics.gaugeDiameter) { rect in
             let circle = NSRect(x: rect.minX, y: rect.midY - Metrics.gaugeDiameter / 2,
                                 width: Metrics.gaugeDiameter, height: Metrics.gaugeDiameter)
             NSColor.labelColor.withAlphaComponent(Metrics.trackAlpha).setFill()
             NSBezierPath(ovalIn: circle).fill()
-
-            let clamped = min(1, max(0, fraction))
-            guard clamped > 0 else { return }
+            guard fraction > 0 else { return }
             let center = NSPoint(x: circle.midX, y: circle.midY)
             let wedge = NSBezierPath()
             wedge.move(to: center)
             wedge.appendArc(withCenter: center, radius: circle.width / 2,
-                            startAngle: 90, endAngle: 90 - 360 * clamped, clockwise: true)
+                            startAngle: 90, endAngle: 90 - 360 * fraction, clockwise: true)
             wedge.close()
             foreground(alert).setFill()
             wedge.fill()
         }
     }
 
+    /// 最近 10 次采样的负载，每根柱子一次采样
+    private static func historyBars(_ history: [Double], alert: Bool) -> Segment {
+        let recent = Array(history.suffix(Metrics.historyCount))
+        let padded = Array(repeating: 0, count: Metrics.historyCount - recent.count) + recent
+        let width = CGFloat(Metrics.historyCount) * Metrics.historyBarWidth + CGFloat(Metrics.historyCount - 1) * Metrics.historyBarGap
+        return Segment(width: width) { rect in
+            let bottom = rect.midY - Metrics.chartHeight / 2
+            // 不画满高的底槽，只留一条淡基线，柱子的起伏才看得清
+            NSColor.labelColor.withAlphaComponent(Metrics.trackAlpha).setFill()
+            NSRect(x: rect.minX, y: bottom, width: width, height: 1).fill()
+            for (index, value) in padded.enumerated() where value > 0 {
+                let x = rect.minX + CGFloat(index) * (Metrics.historyBarWidth + Metrics.historyBarGap)
+                foreground(alert && value >= Metrics.highLevel).setFill()
+                NSRect(x: x, y: bottom, width: Metrics.historyBarWidth,
+                       height: max(1, Metrics.chartHeight * min(1, value))).fill()
+            }
+        }
+    }
+
+    /// 竖向电量条
+    private static func meter(fraction: Double, alert: Bool) -> Segment {
+        Segment(width: Metrics.meterSize.width) { rect in
+            let frame = NSRect(x: rect.minX, y: rect.midY - Metrics.meterSize.height / 2,
+                               width: Metrics.meterSize.width, height: Metrics.meterSize.height)
+            let radius = Metrics.meterSize.width / 3
+            NSColor.labelColor.withAlphaComponent(Metrics.trackAlpha).setFill()
+            NSBezierPath(roundedRect: frame, xRadius: radius, yRadius: radius).fill()
+            guard fraction > 0 else { return }
+            let filled = NSRect(x: frame.minX, y: frame.minY, width: frame.width,
+                                height: max(radius * 2, frame.height * fraction))
+            foreground(alert).setFill()
+            NSBezierPath(roundedRect: filled, xRadius: radius, yRadius: radius).fill()
+        }
+    }
+
+    /// 按负载着色的状态点：绿色正常、橙色偏高、红色很高
+    private static func levelDot(fraction: Double) -> Segment {
+        var segment = Segment(width: Metrics.dotSize) { rect in
+            let color: NSColor = fraction >= Metrics.highLevel ? .systemRed
+                : fraction >= Metrics.warningLevel ? .systemOrange : .systemGreen
+            color.setFill()
+            NSBezierPath(ovalIn: NSRect(x: rect.minX, y: rect.midY - Metrics.dotSize / 2,
+                                        width: Metrics.dotSize, height: Metrics.dotSize)).fill()
+        }
+        segment.colored = true
+        return segment
+    }
+
     private static func symbolSegment(_ name: String) -> Segment {
         let configuration = NSImage.SymbolConfiguration(pointSize: Metrics.symbolSize, weight: .medium)
             .applying(.init(paletteColors: [.labelColor]))
-        let symbol = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
-            .withSymbolConfiguration(configuration)
+        let symbol = NSImage(systemSymbolName: name, accessibilityDescription: nil)?.withSymbolConfiguration(configuration)
         let size = symbol?.size ?? NSSize(width: Metrics.symbolSize, height: Metrics.symbolSize)
         return Segment(width: ceil(size.width)) { rect in
             symbol?.draw(in: NSRect(x: rect.minX, y: rect.midY - size.height / 2, width: size.width, height: size.height))
         }
     }
 
-    /// 两行：上传（绿点）在上，下载（蓝点）在下，数值右对齐
-    private static func networkSegment(_ rate: NetworkRate?) -> Segment {
-        let attributes: [NSAttributedString.Key: Any] = [.font: Metrics.networkFont, .foregroundColor: NSColor.labelColor]
-        let rows: [(String, NSColor)] = [
-            (rate.map { Format.menuBarRate($0.uploadBytesPerSecond) } ?? "— KB/s", DS.NetworkPalette.upload),
-            (rate.map { Format.menuBarRate($0.downloadBytesPerSecond) } ?? "— KB/s", DS.NetworkPalette.download),
-        ]
-        let sampleWidth = ("999 KB/s" as NSString).size(withAttributes: attributes).width
-        let textWidth = ceil(rows.map { ($0.0 as NSString).size(withAttributes: attributes).width }.reduce(sampleWidth, max))
-        let width = Metrics.networkDot + Metrics.innerGap + textWidth
+    // MARK: 网速
 
-        return Segment(width: width) { rect in
-            let capHeight = Metrics.networkFont.capHeight
-            for (index, row) in rows.enumerated() {
-                let baseline = rect.minY + (index == 0 ? Metrics.upperBaseline : Metrics.lowerBaseline + 1)
-                row.1.setFill()
-                NSBezierPath(ovalIn: NSRect(x: rect.minX, y: baseline + capHeight / 2 - Metrics.networkDot / 2,
-                                            width: Metrics.networkDot, height: Metrics.networkDot)).fill()
-                drawText(row.0, attributes: attributes, rightEdge: rect.maxX, baseline: baseline)
+    private static func networkSegment(upload: Double?, download: Double?, style: NetworkMenuStyle) -> Segment {
+        let up = upload.map { Format.menuBarRate($0) } ?? "— KB/s"
+        let down = download.map { Format.menuBarRate($0) } ?? "— KB/s"
+
+        switch style {
+        case .dots, .arrows:
+            let attributes: [NSAttributedString.Key: Any] = [.font: Metrics.networkFont, .foregroundColor: NSColor.labelColor]
+            let textWidth = ceil([up, down, "999 KB/s"].map { self.textWidth($0, attributes) }.max() ?? 0)
+            let markerWidth = style == .dots ? Metrics.dotSize : ceil(self.textWidth("↑", attributes))
+            var segment = Segment(width: markerWidth + Metrics.innerGap + textWidth) { rect in
+                let base = baselineOrigin(in: rect)
+                let rows: [(String, String, NSColor, CGFloat)] = [
+                    (up, "↑", DS.NetworkPalette.upload, base + Metrics.upperBaseline - 1),
+                    (down, "↓", DS.NetworkPalette.download, base + Metrics.lowerBaseline),
+                ]
+                for (text, arrow, color, baseline) in rows {
+                    if style == .dots {
+                        color.setFill()
+                        let center = baseline + Metrics.networkFont.capHeight / 2
+                        NSBezierPath(ovalIn: NSRect(x: rect.minX, y: center - Metrics.dotSize / 2,
+                                                    width: Metrics.dotSize, height: Metrics.dotSize)).fill()
+                    } else {
+                        drawText(arrow, [.font: Metrics.networkFont, .foregroundColor: NSColor.secondaryLabelColor],
+                                 rightEdge: rect.minX + markerWidth, baseline: baseline)
+                    }
+                    drawText(text, attributes, rightEdge: rect.maxX, baseline: baseline)
+                }
             }
+            segment.colored = style == .dots
+            return segment
+        case .inline:
+            let upSegment = inlineText(label: "↑", value: up, sample: "999 KB/s", alert: false)
+            let downSegment = inlineText(label: "↓", value: down, sample: "999 KB/s", alert: false)
+            return combine([upSegment, downSegment], gap: Metrics.innerGap * 2)
         }
     }
 
     private static func combine(_ parts: [Segment], gap: CGFloat = Metrics.innerGap) -> Segment {
         let width = parts.reduce(0) { $0 + $1.width } + CGFloat(max(0, parts.count - 1)) * gap
-        return Segment(width: width) { rect in
+        var segment = Segment(width: width) { rect in
             var x = rect.minX
             for part in parts {
                 part.draw(NSRect(x: x, y: rect.minY, width: part.width, height: rect.height))
                 x += part.width + gap
             }
         }
-    }
-
-    private static func accessibilityText(for model: AppModel) -> String {
-        let cpu = model.store.cpu.map { "CPU \(Format.percent($0.total))" } ?? "CPU"
-        return "OpenStats，\(cpu)"
+        segment.colored = parts.contains(where: \.colored)
+        return segment
     }
 }

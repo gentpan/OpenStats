@@ -30,15 +30,13 @@ public struct PanelRootView: View {
         .frame(maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
         .fixedSize(horizontal: false, vertical: isSnapshot)
         .background {
-            // 实际面板由窗口的液态玻璃底板提供背景；平铺（测量 / 截图）模式使用实色
-            if isSnapshot {
+            // 开启液态玻璃时由窗口底板提供背景，否则画浅色 / 深色实色背景
+            if isSnapshot || !model.settings.panelGlass {
                 RoundedRectangle(cornerRadius: DS.Radius.xl).fill(DS.Palette.background)
             }
         }
         .overlay {
-            if isSnapshot {
-                RoundedRectangle(cornerRadius: DS.Radius.xl).strokeBorder(DS.Palette.border, lineWidth: DS.Size.stroke)
-            }
+            RoundedRectangle(cornerRadius: DS.Radius.xl).strokeBorder(DS.Palette.border, lineWidth: DS.Size.stroke)
         }
     }
 }
@@ -69,14 +67,31 @@ private struct PanelHeader: View {
 
             Spacer(minLength: DS.Space.s3)
 
-            if model.keepAwake.isActive {
-                Image(systemName: "cup.and.saucer.fill")
-                    .font(.system(size: DS.TextSize.sm.rawValue, weight: .semibold))
-                    .foregroundStyle(DS.Palette.primary)
-                    .help("防休眠已开启")
+            HStack(spacing: DS.Space.s1) {
+                if model.keepAwake.isActive {
+                    Image(systemName: "cup.and.saucer.fill")
+                        .font(.system(size: DS.TextSize.sm.rawValue, weight: .semibold))
+                        .foregroundStyle(DS.Palette.primary)
+                        .frame(width: DS.Size.controlHeight)
+                        .help("防休眠已开启")
+                }
+                ThemeToggle()
+                IconButton(systemName: "gearshape", help: "设置") { model.openSettings() }
+                IconButton(systemName: "power", help: "退出 OpenStats") { model.quit() }
             }
-            IconButton(systemName: "gearshape", help: "设置") { model.openSettings() }
-            IconButton(systemName: "power", help: "退出 OpenStats") { model.quit() }
+        }
+    }
+}
+
+/// 在浅色与深色之间切换；当前跟随系统时，切到与系统相反的那一种
+private struct ThemeToggle: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        let isDark = colorScheme == .dark
+        IconButton(systemName: isDark ? "sun.max" : "moon", help: isDark ? "切换到浅色" : "切换到深色") {
+            model.settings.appearance = isDark ? .light : .dark
         }
     }
 }

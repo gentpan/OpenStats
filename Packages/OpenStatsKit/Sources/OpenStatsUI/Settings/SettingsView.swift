@@ -181,6 +181,11 @@ private struct GeneralSettings: View {
                 }
             }
             GroupRow {
+                SettingRow(title: "液态玻璃背景", subtitle: "面板背景半透明，透出桌面；关闭时为浅色或深色实色背景") {
+                    DSToggle(isOn: $settings.panelGlass, label: "液态玻璃背景")
+                }
+            }
+            GroupRow {
                 SettingRow(title: "登录时启动", subtitle: model.launchAtLoginError ?? "开机后自动在菜单栏显示 OpenStats") {
                     DSToggle(isOn: Binding(get: { model.launchAtLoginEnabled },
                                            set: { model.setLaunchAtLogin($0) }),
@@ -214,33 +219,119 @@ private struct MenuBarSettings: View {
 
         MenuBarPreview()
 
+        SettingsGroup(caption: "风格") {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)],
+                      spacing: DS.Space.s3) {
+                ForEach(MenuBarStyle.allCases) { style in
+                    StyleCard(style: style, isSelected: settings.menuBarStyle == style) {
+                        settings.menuBarStyle = style
+                    }
+                }
+            }
+            .padding(DS.Space.s3)
+        }
+
         SettingsGroup(caption: "显示项目") {
             ForEach(Array(MenuBarItem.allCases.enumerated()), id: \.element) { index, item in
                 GroupRow(showsDivider: index > 0) {
-                    VStack(alignment: .leading, spacing: DS.Space.s3) {
-                        SettingRow(title: item.title, subtitle: item.subtitle, icon: item.symbol) {
+                    SettingRow(title: item.title, subtitle: item.subtitle, icon: item.symbol) {
+                        HStack(spacing: DS.Space.s3) {
+                            if settings.isEnabled(item) {
+                                itemStylePicker(item)
+                            }
                             DSToggle(isOn: Binding(get: { settings.isEnabled(item) },
                                                    set: { settings.setEnabled(item, $0) }),
                                      label: item.title)
-                        }
-                        if item.supportsGaugeStyle, settings.isEnabled(item) {
-                            SegmentedControl(selection: Binding(get: { settings.gaugeStyle(for: item) },
-                                                                set: { settings.setGaugeStyle($0, for: item) }),
-                                             options: GaugeStyle.allCases.map { ($0, $0.title) })
-                                .padding(.leading, DS.Size.iconStandalone + DS.Space.s3)
                         }
                     }
                 }
             }
         }
 
-        SettingsGroup(caption: "样式") {
+        SettingsGroup(caption: "其他") {
             GroupRow(showsDivider: false) {
-                SettingRow(title: "高负载时着色", subtitle: "CPU 超过 85% 时数值显示为红色，其余时间跟随菜单栏颜色") {
+                SettingRow(title: "高负载时着色", subtitle: "占用超过 85% 时数值与图形显示为红色") {
                     DSToggle(isOn: $settings.colorizeHighLoad, label: "高负载时着色")
                 }
             }
         }
+    }
+
+    /// 网速有自己的三种样式；其他指标可以单独指定风格，默认跟随整体
+    @ViewBuilder
+    private func itemStylePicker(_ item: MenuBarItem) -> some View {
+        @Bindable var settings = model.settings
+        if item == .network {
+            SegmentedControl(selection: $settings.networkStyle,
+                             options: NetworkMenuStyle.allCases.map { ($0, $0.title) })
+                .frame(width: DS.Size.settingsSidebar + DS.Space.s6)
+        } else {
+            Picker("风格", selection: Binding(get: { settings.styleOverrides[item] },
+                                             set: { settings.setStyleOverride($0, for: item) })) {
+                Text("跟随整体").tag(MenuBarStyle?.none)
+                Divider()
+                ForEach(MenuBarStyle.allCases) { style in
+                    Text(style.title).tag(MenuBarStyle?.some(style))
+                }
+            }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .fixedSize()
+        }
+    }
+}
+
+private struct StyleCard: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.colorScheme) private var colorScheme
+    let style: MenuBarStyle
+    let isSelected: Bool
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        let sample = MenuBarRenderer.image(reading: .sample, items: [.cpu, .memory, .gpu],
+                                           style: { _ in style }, networkStyle: model.settings.networkStyle,
+                                           colorizeHighLoad: false, fahrenheit: model.settings.useFahrenheit)
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                // 预览按原尺寸显示，超出卡片宽度时等比缩小，保证各卡片对齐
+                Image(nsImage: MenuBarRenderer.preview(sample, dark: colorScheme == .dark))
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: sample.size.width, maxHeight: sample.size.height)
+                    .padding(.horizontal, DS.Space.s2)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: DS.Size.controlHeight + DS.Space.s2)
+                    .background(DS.Palette.track, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+
+                HStack(spacing: DS.Space.s1) {
+                    Text(style.title).dsFont(.sm, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
+                    Spacer()
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: DS.TextSize.sm.rawValue))
+                            .foregroundStyle(DS.Palette.primary)
+                    }
+                }
+                Text(style.detail)
+                    .dsFont(.xs)
+                    .foregroundStyle(DS.Palette.textSecondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, minHeight: DS.TextSize.xs.rawValue * 3, alignment: .topLeading)
+            }
+            .padding(DS.Space.s2)
+            .background(hovering && !isSelected ? DS.Palette.surfaceHover : Color.clear,
+                        in: RoundedRectangle(cornerRadius: DS.Radius.md))
+            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md)
+                .strokeBorder(isSelected ? DS.Palette.primary : DS.Palette.border,
+                              lineWidth: isSelected ? DS.Size.chartLine : DS.Size.stroke))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -249,20 +340,22 @@ private struct MenuBarPreview: View {
 
     var body: some View {
         let image = MenuBarRenderer.image(for: model)
-        VStack(spacing: DS.Space.s2) {
-            preview(image: image, dark: false)
-            preview(image: image, dark: true)
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            Text("当前效果（实时数据）").dsFont(.xs, weight: .medium).foregroundStyle(DS.Palette.textSecondary)
+            HStack(spacing: DS.Space.s3) {
+                preview(image: image, dark: false)
+                preview(image: image, dark: true)
+            }
         }
     }
 
     private func preview(image: NSImage, dark: Bool) -> some View {
-        let tinted = MenuBarRenderer.preview(image, dark: dark)
-        return HStack {
+        HStack {
             Spacer()
-            Image(nsImage: tinted)
+            Image(nsImage: MenuBarRenderer.preview(image, dark: dark))
             Spacer()
         }
-        .frame(height: DS.Size.controlHeight)
+        .frame(height: DS.Size.controlHeight + DS.Space.s2)
         .background(dark ? Color(nsColor: NSColor(hex: 0x1F2937)) : Color(nsColor: NSColor(hex: 0xE5E7EB)),
                     in: RoundedRectangle(cornerRadius: DS.Radius.md))
         .accessibilityLabel(dark ? "深色菜单栏预览" : "浅色菜单栏预览")
@@ -352,8 +445,10 @@ private struct HelperSettings: View {
         if let error = helper.lastError {
             InfoBanner(icon: "exclamationmark.triangle.fill", text: error, tone: .error)
         }
-        if HelperConstants.teamIdentifier.isEmpty {
-            InfoBanner(icon: "info.circle", text: "当前为开发构建：辅助工具只校验应用标识。正式发布前需使用 Developer ID 签名并填写 Team ID。", tone: .neutral)
+        if let team = CodeSigningInfo.currentTeamIdentifier() {
+            InfoBanner(icon: "checkmark.seal", text: "已使用 Developer ID 签名（团队 \(team)），辅助工具只接受同一团队签名的 OpenStats。", tone: .success)
+        } else {
+            InfoBanner(icon: "info.circle", text: "当前为临时签名的开发构建，辅助工具只能校验应用标识。使用 Developer ID 证书构建后会自动启用团队校验。", tone: .neutral)
         }
     }
 

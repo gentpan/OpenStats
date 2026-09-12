@@ -12,8 +12,6 @@ enum SnapshotRenderer {
         let defaults = UserDefaults(suiteName: "OpenStats.snapshot") ?? .standard
         let settings = AppSettings(defaults: defaults)
         settings.menuBarItems = [.cpu, .gpu, .memory, .network, .temperature]
-        settings.setGaugeStyle(.ring, for: .gpu)
-        settings.setGaugeStyle(.pie, for: .memory)
         let model = AppModel(settings: settings)
         model.isPanelVisible = true
 

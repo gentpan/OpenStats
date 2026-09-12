@@ -1,4 +1,5 @@
 import Foundation
+import Security
 
 public enum HelperConstants {
     public static let machServiceName = "com.openstats.helper"
@@ -7,14 +8,26 @@ public enum HelperConstants {
     /// 与 App 版本同步；App 发现辅助工具版本不一致时提示重新安装
     public static let protocolVersion = 2
 
-    /// 用 Developer ID 签名后填入 Team ID，辅助工具会据此严格校验调用方。
-    /// 为空时只校验 bundle identifier，仅适用于本地开发。
-    public static let teamIdentifier = ""
-
-    public static var clientRequirement: String {
+    /// 辅助工具对调用方的签名要求：与辅助工具自身同一团队签名的 OpenStats。
+    /// ad-hoc 签名的开发构建没有团队，只能校验 bundle identifier。
+    public static func clientRequirement(teamIdentifier: String?) -> String {
         let identifier = "identifier \"\(appBundleIdentifier)\""
-        guard !teamIdentifier.isEmpty else { return identifier }
+        guard let teamIdentifier, !teamIdentifier.isEmpty else { return identifier }
         return identifier + " and anchor apple generic and certificate leaf[subject.OU] = \"\(teamIdentifier)\""
+    }
+}
+
+public enum CodeSigningInfo {
+    /// 当前进程签名所属的 Team ID；ad-hoc 签名时为 nil
+    public static func currentTeamIdentifier() -> String? {
+        var code: SecCode?
+        guard SecCodeCopySelf([], &code) == errSecSuccess, let code else { return nil }
+        var staticCode: SecStaticCode?
+        guard SecCodeCopyStaticCode(code, [], &staticCode) == errSecSuccess, let staticCode else { return nil }
+        var information: CFDictionary?
+        guard SecCodeCopySigningInformation(staticCode, SecCSFlags(rawValue: kSecCSSigningInformation), &information) == errSecSuccess,
+              let dictionary = information as? [String: Any] else { return nil }
+        return dictionary[kSecCodeInfoTeamIdentifier as String] as? String
     }
 }
 

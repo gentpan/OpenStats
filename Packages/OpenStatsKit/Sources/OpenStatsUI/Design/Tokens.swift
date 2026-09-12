@@ -110,7 +110,7 @@ extension DS {
         static let panelWidth: CGFloat = 640
         static let panelMinHeight: CGFloat = 320
         static let panelGap: CGFloat = 4
-        static let tabsWidth: CGFloat = 340
+        static let tabsWidth: CGFloat = 300
         /// 三列卡片的单列宽度：(面板宽 - 两侧内边距 - 两个列间距) / 3
         static let tileWidth: CGFloat = (panelWidth - Space.s3 * 4) / 3
         static let settingsWidth: CGFloat = 720

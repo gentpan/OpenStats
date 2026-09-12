@@ -71,6 +71,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     private func refreshStatusItem() {
         statusItem.button?.image = MenuBarRenderer.image(for: model)
+        // 悬停时显示完整读数
+        statusItem.button?.toolTip = MenuBarReading(model: model)
+            .tooltip(items: model.settings.orderedMenuBarItems, fahrenheit: model.settings.useFahrenheit)
     }
 
     @objc private func statusItemClicked(_ sender: NSStatusBarButton) {
@@ -107,7 +110,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private func setUpPanel() {
         let model = self.model
         panel = StatusPanel(content: { PanelRootView().environment(model) },
-                            measuring: { PanelRootView().environment(model).environment(\.isSnapshot, true) })
+                            measuring: { PanelRootView().environment(model).environment(\.isSnapshot, true) },
+                            usesGlass: { model.settings.panelGlass })
         panel.onVisibilityChange = { [weak self] visible in
             guard let self else { return }
             self.model.isPanelVisible = visible
@@ -142,7 +146,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
         withObservationTracking {
             _ = model.demand
             _ = model.settings.menuBarItems
-            _ = model.settings.gaugeStyles
+            _ = model.settings.menuBarStyle
+            _ = model.settings.networkStyle
+            _ = model.settings.styleOverrides
             _ = model.settings.colorizeHighLoad
             _ = model.settings.useFahrenheit
             _ = model.keepAwake.isActive

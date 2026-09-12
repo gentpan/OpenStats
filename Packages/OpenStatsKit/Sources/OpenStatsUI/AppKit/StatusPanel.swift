@@ -19,8 +19,11 @@ final class StatusPanel: NSPanel {
     private let makeContent: () -> NSView
     /// 平铺布局（不含滚动容器）的视图，只用来测量内容的自然高度
     private let makeMeasuringContent: () -> NSView
+    private let usesGlass: () -> Bool
 
-    init<Content: View, Measuring: View>(content: @escaping () -> Content, measuring: @escaping () -> Measuring) {
+    init<Content: View, Measuring: View>(content: @escaping () -> Content, measuring: @escaping () -> Measuring,
+                                         usesGlass: @escaping () -> Bool) {
+        self.usesGlass = usesGlass
         makeContent = { NSHostingView(rootView: content()) }
         makeMeasuringContent = { NSHostingView(rootView: measuring()) }
         super.init(contentRect: NSRect(x: 0, y: 0, width: DS.Size.panelWidth, height: DS.Size.panelMinHeight),
@@ -54,8 +57,10 @@ final class StatusPanel: NSPanel {
         self.anchor = anchor
         anchorScreen = screen
 
-        contentView = GlassBackdrop.make(containing: makeContent(), cornerRadius: DS.Radius.xl)
+        let content = makeContent()
         setFrame(targetFrame(), display: false)
+        content.frame = NSRect(origin: .zero, size: frame.size)
+        contentView = GlassBackdrop.make(containing: content, cornerRadius: DS.Radius.xl, glass: usesGlass())
 
         alphaValue = 0
         makeKeyAndOrderFront(nil)
