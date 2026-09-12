@@ -5,7 +5,7 @@ public enum HelperConstants {
     public static let launchdPlistName = "com.openstats.helper.plist"
     public static let appBundleIdentifier = "com.openstats.app"
     /// 与 App 版本同步；App 发现辅助工具版本不一致时提示重新安装
-    public static let protocolVersion = 1
+    public static let protocolVersion = 2
 
     /// 用 Developer ID 签名后填入 Team ID，辅助工具会据此严格校验调用方。
     /// 为空时只校验 bundle identifier，仅适用于本地开发。
@@ -26,5 +26,22 @@ public enum HelperConstants {
     func setFanAutomatic(fan: Int, reply: @escaping @Sendable (String?) -> Void)
     func resetAllFans(reply: @escaping @Sendable (String?) -> Void)
     func setSleepDisabled(_ disabled: Bool, reply: @escaping @Sendable (String?) -> Void)
-    func sleepDisabled(reply: @escaping @Sendable (Bool) -> Void)
+    func flushDNSCache(reply: @escaping @Sendable (String?) -> Void)
+    func purgeMemory(reply: @escaping @Sendable (String?) -> Void)
+}
+
+/// 需要管理员权限的系统维护命令。辅助工具与未安装辅助工具时的授权回退共用同一份固定命令
+public enum MaintenanceCommand: String, Sendable, CaseIterable {
+    case flushDNS, purgeMemory
+
+    public var steps: [(path: String, arguments: [String])] {
+        switch self {
+        case .flushDNS: [("/usr/bin/dscacheutil", ["-flushcache"]), ("/usr/bin/killall", ["-HUP", "mDNSResponder"])]
+        case .purgeMemory: [("/usr/sbin/purge", [])]
+        }
+    }
+
+    public var shellCommand: String {
+        steps.map { ([$0.path] + $0.arguments).joined(separator: " ") }.joined(separator: "; ")
+    }
 }

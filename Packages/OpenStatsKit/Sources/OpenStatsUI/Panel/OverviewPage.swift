@@ -34,7 +34,7 @@ struct OverviewPage: View {
 }
 
 /// 一行等高卡片
-private struct EqualHeightRow<Content: View>: View {
+struct EqualHeightRow<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
@@ -398,9 +398,10 @@ private struct BatteryCard: View {
 private struct TopProcessesCard: View {
     @Environment(AppModel.self) private var model
     @Environment(\.isSnapshot) private var isSnapshot
+    private static let rowCount = 5
 
     var body: some View {
-        let processes = Array(model.store.processes.prefix(5))
+        let processes = Array(model.store.processes.prefix(Self.rowCount))
 
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s1) {
@@ -413,8 +414,10 @@ private struct TopProcessesCard: View {
             }
             .foregroundStyle(DS.Palette.textSecondary)
 
-            if processes.isEmpty {
+            // 数据到达前用等高占位行，避免面板高度变化
+            ForEach(0..<max(0, Self.rowCount - processes.count), id: \.self) { _ in
                 PlaceholderLine()
+                    .frame(height: DS.TextSize.sm.rawValue * 1.25)
             }
             ForEach(processes) { process in
                 HStack(spacing: DS.Space.s2) {

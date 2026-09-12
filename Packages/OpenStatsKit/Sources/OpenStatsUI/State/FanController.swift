@@ -41,8 +41,6 @@ public final class FanController {
         self.settings = settings
     }
 
-    var hasFans: Bool { !(store.sensors?.fans.isEmpty ?? true) }
-
     func select(_ newMode: Mode) async {
         guard newMode != mode || newMode == .custom else { return }
         let previous = mode

@@ -13,8 +13,6 @@ public final class MetricsStore {
     public private(set) var system = SystemInfoReader.read()
 
     public private(set) var cpu: CPULoad?
-    public private(set) var cpuUser = History<Double>(capacity: historyCapacity)
-    public private(set) var cpuSystem = History<Double>(capacity: historyCapacity)
     public private(set) var cpuTotal = History<Double>(capacity: historyCapacity)
 
     public private(set) var memory: MemoryUsage?
@@ -27,7 +25,8 @@ public final class MetricsStore {
     public private(set) var gpu: GPUUsage?
     public private(set) var gpuHistory = History<Double>(capacity: historyCapacity)
     public private(set) var disk: DiskUsage?
-    public private(set) var battery: BatteryStatus?
+    /// 启动时读取一次，确保面板首次打开时布局（是否有电池卡片）就已确定
+    public private(set) var battery: BatteryStatus? = BatterySampler.sample()
     public private(set) var processes: [ProcessUsage] = []
     public private(set) var sensors: SensorReadings?
     public private(set) var lastUpdate: Date?
@@ -38,8 +37,6 @@ public final class MetricsStore {
         lastUpdate = snapshot.date
         if let cpu = snapshot.cpu {
             self.cpu = cpu
-            cpuUser.append(cpu.user)
-            cpuSystem.append(cpu.system)
             cpuTotal.append(cpu.total)
         }
         if let memory = snapshot.memory {

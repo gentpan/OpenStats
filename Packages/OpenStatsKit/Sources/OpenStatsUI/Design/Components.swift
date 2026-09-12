@@ -53,56 +53,13 @@ extension CardHeader where Trailing == Text {
     }
 }
 
-extension CardHeader where Trailing == EmptyView {
-    init(icon: String, title: String) {
-        self.icon = icon
-        self.title = title
-        self.trailing = EmptyView()
-    }
-}
-
 struct HairlineDivider: View {
     var body: some View {
         Rectangle().fill(DS.Palette.border).frame(height: DS.Size.stroke)
     }
 }
 
-// MARK: - 数值
-
-struct BigValue: View {
-    let value: String
-    var unit: String?
-
-    var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) {
-            Text(value)
-                .dsFont(.xxl, weight: .semibold)
-                .monospacedDigit()
-                .foregroundStyle(DS.Palette.textPrimary)
-            if let unit {
-                Text(unit).dsFont(.sm).foregroundStyle(DS.Palette.textSecondary)
-            }
-        }
-        .lineLimit(1)
-    }
-}
-
-struct InlineStat: View {
-    let label: String
-    let value: String
-    var alignment: HorizontalAlignment = .leading
-
-    var body: some View {
-        VStack(alignment: alignment, spacing: 0) {
-            Text(label).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
-            Text(value)
-                .dsFont(.sm, weight: .semibold)
-                .monospacedDigit()
-                .foregroundStyle(DS.Palette.textPrimary)
-                .lineLimit(1)
-        }
-    }
-}
+// MARK: - 图例
 
 struct LegendItem: View {
     let color: Color
@@ -136,32 +93,6 @@ struct ProgressTrack: View {
             }
         }
         .frame(height: height)
-    }
-}
-
-struct StackedBar: View {
-    struct Segment: Identifiable {
-        let id: String
-        let fraction: Double
-        let color: Color
-    }
-
-    let segments: [Segment]
-
-    var body: some View {
-        GeometryReader { proxy in
-            HStack(spacing: 0) {
-                ForEach(segments) { segment in
-                    Rectangle()
-                        .fill(segment.color)
-                        .frame(width: proxy.size.width * min(1, max(0, segment.fraction)))
-                }
-                Spacer(minLength: 0)
-            }
-            .background(DS.Palette.track)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
-        }
-        .frame(height: DS.Size.barHeight)
     }
 }
 
@@ -343,6 +274,36 @@ struct DSToggle: View {
     }
 }
 
+// MARK: - 复选框
+
+struct DSCheckbox: View {
+    let isOn: Bool
+    let action: () -> Void
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
+        Button(action: action) {
+            RoundedRectangle(cornerRadius: DS.Radius.sm)
+                .fill(isOn ? DS.Palette.primary : Color.clear)
+                .overlay {
+                    if isOn {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: DS.TextSize.xs.rawValue - DS.Space.s1 / 2, weight: .bold))
+                            .foregroundStyle(DS.Palette.onPrimary)
+                    } else {
+                        RoundedRectangle(cornerRadius: DS.Radius.sm)
+                            .strokeBorder(DS.Palette.neutral300, lineWidth: DS.Size.chartLine)
+                    }
+                }
+                .frame(width: DS.Size.iconInline, height: DS.Size.iconInline)
+                .opacity(isEnabled ? 1 : 0.4)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isOn ? .isSelected : [])
+    }
+}
+
 // MARK: - 单选行
 
 struct RadioRow: View {
@@ -498,7 +459,10 @@ struct PageScroll<Content: View>: View {
         if isSnapshot {
             stack
         } else {
-            ScrollView { stack }.scrollIndicators(.never)
+            // 内容放得下时不回弹，避免点击时整页轻微抖动
+            ScrollView { stack }
+                .scrollIndicators(.never)
+                .scrollBounceBehavior(.basedOnSize)
         }
     }
 }

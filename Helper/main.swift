@@ -2,7 +2,8 @@
 //  OpenStatsHelper
 //
 //  以 root 运行的辅助工具，由 SMAppService.daemon 注册。
-//  只做三件事：设置风扇转速、切换“合盖不睡眠”、在客户端断开时恢复默认。
+//  只做固定的几件事：设置风扇转速、切换“合盖不睡眠”、刷新 DNS、释放内存，
+//  并在客户端断开时恢复风扇与睡眠设置。
 //
 
 import Foundation
@@ -100,10 +101,12 @@ final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProto
         }
     }
 
-    func sleepDisabled(reply: @escaping @Sendable (Bool) -> Void) {
-        queue.async { [self] in
-            reply(currentSleepDisabled())
-        }
+    func flushDNSCache(reply: @escaping @Sendable (String?) -> Void) {
+        queue.async { [self] in reply(run(.flushDNS)) }
+    }
+
+    func purgeMemory(reply: @escaping @Sendable (String?) -> Void) {
+        queue.async { [self] in reply(run(.purgeMemory)) }
     }
 
     // MARK: 状态恢复
@@ -154,7 +157,7 @@ final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProto
     // MARK: 睡眠
 
     private func applySleepDisabled(_ disabled: Bool) -> String? {
-        let result = runPmset(["-a", "disablesleep", disabled ? "1" : "0"])
+        let result = runTool("/usr/bin/pmset", ["-a", "disablesleep", disabled ? "1" : "0"])
         guard result.status == 0 else {
             return "pmset 执行失败：\(result.output.trimmingCharacters(in: .whitespacesAndNewlines))"
         }
@@ -163,17 +166,22 @@ final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProto
         return nil
     }
 
-    private func currentSleepDisabled() -> Bool {
-        let output = runPmset(["-g"]).output
-        return output.split(separator: "\n").contains { line in
-            let parts = line.split(whereSeparator: \.isWhitespace)
-            return parts.first == "SleepDisabled" && parts.last == "1"
+    // MARK: 系统维护
+
+    private func run(_ command: MaintenanceCommand) -> String? {
+        for step in command.steps {
+            let result = runTool(step.path, step.arguments)
+            // killall 在 mDNSResponder 恰好重启时可能返回非 0，不视为失败
+            if result.status != 0, step.path != "/usr/bin/killall" {
+                return "\((step.path as NSString).lastPathComponent) 执行失败：\(result.output.trimmingCharacters(in: .whitespacesAndNewlines))"
+            }
         }
+        return nil
     }
 
-    private func runPmset(_ arguments: [String]) -> (status: Int32, output: String) {
+    private func runTool(_ path: String, _ arguments: [String]) -> (status: Int32, output: String) {
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
+        process.executableURL = URL(fileURLWithPath: path)
         process.arguments = arguments
         let pipe = Pipe()
         process.standardOutput = pipe

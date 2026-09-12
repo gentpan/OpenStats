@@ -13,6 +13,7 @@ final class StatusPanel: NSPanel {
     private var localMonitor: Any?
     private var anchor: NSRect = .zero
     private weak var anchorScreen: NSScreen?
+    private var lastDismissal = Date.distantPast
 
     /// 面板隐藏时不保留 SwiftUI 视图，避免后台随数据刷新重绘
     private let makeContent: () -> NSView
@@ -41,7 +42,12 @@ final class StatusPanel: NSPanel {
     override var canBecomeKey: Bool { true }
 
     func toggle(below anchor: NSRect, on screen: NSScreen?) {
-        isVisible ? dismiss() : present(below: anchor, on: screen)
+        if isVisible {
+            dismiss()
+        } else if Date().timeIntervalSince(lastDismissal) > 0.3 {
+            // 面板打开时点击菜单栏图标：按下时面板已因失焦关闭，松开时不应再次打开
+            present(below: anchor, on: screen)
+        }
     }
 
     func present(below anchor: NSRect, on screen: NSScreen?) {
@@ -61,20 +67,19 @@ final class StatusPanel: NSPanel {
         onVisibilityChange?(true)
     }
 
-    /// 切换标签页或数据首次到达后重新计算高度，保持顶部对齐
+    /// 切换标签页后重新计算高度，保持顶部对齐。
+    /// 直接设置而不做窗口动画：动画期间 SwiftUI 会逐帧重排，看起来像抖动
     func refreshHeight() {
         guard isVisible else { return }
         let frame = targetFrame()
         guard abs(frame.height - self.frame.height) > 1 else { return }
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.18
-            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            animator().setFrame(frame, display: true)
-        }
+        setFrame(frame, display: true)
+        invalidateShadow()
     }
 
     func dismiss() {
         guard isVisible, !isPinned else { return }
+        lastDismissal = Date()
         removeMonitors()
         NSAnimationContext.runAnimationGroup({ context in
             context.duration = 0.1

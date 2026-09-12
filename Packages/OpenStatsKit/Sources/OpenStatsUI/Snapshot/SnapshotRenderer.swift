@@ -32,6 +32,9 @@ enum SnapshotRenderer {
         await model.hub.start { snapshot in model.handle(snapshot) }
         try? await Task.sleep(for: .seconds(12))
         await model.hub.stop()
+        // 清理页展示真实扫描结果（只读，不删除任何文件）
+        model.cleaner.scan()
+        while model.cleaner.isBusy { try? await Task.sleep(for: .milliseconds(200)) }
 
         for (appearanceName, suffix) in [(NSAppearance.Name.aqua, "light"), (.darkAqua, "dark")] {
             guard let appearance = NSAppearance(named: appearanceName) else { continue }

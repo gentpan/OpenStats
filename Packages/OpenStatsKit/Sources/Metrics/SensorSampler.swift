@@ -12,8 +12,6 @@ public final class SensorSampler {
         fans = smc.map(FanControl.init)
     }
 
-    public var isAvailable: Bool { smc != nil }
-
     public func sample(groups: Set<TemperatureGroup> = Set(TemperatureGroup.allCases), includeFans: Bool = true) -> SensorReadings? {
         guard let smc else { return nil }
         var summaries: [TemperatureSummary] = []

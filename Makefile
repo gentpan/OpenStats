@@ -4,7 +4,7 @@ CONFIG   ?= Debug
 DERIVED  := build/DerivedData
 APP      := $(DERIVED)/Build/Products/$(CONFIG)/OpenStats.app
 
-.PHONY: generate build run stop test snapshot icon open clean
+.PHONY: generate build run stop test snapshot open clean
 
 ## 由 project.yml 生成 Xcode 工程
 generate:
@@ -29,10 +29,6 @@ test:
 ## 用本机实时数据渲染各页面截图到 build/snapshots
 snapshot: build
 	$(APP)/Contents/MacOS/OpenStats --snapshot build/snapshots
-
-## 重新生成应用图标
-icon:
-	swift scripts/make-icon.swift App/Assets.xcassets/AppIcon.appiconset
 
 open: generate
 	open $(PROJECT)

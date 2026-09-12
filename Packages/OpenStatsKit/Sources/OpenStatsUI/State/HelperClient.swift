@@ -104,6 +104,13 @@ public final class HelperClient {
         await call { proxy, reply in proxy.setSleepDisabled(disabled, reply: reply) }
     }
 
+    func run(_ command: MaintenanceCommand) async -> String? {
+        switch command {
+        case .flushDNS: await call { proxy, reply in proxy.flushDNSCache(reply: reply) }
+        case .purgeMemory: await call { proxy, reply in proxy.purgeMemory(reply: reply) }
+        }
+    }
+
     /// 退出应用时使用：同步恢复风扇与睡眠设置，每步最多等待 1 秒
     func restoreDefaultsSynchronously() {
         guard isReady else { return }

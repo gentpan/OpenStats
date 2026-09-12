@@ -86,7 +86,7 @@ public enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
 }
 
 public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
-    case overview, processes, thermal, keepAwake
+    case overview, processes, thermal, keepAwake, cleaner
 
     public var id: String { rawValue }
 
@@ -96,6 +96,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .processes: "进程"
         case .thermal: "散热"
         case .keepAwake: "防休眠"
+        case .cleaner: "清理"
         }
     }
 }
@@ -139,6 +140,10 @@ public final class AppSettings {
     public var appearance: AppearanceMode {
         didSet { defaults.set(appearance.rawValue, forKey: Keys.appearance) }
     }
+    /// 可再生的缓存也先移到废纸篓（可恢复，但不会立即释放空间）
+    public var cleanPrefersTrash: Bool {
+        didSet { defaults.set(cleanPrefersTrash, forKey: Keys.cleanPrefersTrash) }
+    }
 
     public static let refreshOptions = [1, 2, 3, 5]
     public static let batteryFloorOptions = [10, 20, 30, 40]
@@ -163,6 +168,7 @@ public final class AppSettings {
             ? defaults.integer(forKey: Keys.fanSafetyTemperature) : 95
         panelTab = defaults.string(forKey: Keys.panelTab).flatMap(PanelTab.init(rawValue:)) ?? .overview
         appearance = defaults.string(forKey: Keys.appearance).flatMap(AppearanceMode.init(rawValue:)) ?? .system
+        cleanPrefersTrash = defaults.bool(forKey: Keys.cleanPrefersTrash)
     }
 
     /// 按固定顺序返回已启用的菜单栏项目
@@ -194,5 +200,6 @@ public final class AppSettings {
         static let fanSafetyTemperature = "fanSafetyTemperature"
         static let panelTab = "panelTab"
         static let appearance = "appearance"
+        static let cleanPrefersTrash = "cleanPrefersTrash"
     }
 }

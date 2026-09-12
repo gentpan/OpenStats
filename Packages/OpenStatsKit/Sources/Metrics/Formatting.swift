@@ -13,8 +13,6 @@ public struct History<Element: Sendable>: Sendable {
         if elements.count == capacity { elements.removeFirst() }
         elements.append(element)
     }
-
-    public var last: Element? { elements.last }
 }
 
 public enum Format {
@@ -40,24 +38,6 @@ public enum Format {
         if index == 0 { return "\(Int(amount)) B" }
         let digits = amount >= 100 ? 0 : 1
         return "\(amount.formatted(.number.precision(.fractionLength(digits)))) \(units[index])"
-    }
-
-    public static func rate(_ bytesPerSecond: Double) -> String {
-        bytes(bytesPerSecond) + "/s"
-    }
-
-    /// 菜单栏用的紧凑写法：692K、1.2M
-    public static func compactRate(_ bytesPerSecond: Double) -> String {
-        let value = max(0, bytesPerSecond)
-        switch value {
-        case ..<1024: return "\(Int(value))B"
-        case ..<(1024 * 1024): return "\(Int(value / 1024))K"
-        case ..<(1024 * 1024 * 1024):
-            let mb = value / 1024 / 1024
-            return mb >= 10 ? "\(Int(mb))M" : "\(mb.formatted(.number.precision(.fractionLength(1))))M"
-        default:
-            return "\((value / 1024 / 1024 / 1024).formatted(.number.precision(.fractionLength(1))))G"
-        }
     }
 
     /// 菜单栏网速：保留完整单位，数字最多 3 位，宽度稳定

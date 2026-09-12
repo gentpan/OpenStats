@@ -13,6 +13,8 @@ public final class AppModel {
     public let helper: HelperClient
     public let fans: FanController
     public let keepAwake: KeepAwakeController
+    public let cleaner: CleanerController
+    public let maintenance: MaintenanceController
     @ObservationIgnored public let hub = MetricsHub()
 
     public var isPanelVisible = false
@@ -30,6 +32,8 @@ public final class AppModel {
         self.helper = helper
         fans = FanController(helper: helper, store: store, settings: settings)
         keepAwake = KeepAwakeController(helper: helper, settings: settings)
+        cleaner = CleanerController(settings: settings)
+        maintenance = MaintenanceController(helper: helper)
     }
 
     /// 根据当前可见内容决定采集范围
@@ -43,7 +47,7 @@ public final class AppModel {
         demand.memory = true
         demand.network = true
         demand.gpu = (panel && tab == .overview) || menu.contains(.gpu)
-        demand.disk = panel && tab == .overview
+        demand.disk = panel && (tab == .overview || tab == .cleaner)
         demand.battery = (panel && (tab == .overview || tab == .keepAwake)) || keepAwake.lidClosedActive
         demand.processes = panel && (tab == .processes || tab == .overview)
 

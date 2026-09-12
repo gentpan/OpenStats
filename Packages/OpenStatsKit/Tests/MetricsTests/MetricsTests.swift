@@ -52,13 +52,6 @@ struct FormatTests {
         #expect(Format.bytes(UInt64(412_000_000_000), base: .decimal) == "412 GB")
     }
 
-    @Test func compactRate() {
-        #expect(Format.compactRate(0) == "0B")
-        #expect(Format.compactRate(692_486) == "676K")
-        #expect(Format.compactRate(3.5 * 1024 * 1024) == "3.5M")
-        #expect(Format.compactRate(42 * 1024 * 1024) == "42M")
-    }
-
     @Test func menuBarRate() {
         #expect(Format.menuBarRate(0) == "0 B/s")
         #expect(Format.menuBarRate(512) == "512 B/s")

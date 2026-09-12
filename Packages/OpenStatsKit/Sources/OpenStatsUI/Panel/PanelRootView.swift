@@ -1,3 +1,4 @@
+import AppKit
 import Metrics
 import SwiftUI
 
@@ -20,6 +21,7 @@ public struct PanelRootView: View {
                 case .processes: ProcessesPage()
                 case .thermal: ThermalPage()
                 case .keepAwake: KeepAwakePage()
+                case .cleaner: CleanerPage()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
@@ -83,30 +85,10 @@ struct AppGlyph: View {
     var size: CGFloat = DS.Size.controlHeight
 
     var body: some View {
-        RoundedRectangle(cornerRadius: DS.Radius.md)
-            .fill(DS.Palette.primary)
+        Image(nsImage: NSApp.applicationIconImage)
+            .resizable()
+            .interpolation(.high)
             .frame(width: size, height: size)
-            .overlay {
-                PulseMark()
-                    .stroke(DS.Palette.onPrimary,
-                            style: StrokeStyle(lineWidth: size / DS.Space.s12 * DS.Space.s1, lineCap: .round, lineJoin: .round))
-                    .padding(size * 0.22)
-            }
             .accessibilityHidden(true)
-    }
-}
-
-/// 应用标志折线，与 scripts/make-icon.swift 中的点位一致
-struct PulseMark: Shape {
-    static let points: [CGPoint] = [
-        CGPoint(x: 0.00, y: 0.56), CGPoint(x: 0.26, y: 0.56), CGPoint(x: 0.36, y: 0.30),
-        CGPoint(x: 0.50, y: 0.80), CGPoint(x: 0.62, y: 0.40), CGPoint(x: 0.70, y: 0.56),
-        CGPoint(x: 1.00, y: 0.56),
-    ]
-
-    func path(in rect: CGRect) -> Path {
-        Path { path in
-            path.addLines(Self.points.map { CGPoint(x: rect.minX + $0.x * rect.width, y: rect.minY + $0.y * rect.height) })
-        }
     }
 }

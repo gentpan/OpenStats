@@ -70,6 +70,15 @@
 
 安全机制：自定义模式下 CPU 达到设定温度（默认 95°C）自动交还系统控制；应用退出、崩溃或断开连接时风扇自动恢复。
 
+### 清理与系统维护
+
+- **一键扫描**：应用缓存、日志与崩溃报告、浏览器缓存（Chrome / Edge / Brave / Arc / Firefox / Safari）、Xcode 编译缓存、模拟器缓存、npm 缓存、Xcode 归档、未完成的下载、安装包、废纸篓。
+- **先预览再清理**：按类别显示大小，可展开查看具体项目并在访达中定位；清理前二次确认。
+- **安全边界**：只清理白名单目录；钥匙串、密码管理器、VPN、Cookie、历史记录一律不碰；正在运行的应用和浏览器自动跳过；执行前逐项重新校验；所有操作写入 `~/Library/Logs/OpenStats/cleanup.log`。
+- **系统维护**：一键刷新 DNS 缓存、释放内存（已安装辅助工具时直接执行，否则请求一次管理员授权）。
+
+<p><img src="docs/images/cleaner-light.png" width="600" alt="清理"></p>
+
 ### 设置
 
 <p><img src="docs/images/settings-menubar-light.png" width="600" alt="设置"></p>
@@ -92,9 +101,9 @@
 
 ## 辅助工具与安全
 
-风扇调速和“合盖后继续运行”需要系统权限，由 `SMAppService.daemon` 注册的辅助工具完成，首次使用时在“系统设置 › 通用 › 登录项”中批准一次。
+风扇调速、“合盖后继续运行”、刷新 DNS 与释放内存需要系统权限，由 `SMAppService.daemon` 注册的辅助工具完成，首次使用时在“系统设置 › 通用 › 登录项”中批准一次。
 
-- 只暴露固定的几个操作：设置风扇目标转速、恢复自动、切换 `pmset disablesleep`，**不提供任意命令执行**。
+- 只暴露固定的几个操作：设置风扇目标转速、恢复自动、切换 `pmset disablesleep`、刷新 DNS、释放内存，**不提供任意命令执行**。
 - 通过 XPC 通信，并校验调用方代码签名。
 - 客户端断开时自动恢复风扇与睡眠设置；异常退出后下次开机也会恢复。
 
@@ -128,11 +137,11 @@ Helper/                  root 辅助工具及其 launchd 配置
 Packages/OpenStatsKit/
   Sources/SMC            SMC 读写、风扇控制、温度传感器归类
   Sources/Metrics        指标采集与分级调度（MetricsHub）
-  Sources/HelperShared   XPC 协议
+  Sources/HelperShared   XPC 协议与系统维护命令
+  Sources/Cleaner        清理规则、安全守卫、扫描与执行引擎
   Sources/OpenStatsUI    设计 token、面板、设置窗口、菜单栏绘制
-  Tests/MetricsTests     单元测试
+  Tests/                 单元测试（采集、SMC 编解码、清理安全边界）
 project.yml              XcodeGen 工程描述
-scripts/make-icon.swift  生成应用图标
 docs/PLAN.md             技术方案与调研记录
 ```
 
@@ -142,6 +151,10 @@ docs/PLAN.md             技术方案与调研记录
 - [x] 概览仪表盘、进程、散热、防休眠
 - [x] 液态玻璃面板与浅色 / 深色主题
 - [x] 风扇调速与合盖运行（辅助工具）
+- [x] 缓存清理、刷新 DNS、释放内存
+- [ ] 应用卸载（含残留文件与程序坞图标）
+- [ ] 磁盘健康（SSD 寿命、写入量、温度）
+- [ ] 点击菜单栏各指标弹出独立详情
 - [ ] Developer ID 签名、公证与 DMG 发布
 - [ ] Sparkle 自动更新
 - [ ] 功耗、磁盘读写等更多指标

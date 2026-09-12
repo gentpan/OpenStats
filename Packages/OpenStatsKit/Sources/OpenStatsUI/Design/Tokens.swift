@@ -32,7 +32,6 @@ extension DS {
         static let border = Color.dynamic(light: 0x000000, lightAlpha: 0.07, dark: 0xFFFFFF, darkAlpha: 0.09)
         static let track = Color.dynamic(light: 0x000000, lightAlpha: 0.06, dark: 0xFFFFFF, darkAlpha: 0.10)
         static let neutral300 = Color.dynamic(light: 0xD1D5DB, dark: 0x3F434A)
-        static let neutral400 = Color.dynamic(light: 0x9CA3AF, dark: 0x6B7280)
     }
 }
 
@@ -111,7 +110,7 @@ extension DS {
         static let panelWidth: CGFloat = 640
         static let panelMinHeight: CGFloat = 320
         static let panelGap: CGFloat = 4
-        static let tabsWidth: CGFloat = 280
+        static let tabsWidth: CGFloat = 340
         /// 三列卡片的单列宽度：(面板宽 - 两侧内边距 - 两个列间距) / 3
         static let tileWidth: CGFloat = (panelWidth - Space.s3 * 4) / 3
         static let settingsWidth: CGFloat = 720
@@ -129,7 +128,6 @@ extension DS {
         }
 
         static let level1 = Level(color: .black.opacity(0.08), radius: 3, y: 1)
-        static let level2 = Level(color: .black.opacity(0.10), radius: 12, y: 4)
     }
 
     enum Motion {

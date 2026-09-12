@@ -112,11 +112,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             guard let self else { return }
             self.model.isPanelVisible = visible
             self.statusItem.button?.highlight(visible)
-            if visible {
-                self.model.helper.refreshStatus()
-                // 首次采样到进程、电池等数据后内容会变高，稍后重新计算一次
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in self?.panel.refreshHeight() }
-            }
+            if visible { self.model.helper.refreshStatus() }
         }
     }
 
