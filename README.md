@@ -185,8 +185,8 @@ app's user defaults and contain nothing personal. There is no analytics and no t
 
 ## Build & run
 
-Requires macOS 14+, a **full Xcode** (the SwiftUI macro plugins do not ship with
-CommandLineTools) and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
+Requires macOS 14+, **Xcode 26 or later** (the macOS 26 SDK for Liquid Glass; CommandLineTools
+alone lacks the SwiftUI macro plugins) and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
 
 ```bash
 brew install xcodegen

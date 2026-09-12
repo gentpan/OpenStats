@@ -168,7 +168,7 @@ OpenStats **不发起任何网络连接**。指标来自本机的内核接口（
 
 ## 构建与运行
 
-需要 macOS 14+、**完整的 Xcode**（CommandLineTools 不含 SwiftUI 宏插件）以及
+需要 macOS 14+、**Xcode 26 或更高版本**（液态玻璃需要 macOS 26 SDK；仅有 CommandLineTools 时缺少 SwiftUI 宏插件）以及
 [XcodeGen](https://github.com/yonaskolb/XcodeGen)。
 
 ```bash

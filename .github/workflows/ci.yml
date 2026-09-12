@@ -12,13 +12,15 @@ jobs:
       - uses: actions/checkout@v7
 
       # CommandLineTools alone cannot expand SwiftUI's @Observable / @Entry
-      # macros — the plugins ship only with full Xcode. Use the runner's
-      # default Xcode rather than pinning a version that may not be installed
-      # on a future image.
+      # macros — the plugins ship only with full Xcode. Liquid Glass needs the
+      # macOS 26 SDK, so pick the newest Xcode on the image rather than the
+      # default one or a pinned version that a future image may not carry.
       - name: Select Xcode
         run: |
           ls -d /Applications/Xcode*.app
-          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          echo "Using $XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
           swift --version
 
       - name: Install XcodeGen

@@ -75,7 +75,12 @@ public final class HelperClient {
         connection?.invalidate()
         connection = nil
         do {
-            try await service.unregister()
+            // 使用回调版本：不把非 Sendable 的 SMAppService 跨隔离域传递
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                service.unregister { error in
+                    if let error { continuation.resume(throwing: error) } else { continuation.resume() }
+                }
+            }
         } catch {
             lastError = "卸载失败：\(error.localizedDescription)"
         }

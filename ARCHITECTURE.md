@@ -19,7 +19,8 @@ hosting SwiftUI, no third-party dependencies. The Xcode project is generated fro
 
 ## Build
 
-**A full Xcode is required.** CommandLineTools does not ship the SwiftUI macro plugins.
+**Xcode 26 or later is required** — the macOS 26 SDK provides Liquid Glass, and
+CommandLineTools does not ship the SwiftUI macro plugins.
 
 ```bash
 brew install xcodegen
