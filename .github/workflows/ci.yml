@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+
+      # CommandLineTools alone cannot expand SwiftUI's @Observable / @Entry
+      # macros — the plugins ship only with full Xcode. Use the runner's
+      # default Xcode rather than pinning a version that may not be installed
+      # on a future image.
+      - name: Select Xcode
+        run: |
+          ls -d /Applications/Xcode*.app
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          swift --version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Test
+        run: make test
+
+      - name: Build app
+        run: make build CONFIG=Release
+
+      - name: Verify bundle
+        run: |
+          APP=build/DerivedData/Build/Products/Release/OpenStats.app
+          test -x "$APP/Contents/MacOS/OpenStats"
+          test -x "$APP/Contents/MacOS/OpenStatsHelper"
+          test -f "$APP/Contents/Library/LaunchDaemons/com.openstats.helper.plist"
+          test -f "$APP/Contents/Resources/AppIcon.icns"
+          codesign --verify --verbose "$APP"
+
+      # Smoke test: the panel is a menu-bar popover with no window to drive in
+      # CI, so render it off-screen instead. A view that traps on layout fails
+      # here rather than the first time a user clicks the menu-bar item.
+      - name: Render UI snapshots
+        run: |
+          build/DerivedData/Build/Products/Release/OpenStats.app/Contents/MacOS/OpenStats --snapshot "$PWD/snapshots"
+          test "$(ls snapshots/*.png | wc -l)" -ge 20
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ui-snapshots
+          path: snapshots/
