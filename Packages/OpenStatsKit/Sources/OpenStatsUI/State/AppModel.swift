@@ -23,6 +23,7 @@ public final class AppModel {
     public let alerts: AlertController
     public let uninstaller = UninstallerController()
     let startupItems = StartupItemsController()
+    public let history: HistoryRecorder
     @ObservationIgnored public let hub = MetricsHub()
 
     public var isMainWindowVisible = false
@@ -35,7 +36,7 @@ public final class AppModel {
     @ObservationIgnored var openMainWindow: (PanelTab?) -> Void = { _ in }
     @ObservationIgnored var quit: () -> Void = {}
 
-    public init(settings: AppSettings = AppSettings()) {
+    public init(settings: AppSettings = AppSettings(), historyURL: URL? = HistoryDatabase.defaultURL) {
         let store = MetricsStore()
         let helper = HelperClient()
         self.settings = settings
@@ -49,6 +50,7 @@ public final class AppModel {
         network = NetworkController(settings: settings, geo: geo)
         updates = UpdateController(settings: settings)
         alerts = AlertController(settings: settings)
+        history = HistoryRecorder(settings: settings, databaseURL: historyURL)
     }
 
     /// 根据当前可见内容决定采集范围：主窗口看标签页，详情弹窗看是哪一项
@@ -145,5 +147,6 @@ public final class AppModel {
         fans.evaluateSafety()
         keepAwake.evaluateBattery(store.battery)
         alerts.evaluate(store)
+        history.record(snapshot)
     }
 }

@@ -218,6 +218,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                     guard let self else { return }
                     self.menuBar.dismissPopovers()
                     self.model.network.setPaused(true)
+                    self.model.history.flush()
                     Task { await self.model.hub.setPaused(true) }
                 }
             })

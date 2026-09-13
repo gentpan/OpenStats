@@ -57,7 +57,7 @@ private func isolatedDefaults() -> UserDefaults {
 @MainActor
 @Suite struct DemandTests {
     private func model() -> AppModel {
-        AppModel(settings: AppSettings(defaults: isolatedDefaults()))
+        AppModel(settings: AppSettings(defaults: isolatedDefaults()), historyURL: nil)
     }
 
     @Test func menuBarOnlySamplesAtUserInterval() {

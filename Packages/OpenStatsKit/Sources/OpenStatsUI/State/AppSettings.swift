@@ -220,12 +220,12 @@ public enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
 
 /// 主窗口侧边栏的页面
 public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
-    case overview, system, cpu, gpu, memory, disk, network, thermal, processes, keepAwake, cleaner, uninstaller, startupItems
+    case overview, system, history, cpu, gpu, memory, disk, network, thermal, processes, keepAwake, cleaner, uninstaller, startupItems
     case settingsGeneral, settingsMenuBar, settingsNotifications, settingsHelper, settingsAbout
 
     public var id: String { rawValue }
 
-    static let monitors: [PanelTab] = [.overview, .system, .cpu, .gpu, .memory, .disk, .network, .thermal]
+    static let monitors: [PanelTab] = [.overview, .system, .history, .cpu, .gpu, .memory, .disk, .network, .thermal]
     static let tools: [PanelTab] = [.processes, .startupItems, .keepAwake, .cleaner, .uninstaller]
     static let settings: [PanelTab] = [.settingsGeneral, .settingsMenuBar, .settingsNotifications, .settingsHelper, .settingsAbout]
 
@@ -238,6 +238,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .overview: "仪表盘"
         case .system: "本机信息"
+        case .history: "历史"
         case .cpu: "CPU"
         case .gpu: "GPU"
         case .memory: "内存"
@@ -261,6 +262,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .overview: "square.grid.2x2"
         case .system: "laptopcomputer"
+        case .history: "clock.arrow.circlepath"
         case .cpu: "cpu"
         case .gpu: "square.3.layers.3d"
         case .memory: "memorychip"
@@ -388,6 +390,10 @@ public final class AppSettings {
     public var alertCPUTemperature: Int {
         didSet { defaults.set(alertCPUTemperature, forKey: Keys.alertCPUTemperature) }
     }
+    /// 每分钟把主要指标写入本机历史库
+    public var historyEnabled: Bool {
+        didSet { defaults.set(historyEnabled, forKey: Keys.historyEnabled) }
+    }
     /// 启动时与每天检查一次新版本
     public var autoCheckUpdates: Bool {
         didSet { defaults.set(autoCheckUpdates, forKey: Keys.autoCheckUpdates) }
@@ -436,6 +442,7 @@ public final class AppSettings {
         geoIncludeCity = defaults.bool(forKey: Keys.geoIncludeCity)
         geoAutoUpdate = defaults.object(forKey: Keys.geoAutoUpdate) as? Bool ?? true
         autoCheckUpdates = defaults.object(forKey: Keys.autoCheckUpdates) as? Bool ?? true
+        historyEnabled = defaults.object(forKey: Keys.historyEnabled) as? Bool ?? true
         enabledAlerts = Set(defaults.stringArray(forKey: Keys.enabledAlerts)?.compactMap(AlertKind.init(rawValue:)) ?? [])
         alertCPUTemperature = Self.alertTemperatureOptions.contains(defaults.integer(forKey: Keys.alertCPUTemperature))
             ? defaults.integer(forKey: Keys.alertCPUTemperature) : 95
@@ -490,6 +497,7 @@ public final class AppSettings {
         static let geoIncludeCity = "geoIncludeCity"
         static let geoAutoUpdate = "geoAutoUpdate"
         static let autoCheckUpdates = "autoCheckUpdates"
+        static let historyEnabled = "historyEnabled"
         static let enabledAlerts = "enabledAlerts"
         static let alertCPUTemperature = "alertCPUTemperature"
     }

@@ -14,7 +14,23 @@ enum SnapshotRenderer {
         let settings = AppSettings(defaults: defaults)
         settings.menuBarItems = [.cpu, .gpu, .memory, .network, .temperature]
         settings.probeSeconds = 1
-        let model = AppModel(settings: settings)
+        // 历史页用示例数据：最近 24 小时每分钟一条，中间留一段“睡眠”空档
+        let historyURL = FileManager.default.temporaryDirectory.appendingPathComponent("openstats-snapshot-history.sqlite")
+        try? FileManager.default.removeItem(at: historyURL)
+        if let database = try? HistoryDatabase(url: historyURL) {
+            let now = Int(Date().timeIntervalSince1970) / 60 * 60
+            for index in 0..<(24 * 60) where !(600..<780).contains(index) {
+                let t = Double(index)
+                let wave = (sin(t / 90) + 1) / 2
+                await database.insert(HistoryRecord(minute: now - (24 * 60 - index) * 60,
+                                                    cpu: 0.08 + wave * 0.3, cpuMax: min(1, 0.2 + wave * 0.6),
+                                                    memory: 0.55 + wave * 0.2, pressure: index % 400 == 0 ? 4 : 1,
+                                                    download: 200_000 + wave * 3_000_000, upload: 40_000 + wave * 400_000,
+                                                    gpu: index % 3 == 0 ? wave * 0.4 : nil, temperature: 45 + wave * 30,
+                                                    power: index > 1200 ? 20 + wave * 25 : nil))
+            }
+        }
+        let model = AppModel(settings: settings, historyURL: historyURL)
         model.isMainWindowVisible = true
         model.network.setVisibility(inMenuBar: true, detailVisible: true)
 
@@ -41,6 +57,7 @@ enum SnapshotRenderer {
         // 清理页展示真实扫描结果（只读，不删除任何文件）
         model.cleaner.scan()
         while model.cleaner.isBusy { try? await Task.sleep(for: .milliseconds(200)) }
+        model.history.load(.day)
         model.startupItems.refresh()
         model.uninstaller.loadApps()
         try? await Task.sleep(for: .seconds(2))
