@@ -12,7 +12,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-REPO="${REPO:-gentpan/OpenStats}"
+# 安装包放在官网（仓库是私有的，GitHub Release 无法匿名下载）
+DOWNLOAD_BASE="${DOWNLOAD_BASE:-https://getopenstats.com/download}"
 DIST="${DIST:-dist}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-QuotaBar}"
 SIGN_ID="${SIGN_ID:-$(security find-identity -v -p codesigning 2>/dev/null \
@@ -91,7 +92,7 @@ cask "openstats" do
   version "${VERSION}"
   sha256 "${SHA256}"
 
-  url "https://github.com/${REPO}/releases/download/v#{version}/OpenStats-#{version}.dmg"
+  url "${DOWNLOAD_BASE}/OpenStats-#{version}.dmg"
   name "OpenStats"
   desc "Menu bar system monitor with fan control, keep-awake and cleanup"
   homepage "https://getopenstats.com"
@@ -114,5 +115,5 @@ echo "   Homebrew cask：${DIST}/openstats.rb"
 if [ "${SKIP_NOTARIZE:-0}" = "1" ]; then
   echo "⚠️  未公证，仅供本机测试。"
 else
-  echo "下一步：创建 GitHub Release v${VERSION} 并上传 DMG，再把 cask 提交到 gentpan/homebrew-tap。"
+  echo "下一步：./Scripts/publish_release.sh 上传 DMG 到官网并更新 gentpan/homebrew-tap。"
 fi

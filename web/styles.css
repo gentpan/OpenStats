@@ -231,6 +231,9 @@ p { margin: 0; }
 .download { text-align: center; display: flex; flex-direction: column; align-items: center; gap: var(--space-4); }
 .download h2 { font-size: var(--text-2xl); }
 .download p { color: var(--color-text-secondary); }
+.download__brew { font-size: var(--text-sm); }
+.download__brew code { font-family: var(--font-mono); font-size: var(--text-xs); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); background: var(--color-neutral-100); color: var(--color-text); }
+:root[data-theme="dark"] .download__brew code { background: #25282d; }
 
 /* 更新日志（由 Scripts/sync_changelog.py 生成） */
 .log { display: grid; gap: var(--space-4); }

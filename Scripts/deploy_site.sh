@@ -24,8 +24,9 @@ echo "内容指纹 v=$STAMP"
 
 # 目录归部署用户所有，Caddy 只需读取
 "${SSH[@]}" "$HOST" "sudo mkdir -p $ROOT && sudo chown -R \$(id -un):\$(id -gn) $ROOT"
-# geoip/ 由服务器上的定时任务生成，不在 web/ 里——排除掉，否则 --delete 会把数据库删了
-rsync -az --delete --exclude /geoip/ -e "${SSH[*]}" web/ "$HOST:$ROOT/"
+# geoip/ 由服务器上的定时任务生成，download/ 是 publish_release.sh 上传的安装包，都不在 web/ 里——
+# 排除掉，否则 --delete 会把它们删了
+rsync -az --delete --exclude /geoip/ --exclude /download/ -e "${SSH[*]}" web/ "$HOST:$ROOT/"
 "${SSH[@]}" "$HOST" "sudo chmod -R a+rX $ROOT"
 echo "已同步到 $HOST:$ROOT"
 

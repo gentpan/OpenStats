@@ -6,20 +6,19 @@
 
 **Mac 的状态，抬眼就看见——CPU、GPU、内存、网络与温度常驻菜单栏，还能调风扇、防休眠、一键清理。**
 
-[![Release](https://img.shields.io/github/v/release/gentpan/OpenStats?color=6ee02b&label=%E7%89%88%E6%9C%AC)](https://github.com/gentpan/OpenStats/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/gentpan/OpenStats/total?color=6ee02b&label=%E4%B8%8B%E8%BD%BD)](https://github.com/gentpan/OpenStats/releases)
+[![Release](https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.2.0-6ee02b)](https://getopenstats.com/#download)
 [![Stars](https://img.shields.io/github/stars/gentpan/OpenStats?style=flat&color=f5c518&label=%E6%98%9F%E6%A0%87)](https://github.com/gentpan/OpenStats/stargazers)
 [![Last commit](https://img.shields.io/github/last-commit/gentpan/OpenStats?color=black&label=%E6%9C%80%E8%BF%91%E6%8F%90%E4%BA%A4)](https://github.com/gentpan/OpenStats/commits/main)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/gentpan/OpenStats?color=black&label=%E6%8F%90%E4%BA%A4)](https://github.com/gentpan/OpenStats/graphs/commit-activity)
 [![CI](https://github.com/gentpan/OpenStats/actions/workflows/ci.yml/badge.svg)](https://github.com/gentpan/OpenStats/actions/workflows/ci.yml)
-[![macOS](https://img.shields.io/badge/macOS-14%2B-black)](https://github.com/gentpan/OpenStats/releases/latest)
+[![macOS](https://img.shields.io/badge/macOS-14%2B-black)](https://getopenstats.com/#download)
 [![License](https://img.shields.io/badge/license-MIT-black)](LICENSE)
 
 OpenStats 是一款 macOS 菜单栏应用，实时显示 Mac 正在做什么：各核心 CPU 负载、GPU、内存压力、
 网速、磁盘、电池、温度和风扇，并且可以直接处理：给风扇提速、合盖后继续运行、清理缓存。
 所有数据都在你自己的 Mac 上读取。无需注册账号，没有统计上报。只有两项可关闭的网络功能会联网：打开网络详情时查询公网 IP，以及定时 ping 你选择的探测目标。
 
-[下载](https://github.com/gentpan/OpenStats/releases/latest) ·
+[下载](https://getopenstats.com/#download) ·
 [官网](https://getopenstats.com) ·
 [更新日志](CHANGELOG.md) ·
 [架构说明](ARCHITECTURE.md)
@@ -32,9 +31,12 @@ OpenStats 是一款 macOS 菜单栏应用，实时显示 Mac 正在做什么：�
 
 ## 安装
 
-OpenStats 还没有发布正式版本。第一个版本会在 [Releases](https://github.com/gentpan/OpenStats/releases/latest)
-提供 `.dmg`，使用 Developer ID 证书签名并经过 Apple 公证，之后提供 Homebrew cask。
-在此之前请从源码构建，见[构建与运行](#构建与运行)。
+从官网下载 [OpenStats 0.2.0](https://getopenstats.com/download/OpenStats-0.2.0.dmg)（Developer ID 签名、经过 Apple 公证），
+或者用 Homebrew 安装：
+
+```bash
+brew install --cask gentpan/tap/openstats
+```
 
 需要 macOS 14（Sonoma）或更高版本。在 Apple Silicon 上开发和测试。
 界面为简体中文。
@@ -44,10 +46,10 @@ OpenStats 还没有发布正式版本。第一个版本会在 [Releases](https:/
 <!-- changelog:start -->
 <!-- 由 Scripts/sync_changelog.py 从 CHANGELOG.md 生成，请勿手改。 -->
 
-尚未发布正式版本 · 开发中 **48** 项改动尚未发布 · [完整更新日志](CHANGELOG.md)
+最新版本 **0.2.0**（2026-09-13） · [完整更新日志](CHANGELOG.md)
 
 <details open>
-<summary><b>2026-09-13</b> · 未发布 · 新增 30 · 样式 12 · 修复 6</summary>
+<summary><b>2026-09-13</b> · 0.2.0 · 新增 30 · 样式 12 · 修复 6</summary>
 
 **新增**
 

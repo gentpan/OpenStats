@@ -6,13 +6,12 @@
 
 **Your Mac at a glance — CPU, GPU, memory, network and temperatures in the menu bar, with fan control, keep-awake and one-click cleanup.**
 
-[![Release](https://img.shields.io/github/v/release/gentpan/OpenStats?color=6ee02b&label=release)](https://github.com/gentpan/OpenStats/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/gentpan/OpenStats/total?color=6ee02b&label=downloads)](https://github.com/gentpan/OpenStats/releases)
+[![Release](https://img.shields.io/badge/release-0.2.0-6ee02b)](https://getopenstats.com/#download)
 [![Stars](https://img.shields.io/github/stars/gentpan/OpenStats?style=flat&color=f5c518&label=stars)](https://github.com/gentpan/OpenStats/stargazers)
 [![Last commit](https://img.shields.io/github/last-commit/gentpan/OpenStats?color=black&label=last%20commit)](https://github.com/gentpan/OpenStats/commits/main)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/gentpan/OpenStats?color=black&label=commits)](https://github.com/gentpan/OpenStats/graphs/commit-activity)
 [![CI](https://github.com/gentpan/OpenStats/actions/workflows/ci.yml/badge.svg)](https://github.com/gentpan/OpenStats/actions/workflows/ci.yml)
-[![macOS](https://img.shields.io/badge/macOS-14%2B-black)](https://github.com/gentpan/OpenStats/releases/latest)
+[![macOS](https://img.shields.io/badge/macOS-14%2B-black)](https://getopenstats.com/#download)
 [![License](https://img.shields.io/badge/license-MIT-black)](LICENSE)
 
 OpenStats is a macOS menu-bar app that shows what your Mac is doing right now — per-core
@@ -20,7 +19,7 @@ CPU load, GPU, memory pressure, network speed, disk, battery, temperatures and f
 lets you act on it: spin the fans up, keep the Mac awake with the lid closed, clear caches.
 Everything is read on your own Mac. No account, no telemetry. The only network traffic is optional and on demand: a public-IP lookup when you open network details, and a ping probe to a target you choose.
 
-[Download](https://github.com/gentpan/OpenStats/releases/latest) ·
+[Download](https://getopenstats.com/#download) ·
 [Website](https://getopenstats.com) ·
 [Changelog](CHANGELOG.md) ·
 [Architecture](ARCHITECTURE.md)
@@ -33,10 +32,12 @@ Everything is read on your own Mac. No account, no telemetry. The only network t
 
 ## Install
 
-OpenStats has not had a release yet. The first one will be a `.dmg` on
-[Releases](https://github.com/gentpan/OpenStats/releases/latest), signed with a Developer ID
-certificate and notarized by Apple, followed by a Homebrew cask. Until then, build it from
-source — see [Build & run](#build--run).
+Download [OpenStats 0.2.0](https://getopenstats.com/download/OpenStats-0.2.0.dmg) from the website
+(signed with a Developer ID certificate and notarized by Apple), or install it with Homebrew:
+
+```bash
+brew install --cask gentpan/tap/openstats
+```
 
 Requires macOS 14 (Sonoma) or later.
 Developed and tested on Apple Silicon. The interface is in Simplified Chinese.
@@ -46,10 +47,10 @@ Developed and tested on Apple Silicon. The interface is in Simplified Chinese.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Not released yet · **48** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.2.0** (2026-09-13) · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-09-13</b> · Unreleased · 30 added · 12 style · 6 fixed</summary>
+<summary><b>2026-09-13</b> · 0.2.0 · 30 added · 12 style · 6 fixed</summary>
 
 **Added**
 
