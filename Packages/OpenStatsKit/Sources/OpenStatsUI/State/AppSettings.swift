@@ -390,6 +390,13 @@ public final class AppSettings {
     public var alertCPUTemperature: Int {
         didSet { defaults.set(alertCPUTemperature, forKey: Keys.alertCPUTemperature) }
     }
+    /// 全局快捷键
+    public var hotKeys: [HotKeyAction: HotKey] {
+        didSet {
+            let stored = Dictionary(uniqueKeysWithValues: hotKeys.map { ($0.key.rawValue, $0.value) })
+            defaults.set(try? JSONEncoder().encode(stored), forKey: Keys.hotKeys)
+        }
+    }
     /// 每分钟把主要指标写入本机历史库
     public var historyEnabled: Bool {
         didSet { defaults.set(historyEnabled, forKey: Keys.historyEnabled) }
@@ -443,6 +450,10 @@ public final class AppSettings {
         geoAutoUpdate = defaults.object(forKey: Keys.geoAutoUpdate) as? Bool ?? true
         autoCheckUpdates = defaults.object(forKey: Keys.autoCheckUpdates) as? Bool ?? true
         historyEnabled = defaults.object(forKey: Keys.historyEnabled) as? Bool ?? true
+        let storedHotKeys = defaults.data(forKey: Keys.hotKeys).flatMap { try? JSONDecoder().decode([String: HotKey].self, from: $0) } ?? [:]
+        hotKeys = Dictionary(uniqueKeysWithValues: storedHotKeys.compactMap { key, value in
+            HotKeyAction(rawValue: key).map { ($0, value) }
+        })
         enabledAlerts = Set(defaults.stringArray(forKey: Keys.enabledAlerts)?.compactMap(AlertKind.init(rawValue:)) ?? [])
         alertCPUTemperature = Self.alertTemperatureOptions.contains(defaults.integer(forKey: Keys.alertCPUTemperature))
             ? defaults.integer(forKey: Keys.alertCPUTemperature) : 95
@@ -498,6 +509,7 @@ public final class AppSettings {
         static let geoAutoUpdate = "geoAutoUpdate"
         static let autoCheckUpdates = "autoCheckUpdates"
         static let historyEnabled = "historyEnabled"
+        static let hotKeys = "hotKeys"
         static let enabledAlerts = "enabledAlerts"
         static let alertCPUTemperature = "alertCPUTemperature"
     }

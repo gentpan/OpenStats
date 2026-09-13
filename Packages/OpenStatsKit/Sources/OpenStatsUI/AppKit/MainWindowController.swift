@@ -15,6 +15,10 @@ final class MainWindowController: NSObject, NSWindowDelegate {
 
     var isVisible: Bool { window?.isVisible == true }
 
+    func close() {
+        window?.performClose(nil)
+    }
+
     func show(tab: PanelTab?) {
         if let tab { model.settings.panelTab = tab }
         let window = self.window ?? makeWindow()

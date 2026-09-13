@@ -86,6 +86,8 @@ struct GeneralSettings: View {
                 }
             }
         }
+
+        HotKeySettings()
     }
 }
 
@@ -173,6 +175,78 @@ struct DiagnosticsSettings: View {
                 EmptyView()
             }
         }
+    }
+}
+
+// MARK: - 快捷键
+
+struct HotKeySettings: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let settings = model.settings
+        SettingsGroup(caption: "全局快捷键（在任何应用中都能使用，需要包含 ⌘、⌥ 或 ⌃）") {
+            ForEach(Array(HotKeyAction.allCases.enumerated()), id: \.element) { index, action in
+                GroupRow(showsDivider: index > 0) {
+                    SettingRow(title: action.title,
+                               subtitle: model.hotKeyConflicts.contains(action) ? "这个快捷键已被其他应用或系统占用，请换一个" : nil) {
+                        ShortcutRecorder(hotKey: Binding(get: { settings.hotKeys[action] },
+                                                         set: { settings.hotKeys[action] = $0 }))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// 点一下开始录制，按下组合键完成；Esc 取消，⌫ 清除
+struct ShortcutRecorder: View {
+    @Binding var hotKey: HotKey?
+    @State private var recording = false
+    @State private var monitor: Any?
+
+    var body: some View {
+        HStack(spacing: DS.Space.s1) {
+            Button {
+                recording ? stop() : start()
+            } label: {
+                Text(verbatim: recording ? "按下快捷键…" : hotKey?.display ?? "录制快捷键")
+                    .dsFont(.sm, weight: hotKey == nil || recording ? .regular : .semibold)
+                    .monospacedDigit()
+                    .frame(minWidth: DS.Space.s16 + DS.Space.s12)
+            }
+            .buttonStyle(DSButtonStyle(kind: recording ? .primary : .secondary))
+            if hotKey != nil && !recording {
+                MiniIconButton(systemName: "xmark.circle.fill", help: "清除快捷键") { hotKey = nil }
+            }
+        }
+        .onDisappear { stop() }
+    }
+
+    private func start() {
+        recording = true
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            switch Int(event.keyCode) {
+            case 53:   // Esc
+                stop()
+            case 51 where event.modifierFlags.intersection([.command, .option, .control]).isEmpty:   // Delete
+                hotKey = nil
+                stop()
+            default:
+                let candidate = HotKey(keyCode: event.keyCode, modifiers: event.modifierFlags,
+                                       key: event.charactersIgnoringModifiers ?? "")
+                guard candidate.isValid else { NSSound.beep(); return nil }
+                hotKey = candidate
+                stop()
+            }
+            return nil
+        }
+    }
+
+    private func stop() {
+        recording = false
+        if let monitor { NSEvent.removeMonitor(monitor) }
+        monitor = nil
     }
 }
 

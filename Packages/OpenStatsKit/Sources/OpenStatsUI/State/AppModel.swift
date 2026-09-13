@@ -27,6 +27,8 @@ public final class AppModel {
     @ObservationIgnored public let hub = MetricsHub()
 
     public var isMainWindowVisible = false
+    /// 被其他应用占用、没能注册的快捷键
+    public var hotKeyConflicts: Set<HotKeyAction> = []
     /// 当前打开的菜单栏详情弹窗
     public var openPopover: MenuBarItem?
     public private(set) var launchAtLoginEnabled = SMAppService.mainApp.status == .enabled

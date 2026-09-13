@@ -9,6 +9,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private var mainWindow: MainWindowController!
     private var updateWindow: UpdateWindowController!
     private var updateTimer: Timer?
+    private let hotKeys = HotKeyCenter()
     private var workspaceObservers: [NSObjectProtocol] = []
 
     public override init() {
@@ -58,6 +59,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
             self?.mainWindow.show(tab: tab)
         }
         model.alerts.start()
+        hotKeys.onAction = { [weak self] action in self?.perform(action) }
+        applyHotKeys()
 
         // 开发调试：--show-panel [cpu|memory|network|gpu|temperature|fan] 启动后展开并固定弹窗；--show-window 打开主窗口
         let arguments = CommandLine.arguments
@@ -110,6 +113,31 @@ public final class AppController: NSObject, NSApplicationDelegate {
     @objc private func checkForUpdatesFromMenu() {
         model.updates.check(userInitiated: true)
         mainWindow.show(tab: .settingsAbout)
+    }
+
+    private func applyHotKeys() {
+        hotKeys.apply(model.settings.hotKeys)
+        model.hotKeyConflicts = hotKeys.conflicts
+        withObservationTracking {
+            _ = model.settings.hotKeys
+        } onChange: { [weak self] in
+            Task { @MainActor in self?.applyHotKeys() }
+        }
+    }
+
+    private func perform(_ action: HotKeyAction) {
+        Log.app.info("快捷键：\(action.rawValue, privacy: .public)")
+        switch action {
+        case .toggleMainWindow:
+            if mainWindow.isVisible && NSApp.isActive { mainWindow.close() } else { mainWindow.show(tab: nil) }
+        case .showProcesses:
+            menuBar.dismissPopovers()
+            mainWindow.show(tab: .processes)
+        case .toggleKeepAwake:
+            Task { await model.keepAwake.setActive(!model.keepAwake.isActive) }
+        case .purgeMemory:
+            Task { await model.maintenance.run(.purgeMemory) }
+        }
     }
 
     /// 启动 10 秒后检查一次，之后每小时看一眼是否已满一天

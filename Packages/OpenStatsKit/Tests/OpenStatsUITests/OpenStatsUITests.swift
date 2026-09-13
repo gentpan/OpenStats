@@ -225,3 +225,28 @@ private func isolatedDefaults() -> UserDefaults {
         #expect(Set(AlertKind.allCases.map(\.tab)).isSubset(of: Set(PanelTab.allCases)))
     }
 }
+
+@Suite struct HotKeyTests {
+    @Test func displaysAndValidates() {
+        let hotKey = HotKey(keyCode: 1, modifiers: [.command, .option, .capsLock], key: "s")
+        #expect(hotKey.display == "⌥⌘S")
+        #expect(hotKey.isValid)
+        #expect(!HotKey(keyCode: 1, modifiers: [.shift], key: "s").isValid)
+        #expect(HotKey(keyCode: 49, modifiers: [.control], key: " ").display == "⌃空格")
+    }
+
+    @MainActor
+    @Test func persistsBindings() {
+        let defaults = isolatedDefaults()
+        let settings = AppSettings(defaults: defaults)
+        settings.hotKeys[.toggleKeepAwake] = HotKey(keyCode: 40, modifiers: [.command, .shift], key: "k")
+        let reloaded = AppSettings(defaults: defaults)
+        #expect(reloaded.hotKeys[.toggleKeepAwake]?.display == "⇧⌘K")
+    }
+}
+
+@Suite struct FunctionKeyTests {
+    @Test func namesFunctionKeys() {
+        #expect(HotKey(keyCode: 0x7A, modifiers: [.command], key: "\u{F704}").display == "⌘F1")
+    }
+}
