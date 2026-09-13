@@ -47,9 +47,26 @@ Developed and tested on Apple Silicon. The interface is in Simplified Chinese.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.2.0** (2026-09-13) · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.2.0** (2026-09-13) · **6** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
+<summary><b>2026-09-13</b> · Unreleased · 3 added · 3 changed</summary>
+
+**Added**
+
+- 在线升级：启动时和之后每天检查官网版本清单，发现新版本时弹出版本号与更新摘要，可一键安装、以后再说或跳过此版本；下载后依次核对 sha256、包名与版本、开发者签名团队和 Apple 公证，任何一项不通过都放弃安装；旧版先备份再原地替换，失败自动还原，装完自动重启到新版。「设置 · 关于」与应用菜单里可以手动检查更新。
+- 辅助工具版本检查：启动时核对正在运行的辅助工具版本；旧进程还在运行时先断开让它退出，由系统启动新版本，仍然旧时在风扇、合盖运行和辅助工具设置里提示“重新安装”，侧边栏对应项目显示提醒圆点；有新版本时“关于”旁同样显示圆点。
+- 导出诊断信息（设置 · 关于）：把版本、系统与辅助工具状态、主要设置、最近 3 天的运行日志、清理记录和最近的崩溃报告打包成 zip，反馈问题时附上；自动去掉用户目录名、IP 与硬件地址，不含序列号。应用与辅助工具的关键操作和错误写入系统日志。
+
+**Changed**
+
+- 连接探测更省电：打开网络详情时按设置的间隔探测；详情关闭、只在菜单栏显示网速时改为每 10 秒低频探测，并允许系统合并唤醒，也可以在设置里关闭后台探测。
+- 进程页每 2 秒刷新一次（读取全系统进程需要启动 ps），其他页面仍为每秒。
+- 菜单栏图标用 ⌘ 拖动调整的顺序会被记住，重启应用或切换显示项目后保持不变。
+
+</details>
+
+<details>
 <summary><b>2026-09-13</b> · 0.2.0 · 30 added · 12 style · 6 fixed</summary>
 
 **Added**

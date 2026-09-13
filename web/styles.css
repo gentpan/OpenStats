@@ -232,8 +232,8 @@ p { margin: 0; }
 .download h2 { font-size: var(--text-2xl); }
 .download p { color: var(--color-text-secondary); }
 .download__brew { font-size: var(--text-sm); }
-.download__brew code { font-family: var(--font-mono); font-size: var(--text-xs); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); background: var(--color-neutral-100); color: var(--color-text); }
-:root[data-theme="dark"] .download__brew code { background: #25282d; }
+.download__brew code, .faq code { font-family: var(--font-mono); font-size: var(--text-xs); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); background: var(--color-neutral-100); color: var(--color-text); }
+:root[data-theme="dark"] .download__brew code, :root[data-theme="dark"] .faq code { background: #25282d; }
 
 /* 更新日志（由 Scripts/sync_changelog.py 生成） */
 .log { display: grid; gap: var(--space-4); }
@@ -246,8 +246,11 @@ p { margin: 0; }
 .log__list { margin: var(--space-3) 0 0; padding-left: var(--space-4); font-size: var(--text-sm); color: var(--color-text-secondary); display: grid; gap: var(--space-2); }
 .log__kind { display: inline-block; margin-right: var(--space-2); font-size: var(--text-xs); font-weight: 600; color: var(--color-primary); }
 .log__list code { font-family: var(--font-mono); font-size: var(--text-xs); }
-.log__more { display: inline-block; margin-top: var(--space-3); font-size: var(--text-sm); }
-.log__all { margin-top: var(--space-6); font-size: var(--text-sm); }
+.log__rest { margin-top: var(--space-3); }
+.log__rest > summary, .log__older > summary { cursor: pointer; font-size: var(--text-sm); color: var(--color-primary); }
+.log__rest[open] > summary { margin-bottom: var(--space-1); }
+.log__older { display: grid; gap: var(--space-4); }
+.log__older[open] > summary { margin-bottom: var(--space-2); }
 
 .faq { border-bottom: 1px solid var(--color-border); padding: var(--space-4) 0; }
 .faq summary { cursor: pointer; font-weight: 600; list-style: none; }

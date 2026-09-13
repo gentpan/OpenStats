@@ -24,6 +24,10 @@ APP="build/DerivedData/Build/Products/Release/OpenStats.app"
 DMG_NAME="OpenStats-${VERSION}.dmg"
 ZIP_NAME="OpenStats-${VERSION}.zip"
 
+# 在线升级的更新摘要取自该版本的更新日志：发版前把 “## 未发布” 改成 “## 版本 · 日期”
+grep -q "^## ${VERSION} · " CHANGELOG.md \
+  || { echo "error: CHANGELOG.md 里没有 “## ${VERSION} · 日期” 标题，先把 “## 未发布” 改成正式版本。" >&2; exit 1; }
+
 if [ -z "$SIGN_ID" ]; then
   echo "error: 钥匙串里没有 Developer ID Application 证书，无法发布。" >&2
   exit 1
