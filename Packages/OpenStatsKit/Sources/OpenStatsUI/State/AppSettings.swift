@@ -404,11 +404,12 @@ public final class AppSettings {
     public var alertCPUTemperature: Int {
         didSet { defaults.set(alertCPUTemperature, forKey: Keys.alertCPUTemperature) }
     }
-    /// 界面语言，重启后生效
+    /// 界面语言：界面文字立即切换；系统提供的名称（显示器、应用名）在下次启动时跟着切换
     public var language: AppLanguage {
         didSet {
             defaults.set(language.rawValue, forKey: Keys.language)
             language.applyToProcessLocale(defaults: defaults)
+            L10n.configure(language)
         }
     }
     nonisolated public static let languageKey = "language"

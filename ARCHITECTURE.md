@@ -174,8 +174,10 @@ Source strings are Simplified Chinese. `Scripts/l10n_wrap.py` wraps every Chines
 `tr` returns the input unless English is active; otherwise it looks the text up in
 `Localization/Translations.swift` — exact keys first, then templates where `{}` stands for an
 interpolated value, longest literal fragments first, translating captured values once more. The
-language is chosen at launch (System follows the global `AppleLanguages`) and applies after a
-relaunch; dates use `L10n.locale`. `--snapshot <dir> --language en` renders English screenshots and
+language is configured at launch (System follows the global `AppleLanguages`). Changing it
+reconfigures `L10n`, rebuilds the main window and update prompt through `.id(language)`, rebuilds the
+app menu and redraws the menu bar; popovers are created on open. Names supplied by macOS follow the
+app's `AppleLanguages`, which changes at the next launch. Dates use `L10n.locale`. `--snapshot <dir> --language en` renders English screenshots and
 writes any untranslated string to `untranslated.txt`.
 
 `--snapshot <dir>` renders every main-window page, popover, settings section and the menu bar in light and

@@ -40,7 +40,7 @@ public final class HelperClient {
 
     public var isReady: Bool { status == .enabled }
 
-    static let outdatedMessage = tr("辅助工具版本比应用旧，部分功能可能无法使用，请重新安装一次（需要管理员授权）。")
+    static var outdatedMessage: String { tr("辅助工具版本比应用旧，部分功能可能无法使用，请重新安装一次（需要管理员授权）。") }
 
     /// 未安装、待批准或版本过旧，需要用户处理
     var needsAttention: Bool { !isReady || isOutdated }

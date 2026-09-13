@@ -888,8 +888,7 @@ npm 缓存	npm Cache
 ，{} 项未能移动	, {} couldn't be moved
 ，已从程序坞移除	, removed from the Dock
 ：{}	: {}
-重新启动 OpenStats 后生效	Takes effect after OpenStats relaunches
-立即重启	Relaunch Now
+立即切换；显示器、应用名称等由系统提供的文字在下次启动时切换	Applies right away; names supplied by macOS, such as displays and apps, switch at next launch
 1 项	1 item
 1 个进程	1 process
 1 个应用，系统自带的不列出	1 app; built-in apps are not listed

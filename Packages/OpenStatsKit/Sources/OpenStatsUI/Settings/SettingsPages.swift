@@ -81,18 +81,10 @@ struct GeneralSettings: View {
                 }
             }
             GroupRow {
-                SettingRow(title: "语言 / Language",
-                           subtitle: settings.language.resolved == L10n.language ? nil : tr("重新启动 OpenStats 后生效")) {
-                    HStack(spacing: DS.Space.s2) {
-                        if settings.language.resolved != L10n.language {
-                            Button(tr("立即重启")) { model.relaunch() }
-                                .buttonStyle(DSButtonStyle(kind: .primary))
-                                .fixedSize()
-                        }
-                        SegmentedControl(selection: $settings.language,
-                                         options: AppLanguage.allCases.map { ($0, $0.title) })
-                            .frame(width: DS.Size.sidebarWidth + DS.Space.s12)
-                    }
+                SettingRow(title: "语言 / Language", subtitle: tr("立即切换；显示器、应用名称等由系统提供的文字在下次启动时切换")) {
+                    SegmentedControl(selection: $settings.language,
+                                     options: AppLanguage.allCases.map { ($0, $0.title) })
+                        .frame(width: DS.Size.sidebarWidth + DS.Space.s12)
                 }
             }
             GroupRow {

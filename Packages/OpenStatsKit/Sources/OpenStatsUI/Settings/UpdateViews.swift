@@ -138,6 +138,7 @@ struct UpdatePromptView: View {
         .padding(.top, DS.Size.windowHeader)
         .frame(width: DS.Size.updateWindowWidth)
         .background(DS.Palette.background)
+        .id(model.settings.language)
     }
 }
 

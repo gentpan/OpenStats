@@ -97,12 +97,6 @@ public final class AppModel {
         openPopover == .network || (isMainWindowVisible && settings.panelTab == .network)
     }
 
-    /// 等当前进程退出后重新打开应用（切换语言后使用）
-    func relaunch() {
-        try? UpdateInstaller.relaunch(Bundle.main.bundleURL)
-        quit()
-    }
-
     func refreshLaunchAtLogin() {
         launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
     }

@@ -25,7 +25,7 @@ public final class GeoDatabaseController {
     @ObservationIgnored private var asnDatabase: MaxMindDatabase?
 
     static let manifestURL = URL(string: "https://getopenstats.com/geoip/manifest.json")!
-    static let attribution = tr("本产品包含 MaxMind 创建的 GeoLite2 数据，可从 https://www.maxmind.com 获取。")
+    static var attribution: String { tr("本产品包含 MaxMind 创建的 GeoLite2 数据，可从 https://www.maxmind.com 获取。") }
     private static let checkInterval: TimeInterval = 3 * 24 * 3600
     private static let lastCheckedKey = "geoDatabaseLastChecked"
 

@@ -53,6 +53,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         observeProbeSettings()
         applyAppearance()
         updateNetworkVisibility()
+        appliedLanguage = model.settings.language
         Task { await model.geo.updateIfNeeded() }
         startUpdateChecks()
         model.alerts.openTab = { [weak self] tab in
@@ -185,9 +186,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
             _ = model.settings.probeEnabled
             _ = model.settings.probeInBackground
             _ = model.settings.enabledAlerts
+            _ = model.settings.language
         } onChange: { [weak self] in
             Task { @MainActor in
                 guard let self else { return }
+                self.applyLanguageIfChanged()
                 self.model.alerts.applySettings()
                 await self.model.hub.update(self.model.demand)
                 self.applyAppearance()
@@ -217,6 +220,22 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 self.observeProbeSettings()
             }
         }
+    }
+
+    private var appliedLanguage: AppLanguage?
+
+    /// 切换语言后重建应用菜单、菜单栏图标文字与已打开的弹窗
+    private func applyLanguageIfChanged() {
+        let language = model.settings.language
+        guard appliedLanguage != nil, appliedLanguage != language else {
+            appliedLanguage = language
+            return
+        }
+        appliedLanguage = language
+        NSApp.mainMenu = MainMenu.make(target: self, settingsAction: #selector(openSettingsFromMenu),
+                                       updateAction: #selector(checkForUpdatesFromMenu))
+        menuBar.dismissPopovers()
+        menuBar.refreshImages()
     }
 
     private func updateNetworkVisibility() {

@@ -61,6 +61,8 @@ public struct MainWindowView: View {
         .background(DS.Palette.background)
         // 内容延伸到透明标题栏下方，由顶栏高度留出红绿灯按钮的位置
         .ignoresSafeArea()
+        // 文案在各视图计算时翻译好，切换语言后整棵视图重建
+        .id(model.settings.language)
     }
 }
 
