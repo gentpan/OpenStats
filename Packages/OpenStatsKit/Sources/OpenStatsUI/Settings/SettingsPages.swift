@@ -73,7 +73,7 @@ struct GeneralSettings: View {
                 }
             }
             GroupRow {
-                SettingRow(title: "刷新频率", subtitle: "只显示菜单栏时的采样间隔；打开弹窗或主窗口时固定为 1 秒") {
+                SettingRow(title: "刷新频率", subtitle: "只显示菜单栏时的采样间隔；打开弹窗或主窗口时为 1 秒（进程页 2 秒）") {
                     SegmentedControl(selection: $settings.refreshSeconds,
                                      options: AppSettings.refreshOptions.map { ($0, "\($0) 秒") })
                         .frame(width: DS.Size.sidebarWidth + DS.Space.s12)
@@ -84,6 +84,40 @@ struct GeneralSettings: View {
                     SegmentedControl(selection: $settings.useFahrenheit, options: [(false, "°C"), (true, "°F")])
                         .frame(width: DS.Size.sidebarWidth / 2 + DS.Space.s6)
                 }
+            }
+        }
+    }
+}
+
+// MARK: - 诊断
+
+struct DiagnosticsSettings: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let diagnostics = model.diagnostics
+
+        SettingsGroup(caption: "反馈问题") {
+            GroupRow(showsDivider: false) {
+                SettingRow(title: "导出诊断信息",
+                           subtitle: "打包版本、系统与辅助工具状态、主要设置、最近 3 天的运行日志和崩溃报告，反馈问题时附上；会去掉序列号、IP 与硬件地址") {
+                    Button(diagnostics.phase == .collecting ? "正在导出…" : "导出…") { diagnostics.export(model: model) }
+                        .buttonStyle(DSButtonStyle(kind: .secondary))
+                        .disabled(diagnostics.phase == .collecting)
+                }
+            }
+            switch diagnostics.phase {
+            case .finished(let url):
+                GroupRow {
+                    InfoBanner(icon: "checkmark.circle.fill", text: "已导出 \(url.lastPathComponent)", tone: .success) {
+                        Button("在访达中显示") { diagnostics.reveal() }
+                            .buttonStyle(DSButtonStyle(kind: .secondary))
+                    }
+                }
+            case .failed(let message):
+                GroupRow { InfoBanner(icon: "exclamationmark.triangle.fill", text: message, tone: .error) }
+            default:
+                EmptyView()
             }
         }
     }
@@ -612,6 +646,7 @@ struct AboutSettings: View {
         }
 
         UpdateSettings()
+        DiagnosticsSettings()
 
         SettingsGroup(caption: "致谢") {
             GroupRow(showsDivider: false) {

@@ -25,6 +25,7 @@ let package = Package(
         .testTarget(name: "CleanerTests", dependencies: ["Cleaner"]),
         .testTarget(name: "HelperSharedTests", dependencies: ["HelperShared"]),
         .testTarget(name: "UpdatesTests", dependencies: ["Updates"]),
+        .testTarget(name: "OpenStatsUITests", dependencies: ["OpenStatsUI", "Metrics"]),
     ],
     swiftLanguageModes: [.v6]
 )

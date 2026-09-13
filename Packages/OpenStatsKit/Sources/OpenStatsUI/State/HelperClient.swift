@@ -68,6 +68,7 @@ public final class HelperClient {
             try service.register()
         } catch {
             lastError = "安装失败：\(error.localizedDescription)"
+            Log.helper.error("安装失败：\(error.localizedDescription, privacy: .public)")
         }
         refreshStatus()
         if status == .requiresApproval {
@@ -90,6 +91,7 @@ public final class HelperClient {
             }
         } catch {
             lastError = "卸载失败：\(error.localizedDescription)"
+            Log.helper.error("卸载失败：\(error.localizedDescription, privacy: .public)")
         }
         refreshStatus()
     }
@@ -98,22 +100,32 @@ public final class HelperClient {
     public func reinstall() async {
         await uninstall()
         install()
-        await verifyVersion(recheckDelay: .zero)
+        await verifyVersion(allowRestart: false)
     }
 
-    /// 核对辅助工具的协议版本。辅助工具空闲 30 秒后自动退出，下次调用时 launchd 会启动应用包里的新版本，
-    /// 所以第一次发现版本旧时等它退出后再确认一次，避免刚升级完就误报
-    func verifyVersion(recheckDelay: Duration = .seconds(45)) async {
-        guard let version = await remoteProtocolVersion(), version < HelperConstants.protocolVersion else {
+    /// 核对辅助工具的协议版本。版本旧通常是替换应用后旧的辅助工具进程还在运行（新应用一连上它就不会空闲退出）：
+    /// 先断开连接让它空闲 30 秒后退出，再连接时 launchd 会启动应用包里的新版本；仍然旧才提示重新安装
+    func verifyVersion(allowRestart: Bool = true) async {
+        let remote = await remoteProtocolVersion()
+        Log.helper.info("辅助工具状态 \(self.status.title, privacy: .public)，协议版本 \(remote.map(String.init) ?? "未连接", privacy: .public)")
+        guard let version = remote, version < HelperConstants.protocolVersion else {
             isOutdated = false
             return
         }
-        if recheckDelay > .zero {
-            try? await Task.sleep(for: recheckDelay)
-            guard let again = await remoteProtocolVersion() else { return }
-            isOutdated = again < HelperConstants.protocolVersion
-        } else {
+        guard allowRestart else {
             isOutdated = true
+            return
+        }
+        connection?.invalidate()
+        connection = nil
+        try? await Task.sleep(for: .seconds(40))
+        guard let again = await remoteProtocolVersion() else { return }
+        isOutdated = again < HelperConstants.protocolVersion
+        if isOutdated {
+            Log.helper.error("辅助工具协议版本 \(again) 低于应用的 \(HelperConstants.protocolVersion)")
+        } else {
+            // 新的辅助工具进程没有之前的风扇与睡眠设置，重新下发
+            onReconnect?()
         }
     }
 
@@ -187,6 +199,7 @@ public final class HelperClient {
         return await withCheckedContinuation { (continuation: CheckedContinuation<String?, Never>) in
             let once = ResumeOnce(continuation)
             let proxy = connection.remoteObjectProxyWithErrorHandler { error in
+                Log.helper.error("XPC 调用失败：\(error.localizedDescription, privacy: .public)")
                 once.resume("无法连接辅助工具：\(error.localizedDescription)")
             } as? OpenStatsHelperProtocol
             guard let proxy else {

@@ -87,9 +87,11 @@ public final class UpdateController {
                 }
                 release = latest
                 phase = .available
+                Log.update.notice("发现新版本 \(latest.version, privacy: .public)")
                 // 手动检查时总是提示；自动检查时跳过用户选择忽略的版本
                 if userInitiated || latest.version != skippedVersion { onPrompt() }
             case .failure(let error):
+                Log.update.error("检查更新失败：\(error.localizedDescription, privacy: .public)")
                 // 自动检查失败不打扰用户，只在关于页里显示
                 phase = userInitiated ? .failed(error.localizedDescription) : (release == nil ? .idle : .available)
             }
@@ -168,11 +170,13 @@ public final class UpdateController {
                     try await replaceWithAdministratorPrompt(app, with: candidate)
                 }
                 skippedVersion = nil
+                Log.update.notice("已安装 \(release.version, privacy: .public)，重新启动")
                 try? FileManager.default.removeItem(at: work)
                 try UpdateInstaller.relaunch(app)
                 terminate()
             } catch {
                 // 取消下载时 URLSession 抛出的是 URLError，按任务是否被取消判断
+                if !Task.isCancelled { Log.update.error("安装更新失败：\(error.localizedDescription, privacy: .public)") }
                 phase = Task.isCancelled ? .available
                     : .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
             }

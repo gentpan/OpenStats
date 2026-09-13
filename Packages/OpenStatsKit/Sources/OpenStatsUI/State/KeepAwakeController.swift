@@ -183,6 +183,7 @@ public final class KeepAwakeController {
     }
 
     private func show(_ message: String, isError: Bool) {
+        if isError { Log.power.error("\(message, privacy: .public)") } else { Log.power.info("\(message, privacy: .public)") }
         notice = message
         noticeIsError = isError
     }

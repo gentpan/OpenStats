@@ -19,6 +19,7 @@ public final class AppModel {
     public let geo: GeoDatabaseController
     public let explainer = ProcessExplainer()
     public let updates: UpdateController
+    let diagnostics = DiagnosticsExporter()
     @ObservationIgnored public let hub = MetricsHub()
 
     public var isMainWindowVisible = false

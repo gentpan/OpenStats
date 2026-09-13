@@ -8,7 +8,11 @@
 
 import Foundation
 import HelperShared
+import os
 import SMC
+
+/// 写入系统统一日志，应用“导出诊断信息”时一并收集
+private let log = Logger(subsystem: "com.openstats.helper", category: "helper")
 
 final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProtocol, @unchecked Sendable {
     /// 所有可变状态只在该队列上访问
@@ -26,8 +30,10 @@ final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProto
     private var idleExit: DispatchWorkItem?
 
     func run() {
+        log.notice("辅助工具启动，协议版本 \(HelperConstants.protocolVersion)")
         queue.sync {
             fans = (try? SMCConnection()).map(FanControl.init)
+            if fans == nil { log.error("无法打开 SMC") }
             recoverFromPreviousRun()
             scheduleIdleExit()
         }
@@ -72,6 +78,7 @@ final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProto
                 manualFans.insert(fan)
                 reply(nil)
             } catch {
+                log.error("设置风扇 \(fan) 失败：\(String(describing: error), privacy: .public)")
                 reply("设置风扇失败：\(error)")
             }
         }
@@ -86,6 +93,7 @@ final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProto
                 manualFans.remove(fan)
                 reply(nil)
             } catch {
+                log.error("恢复风扇 \(fan) 失败：\(String(describing: error), privacy: .public)")
                 reply("恢复风扇失败：\(error)")
             }
         }
@@ -123,6 +131,7 @@ final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProto
 
             let result = runTool("/usr/sbin/networksetup", DNSConfiguration.networksetupArguments(service: service, servers: servers))
             guard result.status == 0 else {
+                log.error("networksetup 失败：\(result.output, privacy: .public)")
                 return reply("networksetup 执行失败：\(result.output.trimmingCharacters(in: .whitespacesAndNewlines))")
             }
             reply(run(.flushDNS))
@@ -135,6 +144,7 @@ final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProto
         connections.remove(id)
         guard connections.isEmpty else { return }
         // 应用已退出或崩溃：把系统恢复到默认状态
+        log.info("客户端全部断开，恢复风扇与睡眠设置")
         _ = resetFans()
         if sleepDisabledByHelper { _ = applySleepDisabled(false) }
         scheduleIdleExit()
@@ -143,6 +153,7 @@ final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProto
     private func recoverFromPreviousRun() {
         guard let data = try? Data(contentsOf: stateURL),
               let state = try? PropertyListDecoder().decode(PersistedState.self, from: data) else { return }
+        log.notice("上次异常退出，恢复风扇与睡眠设置")
         if state.sleepDisabled {
             sleepDisabledByHelper = true
             _ = applySleepDisabled(false)
@@ -154,6 +165,7 @@ final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProto
         idleExit?.cancel()
         let work = DispatchWorkItem { [weak self] in
             guard let self, self.connections.isEmpty else { return }
+            log.info("空闲退出")
             exit(0)
         }
         idleExit = work

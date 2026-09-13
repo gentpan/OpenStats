@@ -16,6 +16,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
+        _ = DiagnosticsExporter.launchDate
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "开发版"
+        Log.app.notice("OpenStats \(version, privacy: .public) 启动，macOS \(ProcessInfo.processInfo.operatingSystemVersionString, privacy: .public)")
         NSApp.mainMenu = MainMenu.make(target: self, settingsAction: #selector(openSettingsFromMenu),
                                        updateAction: #selector(checkForUpdatesFromMenu))
         menuBar = MenuBarController(model: model)

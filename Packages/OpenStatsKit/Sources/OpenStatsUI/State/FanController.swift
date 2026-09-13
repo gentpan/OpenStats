@@ -104,6 +104,7 @@ public final class FanController {
     }
 
     private func show(_ message: String, isError: Bool) {
+        if isError { Log.fans.error("\(message, privacy: .public)") } else { Log.fans.info("\(message, privacy: .public)") }
         notice = message
         noticeIsError = isError
     }

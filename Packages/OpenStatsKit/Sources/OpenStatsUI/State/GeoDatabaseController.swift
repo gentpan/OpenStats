@@ -91,6 +91,7 @@ public final class GeoDatabaseController {
             message = (failure.text, true)
         } catch {
             message = ("更新失败：\(error.localizedDescription)", true)
+            Log.network.error("归属地数据库更新失败：\(error.localizedDescription, privacy: .public)")
         }
     }
 

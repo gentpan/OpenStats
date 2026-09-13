@@ -36,6 +36,7 @@ public final class MaintenanceController {
             : await Self.runWithAdministratorPrompt(shell: command.shellCommand, prompt: prompt)
 
         if let error {
+            Log.app.error("\(command.rawValue, privacy: .public) 失败：\(error, privacy: .public)")
             outcomes[command] = Outcome(text: error, isError: error != Self.cancelled)
             return
         }
@@ -71,6 +72,7 @@ public final class MaintenanceController {
             error = await Self.runWithAdministratorPrompt(shell: shell, prompt: "OpenStats 需要管理员权限来修改“\(service)”的 DNS。")
         }
         if let error {
+            Log.network.error("设置 DNS 失败：\(error, privacy: .public)")
             dnsOutcome = Outcome(text: error, isError: error != Self.cancelled)
         } else {
             dnsOutcome = Outcome(text: servers.isEmpty ? "已恢复自动获取 DNS" : "DNS 已设置为 \(servers.joined(separator: "、"))", isError: false)
