@@ -1,4 +1,5 @@
 import Foundation
+import Localization
 
 public enum TemperatureGroup: String, Sendable, CaseIterable, Codable {
     case cpu, gpu, memory, battery, palmRest
@@ -7,9 +8,9 @@ public enum TemperatureGroup: String, Sendable, CaseIterable, Codable {
         switch self {
         case .cpu: "CPU"
         case .gpu: "GPU"
-        case .memory: "内存"
-        case .battery: "电池"
-        case .palmRest: "掌托"
+        case .memory: tr("内存")
+        case .battery: tr("电池")
+        case .palmRest: tr("掌托")
         }
     }
 }

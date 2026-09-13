@@ -1,4 +1,5 @@
 import Foundation
+import Localization
 import Observation
 
 public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
@@ -9,22 +10,22 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
     var title: String {
         switch self {
         case .cpu: "CPU"
-        case .memory: "内存"
-        case .network: "网络"
+        case .memory: tr("内存")
+        case .network: tr("网络")
         case .gpu: "GPU"
-        case .temperature: "CPU 温度"
-        case .fan: "风扇转速"
+        case .temperature: tr("CPU 温度")
+        case .fan: tr("风扇转速")
         }
     }
 
     var subtitle: String {
         switch self {
-        case .cpu: "总占用"
-        case .memory: "已用内存占比"
-        case .network: "上传与下载速度、IP 地址、DNS"
-        case .gpu: "GPU 占用"
-        case .temperature: "CPU 核心最高温度"
-        case .fan: "转速最高的风扇"
+        case .cpu: tr("总占用")
+        case .memory: tr("已用内存占比")
+        case .network: tr("上传与下载速度、IP 地址、DNS")
+        case .gpu: tr("GPU 占用")
+        case .temperature: tr("CPU 核心最高温度")
+        case .fan: tr("转速最高的风扇")
         }
     }
 
@@ -44,11 +45,11 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
     var popoverTitle: String {
         switch self {
         case .cpu: "CPU"
-        case .memory: "内存"
-        case .network: "网络"
+        case .memory: tr("内存")
+        case .network: tr("网络")
         case .gpu: "GPU"
-        case .temperature: "温度"
-        case .fan: "风扇"
+        case .temperature: tr("温度")
+        case .fan: tr("风扇")
         }
     }
 
@@ -91,23 +92,23 @@ public enum PopoverSection: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .cpuHeatmap: "核心热力图"
-        case .cpuClusters: "核心分工"
-        case .cpuLoadAverage: "排队程度"
-        case .cpuApps, .memoryApps: "按应用汇总"
-        case .networkProcesses: "高占用进程"
-        case .memoryWaterline: "内存水位"
-        case .memoryCompression: "压缩与交换"
-        case .networkHistory: "流量历史"
-        case .networkProbe: "连接探测"
-        case .networkInterface: "接口"
-        case .networkAddresses: "IP 地址"
+        case .cpuHeatmap: tr("核心热力图")
+        case .cpuClusters: tr("核心分工")
+        case .cpuLoadAverage: tr("排队程度")
+        case .cpuApps, .memoryApps: tr("按应用汇总")
+        case .networkProcesses: tr("高占用进程")
+        case .memoryWaterline: tr("内存水位")
+        case .memoryCompression: tr("压缩与交换")
+        case .networkHistory: tr("流量历史")
+        case .networkProbe: tr("连接探测")
+        case .networkInterface: tr("接口")
+        case .networkAddresses: tr("IP 地址")
         case .networkDNS: "DNS"
-        case .gpuHistory: "使用历史"
-        case .gpuDetails: "显卡信息"
-        case .thermalSensors: "温度"
-        case .thermalFans: "风扇"
-        case .thermalPower: "功耗"
+        case .gpuHistory: tr("使用历史")
+        case .gpuDetails: tr("显卡信息")
+        case .thermalSensors: tr("温度")
+        case .thermalFans: tr("风扇")
+        case .thermalPower: tr("功耗")
         }
     }
 }
@@ -123,8 +124,8 @@ public enum MenuBarLayout: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .separate: "每项独立"
-        case .combined: "合并为一个"
+        case .separate: tr("每项独立")
+        case .combined: tr("合并为一个")
         }
     }
 }
@@ -137,11 +138,11 @@ public enum ProbeTarget: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .cloudflare: "Cloudflare（1.1.1.1）"
-        case .google: "Google（8.8.8.8）"
-        case .aliyun: "阿里云（223.5.5.5）"
-        case .tencent: "腾讯（119.29.29.29）"
-        case .gateway: "路由器（网关）"
+        case .cloudflare: tr("Cloudflare（1.1.1.1）")
+        case .google: tr("Google（8.8.8.8）")
+        case .aliyun: tr("阿里云（223.5.5.5）")
+        case .tencent: tr("腾讯（119.29.29.29）")
+        case .gateway: tr("路由器（网关）")
         }
     }
 
@@ -165,27 +166,27 @@ public enum MenuBarStyle: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .stacked: "双行文字"
-        case .inline: "单行文字"
-        case .icon: "图标"
-        case .ring: "圆环"
-        case .pie: "饼图"
-        case .history: "柱状历史"
-        case .meter: "电量条"
-        case .dot: "状态圆点"
+        case .stacked: tr("双行文字")
+        case .inline: tr("单行文字")
+        case .icon: tr("图标")
+        case .ring: tr("圆环")
+        case .pie: tr("饼图")
+        case .history: tr("柱状历史")
+        case .meter: tr("电量条")
+        case .dot: tr("状态圆点")
         }
     }
 
     var detail: String {
         switch self {
-        case .stacked: "小标签在上、数值在下，最紧凑"
-        case .inline: "标签与数值同一行，最易读"
-        case .icon: "用系统图标代替文字标签"
-        case .ring: "圆环表示当前占用比例"
-        case .pie: "饼图表示当前占用比例"
-        case .history: "10 根柱子是最近 10 次采样（约 20 秒）的变化"
-        case .meter: "竖向电量条表示当前占用比例"
-        case .dot: "绿色正常、橙色偏高（60% 以上）、红色很高（85% 以上）"
+        case .stacked: tr("小标签在上、数值在下，最紧凑")
+        case .inline: tr("标签与数值同一行，最易读")
+        case .icon: tr("用系统图标代替文字标签")
+        case .ring: tr("圆环表示当前占用比例")
+        case .pie: tr("饼图表示当前占用比例")
+        case .history: tr("10 根柱子是最近 10 次采样（约 20 秒）的变化")
+        case .meter: tr("竖向电量条表示当前占用比例")
+        case .dot: tr("绿色正常、橙色偏高（60% 以上）、红色很高（85% 以上）")
         }
     }
 }
@@ -197,9 +198,22 @@ public enum NetworkMenuStyle: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .dots: "双行圆点"
-        case .arrows: "双行箭头"
-        case .inline: "单行"
+        case .dots: tr("双行圆点")
+        case .arrows: tr("双行箭头")
+        case .inline: tr("单行")
+        }
+    }
+}
+
+extension AppLanguage: Identifiable {
+    public var id: String { rawValue }
+
+    /// 语言名称用各自的文字写，不随界面语言翻译
+    var title: String {
+        switch self {
+        case .system: tr("跟随系统")
+        case .chinese: "简体中文"
+        case .english: "English"
         }
     }
 }
@@ -211,9 +225,9 @@ public enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .system: "跟随系统"
-        case .light: "浅色"
-        case .dark: "深色"
+        case .system: tr("跟随系统")
+        case .light: tr("浅色")
+        case .dark: tr("深色")
         }
     }
 }
@@ -232,29 +246,29 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
     var isSettings: Bool { Self.settings.contains(self) }
 
     /// 页面顶栏的标题：设置页带上分组名
-    var headerTitle: String { isSettings ? "设置 · \(title)" : title }
+    var headerTitle: String { isSettings ? tr("设置 · \(title)") : title }
 
     var title: String {
         switch self {
-        case .overview: "仪表盘"
-        case .system: "本机信息"
-        case .history: "历史"
+        case .overview: tr("仪表盘")
+        case .system: tr("本机信息")
+        case .history: tr("历史")
         case .cpu: "CPU"
         case .gpu: "GPU"
-        case .memory: "内存"
-        case .disk: "磁盘"
-        case .network: "网络"
-        case .thermal: "温度与风扇"
-        case .processes: "进程"
-        case .keepAwake: "防休眠"
-        case .cleaner: "清理"
-        case .uninstaller: "卸载应用"
-        case .startupItems: "启动项"
-        case .settingsGeneral: "通用"
-        case .settingsMenuBar: "菜单栏"
-        case .settingsNotifications: "通知"
-        case .settingsHelper: "辅助工具"
-        case .settingsAbout: "关于"
+        case .memory: tr("内存")
+        case .disk: tr("磁盘")
+        case .network: tr("网络")
+        case .thermal: tr("温度与风扇")
+        case .processes: tr("进程")
+        case .keepAwake: tr("防休眠")
+        case .cleaner: tr("清理")
+        case .uninstaller: tr("卸载应用")
+        case .startupItems: tr("启动项")
+        case .settingsGeneral: tr("通用")
+        case .settingsMenuBar: tr("菜单栏")
+        case .settingsNotifications: tr("通知")
+        case .settingsHelper: tr("辅助工具")
+        case .settingsAbout: tr("关于")
         }
     }
 
@@ -390,6 +404,14 @@ public final class AppSettings {
     public var alertCPUTemperature: Int {
         didSet { defaults.set(alertCPUTemperature, forKey: Keys.alertCPUTemperature) }
     }
+    /// 界面语言，重启后生效
+    public var language: AppLanguage {
+        didSet {
+            defaults.set(language.rawValue, forKey: Keys.language)
+            language.applyToProcessLocale(defaults: defaults)
+        }
+    }
+    nonisolated public static let languageKey = "language"
     /// 全局快捷键
     public var hotKeys: [HotKeyAction: HotKey] {
         didSet {
@@ -450,6 +472,7 @@ public final class AppSettings {
         geoAutoUpdate = defaults.object(forKey: Keys.geoAutoUpdate) as? Bool ?? true
         autoCheckUpdates = defaults.object(forKey: Keys.autoCheckUpdates) as? Bool ?? true
         historyEnabled = defaults.object(forKey: Keys.historyEnabled) as? Bool ?? true
+        language = defaults.string(forKey: Keys.language).flatMap(AppLanguage.init(rawValue:)) ?? .system
         let storedHotKeys = defaults.data(forKey: Keys.hotKeys).flatMap { try? JSONDecoder().decode([String: HotKey].self, from: $0) } ?? [:]
         hotKeys = Dictionary(uniqueKeysWithValues: storedHotKeys.compactMap { key, value in
             HotKeyAction(rawValue: key).map { ($0, value) }
@@ -510,6 +533,7 @@ public final class AppSettings {
         static let autoCheckUpdates = "autoCheckUpdates"
         static let historyEnabled = "historyEnabled"
         static let hotKeys = "hotKeys"
+        static let language = "language"
         static let enabledAlerts = "enabledAlerts"
         static let alertCPUTemperature = "alertCPUTemperature"
     }

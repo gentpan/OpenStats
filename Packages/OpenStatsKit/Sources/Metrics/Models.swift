@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import Localization
 import SMC
 
 public struct CPUCluster: Sendable, Equatable, Identifiable {
@@ -27,9 +28,9 @@ public enum MemoryPressure: Int, Sendable {
 
     public var title: String {
         switch self {
-        case .normal: "正常"
-        case .warning: "偏高"
-        case .critical: "严重"
+        case .normal: tr("正常")
+        case .warning: tr("偏高")
+        case .critical: tr("严重")
         }
     }
 }

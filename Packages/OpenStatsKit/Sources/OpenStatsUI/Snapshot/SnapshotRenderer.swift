@@ -1,4 +1,5 @@
 import AppKit
+import Localization
 import Metrics
 import SMC
 import SwiftUI
@@ -65,7 +66,7 @@ enum SnapshotRenderer {
             version: "0.3.0", build: "3", date: "2026-09-20", minimumSystem: "14.0",
             url: URL(string: "https://getopenstats.com/download/OpenStats-0.3.0.zip")!, sha256: String(repeating: "0", count: 64),
             size: 9_600_000, dmg: nil,
-            notes: ["在线升级：发现新版本时显示更新摘要，一键安装并自动重启", "连接探测只在需要时运行，更省电", "进程页刷新频率调整为每 2 秒"],
+            notes: [tr("在线升级：发现新版本时显示更新摘要，一键安装并自动重启"), tr("连接探测只在需要时运行，更省电"), tr("进程页刷新频率调整为每 2 秒")],
             changelog: URL(string: "https://getopenstats.com/#changelog")))
 
         for (appearanceName, suffix) in [(NSAppearance.Name.aqua, "light"), (.darkAqua, "dark")] {
@@ -96,7 +97,7 @@ enum SnapshotRenderer {
             }
             writePNG(padded, scale: 2, to: outputDirectory.appendingPathComponent("menubar-\(dark ? "dark" : "light").png"))
         }
-        print("截图已输出到 \(outputDirectory.path)")
+        print(tr("截图已输出到 \(outputDirectory.path)"))
     }
 
     /// 用真实的 NSHostingView 放进离屏窗口截图，渲染路径与 App 内一致

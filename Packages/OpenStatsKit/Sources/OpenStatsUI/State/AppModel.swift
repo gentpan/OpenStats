@@ -3,6 +3,7 @@ import Metrics
 import Observation
 import ServiceManagement
 import SMC
+import Updates
 
 /// 应用状态总入口，注入到所有 SwiftUI 视图
 @MainActor
@@ -94,6 +95,12 @@ public final class AppModel {
     /// 网络详情（接口、公网 IP、进程流量）正在显示
     var isNetworkDetailVisible: Bool {
         openPopover == .network || (isMainWindowVisible && settings.panelTab == .network)
+    }
+
+    /// 等当前进程退出后重新打开应用（切换语言后使用）
+    func relaunch() {
+        try? UpdateInstaller.relaunch(Bundle.main.bundleURL)
+        quit()
     }
 
     func refreshLaunchAtLogin() {

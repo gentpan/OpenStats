@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import Localization
 import SystemConfiguration
 
 public struct NetworkSampler {
@@ -62,7 +63,7 @@ public struct NetworkSampler {
         // utun / ipsec / ppp 是 VPN 或代理隧道，系统不提供显示名
         let tunnelPrefixes = ["utun", "ipsec", "ppp"]
         let displayName = systemName
-            ?? (tunnelPrefixes.contains { bsdName.hasPrefix($0) } ? "VPN 隧道" : bsdName)
+            ?? (tunnelPrefixes.contains { bsdName.hasPrefix($0) } ? tr("VPN 隧道") : bsdName)
 
         let state = SCDynamicStoreCopyValue(store, "State:/Network/Interface/\(bsdName)/IPv4" as CFString) as? [String: Any]
         let address = (state?["Addresses"] as? [String])?.first

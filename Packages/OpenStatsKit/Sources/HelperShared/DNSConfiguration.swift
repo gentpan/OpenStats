@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import Localization
 
 /// 常用公共 DNS。只用 IPv4 地址：没有 IPv6 的网络里写入 IPv6 服务器会拖慢解析
 public enum DNSPreset: String, CaseIterable, Identifiable, Sendable {
@@ -9,11 +10,11 @@ public enum DNSPreset: String, CaseIterable, Identifiable, Sendable {
 
     public var title: String {
         switch self {
-        case .automatic: "自动"
+        case .automatic: tr("自动")
         case .cloudflare: "Cloudflare"
         case .google: "Google"
-        case .tencent: "腾讯 DNSPod"
-        case .aliyun: "阿里云"
+        case .tencent: tr("腾讯 DNSPod")
+        case .aliyun: tr("阿里云")
         }
     }
 

@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import Localization
 
 /// MaxMind DB（.mmdb）读取器，按格式规范 2.0 实现：二叉搜索树定位记录，再解码数据段。
 /// 文件以内存映射方式打开，查询不需要把整个库读进内存。
@@ -39,11 +40,11 @@ public final class MaxMindDatabase: @unchecked Sendable {
         }
         var decoder = Decoder(data: data, pointerBase: marker.upperBound)
         guard case .map(let metadata)? = try? decoder.decode(at: marker.upperBound).value else {
-            throw Error.invalidMetadata("元数据不是字典")
+            throw Error.invalidMetadata(tr("元数据不是字典"))
         }
         guard let nodes = metadata["node_count"]?.integer, let record = metadata["record_size"]?.integer,
               [24, 28, 32].contains(record), let version = metadata["ip_version"]?.integer else {
-            throw Error.invalidMetadata("缺少 node_count / record_size / ip_version")
+            throw Error.invalidMetadata(tr("缺少 node_count / record_size / ip_version"))
         }
         nodeCount = nodes
         recordSize = record
@@ -272,7 +273,7 @@ public struct GeoLocation: Sendable, Equatable {
 }
 
 public enum GeoLookup {
-    /// 名称优先取简体中文，没有时用英文
+    /// 中文界面优先取简体中文名称（没有时用英文），英文界面取英文
     public static func locate(_ address: String, location: MaxMindDatabase?, asn: MaxMindDatabase?) -> GeoLocation? {
         var result = GeoLocation()
         if let record = location?.lookup(address) {
@@ -290,6 +291,6 @@ public enum GeoLookup {
 
     private static func name(_ value: MaxMindDatabase.Value?) -> String? {
         guard let names = value?["names"] else { return nil }
-        return names["zh-CN"]?.string ?? names["en"]?.string
+        return L10n.isEnglish ? names["en"]?.string : names["zh-CN"]?.string ?? names["en"]?.string
     }
 }

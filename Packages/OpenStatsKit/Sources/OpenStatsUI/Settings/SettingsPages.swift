@@ -1,5 +1,6 @@
 import AppKit
 import HelperShared
+import Localization
 import Metrics
 import SwiftUI
 
@@ -59,28 +60,43 @@ struct GeneralSettings: View {
 
         SettingsGroup {
             GroupRow(showsDivider: false) {
-                SettingRow(title: "外观", subtitle: "主窗口与弹窗的配色；菜单栏始终跟随系统") {
+                SettingRow(title: tr("外观"), subtitle: tr("主窗口与弹窗的配色；菜单栏始终跟随系统")) {
                     SegmentedControl(selection: $settings.appearance,
                                      options: AppearanceMode.allCases.map { ($0, $0.title) })
                         .frame(width: DS.Size.sidebarWidth + DS.Space.s12)
                 }
             }
             GroupRow {
-                SettingRow(title: "登录时启动", subtitle: model.launchAtLoginError ?? "开机后自动在菜单栏显示 OpenStats") {
+                SettingRow(title: tr("登录时启动"), subtitle: model.launchAtLoginError ?? tr("开机后自动在菜单栏显示 OpenStats")) {
                     DSToggle(isOn: Binding(get: { model.launchAtLoginEnabled },
                                            set: { model.setLaunchAtLogin($0) }),
-                             label: "登录时启动")
+                             label: tr("登录时启动"))
                 }
             }
             GroupRow {
-                SettingRow(title: "刷新频率", subtitle: "只显示菜单栏时的采样间隔；打开弹窗或主窗口时为 1 秒（进程页 2 秒）") {
+                SettingRow(title: tr("刷新频率"), subtitle: tr("只显示菜单栏时的采样间隔；打开弹窗或主窗口时为 1 秒（进程页 2 秒）")) {
                     SegmentedControl(selection: $settings.refreshSeconds,
-                                     options: AppSettings.refreshOptions.map { ($0, "\($0) 秒") })
+                                     options: AppSettings.refreshOptions.map { ($0, tr("\($0) 秒")) })
                         .frame(width: DS.Size.sidebarWidth + DS.Space.s12)
                 }
             }
             GroupRow {
-                SettingRow(title: "温度单位") {
+                SettingRow(title: "语言 / Language",
+                           subtitle: settings.language.resolved == L10n.language ? nil : tr("重新启动 OpenStats 后生效")) {
+                    HStack(spacing: DS.Space.s2) {
+                        if settings.language.resolved != L10n.language {
+                            Button(tr("立即重启")) { model.relaunch() }
+                                .buttonStyle(DSButtonStyle(kind: .primary))
+                                .fixedSize()
+                        }
+                        SegmentedControl(selection: $settings.language,
+                                         options: AppLanguage.allCases.map { ($0, $0.title) })
+                            .frame(width: DS.Size.sidebarWidth + DS.Space.s12)
+                    }
+                }
+            }
+            GroupRow {
+                SettingRow(title: tr("温度单位")) {
                     SegmentedControl(selection: $settings.useFahrenheit, options: [(false, "°C"), (true, "°F")])
                         .frame(width: DS.Size.sidebarWidth / 2 + DS.Space.s6)
                 }
@@ -101,13 +117,13 @@ struct NotificationSettings: View {
         let alerts = model.alerts
 
         if alerts.authorization == .denied {
-            InfoBanner(icon: "bell.slash", text: "OpenStats 的通知被关闭了，打开的提醒不会显示。", tone: .warning) {
-                Button("打开通知设置") { alerts.openNotificationSettings() }
+            InfoBanner(icon: "bell.slash", text: tr("OpenStats 的通知被关闭了，打开的提醒不会显示。"), tone: .warning) {
+                Button(tr("打开通知设置")) { alerts.openNotificationSettings() }
                     .buttonStyle(DSButtonStyle(kind: .primary))
             }
         }
 
-        SettingsGroup(caption: "发生这些状况时发送系统通知，点通知打开对应页面") {
+        SettingsGroup(caption: tr("发生这些状况时发送系统通知，点通知打开对应页面")) {
             ForEach(Array(AlertKind.allCases.enumerated()), id: \.element) { index, kind in
                 GroupRow(showsDivider: index > 0) {
                     SettingRow(title: kind.title, subtitle: kind.detail, icon: kind.symbol) {
@@ -120,7 +136,7 @@ struct NotificationSettings: View {
                 }
                 if kind == .cpuTemperature, settings.enabledAlerts.contains(.cpuTemperature) {
                     GroupRow {
-                        SettingRow(title: "过热温度") {
+                        SettingRow(title: tr("过热温度")) {
                             SegmentedControl(selection: $settings.alertCPUTemperature,
                                              options: AppSettings.alertTemperatureOptions.map {
                                                  ($0, Format.temperature(Double($0), fahrenheit: settings.useFahrenheit))
@@ -134,8 +150,8 @@ struct NotificationSettings: View {
 
         SettingsGroup {
             GroupRow(showsDivider: false) {
-                SettingRow(title: "发送测试通知", subtitle: alerts.authorization == .allowed ? "确认通知能正常显示" : "首次发送时系统会询问是否允许通知") {
-                    Button("发送") { alerts.sendTest() }
+                SettingRow(title: tr("发送测试通知"), subtitle: alerts.authorization == .allowed ? tr("确认通知能正常显示") : tr("首次发送时系统会询问是否允许通知")) {
+                    Button(tr("发送")) { alerts.sendTest() }
                     .buttonStyle(DSButtonStyle(kind: .secondary))
                 }
             }
@@ -152,11 +168,11 @@ struct DiagnosticsSettings: View {
     var body: some View {
         let diagnostics = model.diagnostics
 
-        SettingsGroup(caption: "反馈问题") {
+        SettingsGroup(caption: tr("反馈问题")) {
             GroupRow(showsDivider: false) {
-                SettingRow(title: "导出诊断信息",
-                           subtitle: "打包版本、系统与辅助工具状态、主要设置、最近 3 天的运行日志和崩溃报告，反馈问题时附上；会去掉序列号、IP 与硬件地址") {
-                    Button(diagnostics.phase == .collecting ? "正在导出…" : "导出…") { diagnostics.export(model: model) }
+                SettingRow(title: tr("导出诊断信息"),
+                           subtitle: tr("打包版本、系统与辅助工具状态、主要设置、最近 3 天的运行日志和崩溃报告，反馈问题时附上；会去掉序列号、IP 与硬件地址")) {
+                    Button(diagnostics.phase == .collecting ? tr("正在导出…") : tr("导出…")) { diagnostics.export(model: model) }
                         .buttonStyle(DSButtonStyle(kind: .secondary))
                         .disabled(diagnostics.phase == .collecting)
                 }
@@ -164,8 +180,8 @@ struct DiagnosticsSettings: View {
             switch diagnostics.phase {
             case .finished(let url):
                 GroupRow {
-                    InfoBanner(icon: "checkmark.circle.fill", text: "已导出 \(url.lastPathComponent)", tone: .success) {
-                        Button("在访达中显示") { diagnostics.reveal() }
+                    InfoBanner(icon: "checkmark.circle.fill", text: tr("已导出 \(url.lastPathComponent)"), tone: .success) {
+                        Button(tr("在访达中显示")) { diagnostics.reveal() }
                             .buttonStyle(DSButtonStyle(kind: .secondary))
                     }
                 }
@@ -185,11 +201,11 @@ struct HotKeySettings: View {
 
     var body: some View {
         let settings = model.settings
-        SettingsGroup(caption: "全局快捷键（在任何应用中都能使用，需要包含 ⌘、⌥ 或 ⌃）") {
+        SettingsGroup(caption: tr("全局快捷键（在任何应用中都能使用，需要包含 ⌘、⌥ 或 ⌃）")) {
             ForEach(Array(HotKeyAction.allCases.enumerated()), id: \.element) { index, action in
                 GroupRow(showsDivider: index > 0) {
                     SettingRow(title: action.title,
-                               subtitle: model.hotKeyConflicts.contains(action) ? "这个快捷键已被其他应用或系统占用，请换一个" : nil) {
+                               subtitle: model.hotKeyConflicts.contains(action) ? tr("这个快捷键已被其他应用或系统占用，请换一个") : nil) {
                         ShortcutRecorder(hotKey: Binding(get: { settings.hotKeys[action] },
                                                          set: { settings.hotKeys[action] = $0 }))
                     }
@@ -210,14 +226,14 @@ struct ShortcutRecorder: View {
             Button {
                 recording ? stop() : start()
             } label: {
-                Text(verbatim: recording ? "按下快捷键…" : hotKey?.display ?? "录制快捷键")
+                Text(verbatim: recording ? tr("按下快捷键…") : hotKey?.display ?? tr("录制快捷键"))
                     .dsFont(.sm, weight: hotKey == nil || recording ? .regular : .semibold)
                     .monospacedDigit()
                     .frame(minWidth: DS.Space.s16 + DS.Space.s12)
             }
             .buttonStyle(DSButtonStyle(kind: recording ? .primary : .secondary))
             if hotKey != nil && !recording {
-                MiniIconButton(systemName: "xmark.circle.fill", help: "清除快捷键") { hotKey = nil }
+                MiniIconButton(systemName: "xmark.circle.fill", help: tr("清除快捷键")) { hotKey = nil }
             }
         }
         .onDisappear { stop() }
@@ -260,12 +276,12 @@ struct MenuBarSettings: View {
 
         MenuBarPreview()
 
-        SettingsGroup(caption: "布局") {
+        SettingsGroup(caption: tr("布局")) {
             GroupRow(showsDivider: false) {
-                SettingRow(title: "菜单栏图标",
+                SettingRow(title: tr("菜单栏图标"),
                            subtitle: settings.menuBarLayout == .separate
-                               ? "每个指标一个图标，点击弹出该项详情"
-                               : "所有指标合成一个图标，点击打开主窗口") {
+                               ? tr("每个指标一个图标，点击弹出该项详情")
+                               : tr("所有指标合成一个图标，点击打开主窗口")) {
                     SegmentedControl(selection: $settings.menuBarLayout,
                                      options: MenuBarLayout.allCases.map { ($0, $0.title) })
                         .frame(width: DS.Size.sidebarWidth + DS.Space.s6)
@@ -273,7 +289,7 @@ struct MenuBarSettings: View {
             }
         }
 
-        SettingsGroup(caption: "风格") {
+        SettingsGroup(caption: tr("风格")) {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)],
                       spacing: DS.Space.s3) {
                 ForEach(MenuBarStyle.allCases) { style in
@@ -285,7 +301,7 @@ struct MenuBarSettings: View {
             .padding(DS.Space.s3)
         }
 
-        SettingsGroup(caption: "显示项目") {
+        SettingsGroup(caption: tr("显示项目")) {
             ForEach(Array(MenuBarItem.allCases.enumerated()), id: \.element) { index, item in
                 GroupRow(showsDivider: index > 0) {
                     VStack(alignment: .leading, spacing: DS.Space.s3) {
@@ -307,10 +323,10 @@ struct MenuBarSettings: View {
             }
         }
 
-        SettingsGroup(caption: "其他") {
+        SettingsGroup(caption: tr("其他")) {
             GroupRow(showsDivider: false) {
-                SettingRow(title: "高负载时着色", subtitle: "占用超过 85% 时数值与图形显示为红色") {
-                    DSToggle(isOn: $settings.colorizeHighLoad, label: "高负载时着色")
+                SettingRow(title: tr("高负载时着色"), subtitle: tr("占用超过 85% 时数值与图形显示为红色")) {
+                    DSToggle(isOn: $settings.colorizeHighLoad, label: tr("高负载时着色"))
                 }
             }
         }
@@ -325,9 +341,9 @@ struct MenuBarSettings: View {
                              options: NetworkMenuStyle.allCases.map { ($0, $0.title) })
                 .frame(width: DS.Size.sidebarWidth + DS.Space.s6)
         } else {
-            Picker("风格", selection: Binding(get: { settings.styleOverrides[item] },
+            Picker(tr("风格"), selection: Binding(get: { settings.styleOverrides[item] },
                                              set: { settings.setStyleOverride($0, for: item) })) {
-                Text("跟随整体").tag(MenuBarStyle?.none)
+                Text(tr("跟随整体")).tag(MenuBarStyle?.none)
                 Divider()
                 ForEach(MenuBarStyle.allCases) { style in
                     Text(style.title).tag(MenuBarStyle?.some(style))
@@ -348,7 +364,7 @@ private struct PopoverSectionPicker: View {
     var body: some View {
         let settings = model.settings
         HStack(alignment: .firstTextBaseline, spacing: DS.Space.s3) {
-            Text("弹窗显示")
+            Text(tr("弹窗显示"))
                 .dsFont(.xs)
                 .foregroundStyle(DS.Palette.textSecondary)
                 .fixedSize()
@@ -453,7 +469,7 @@ private struct MenuBarPreview: View {
     var body: some View {
         let image = MenuBarRenderer.image(for: model)
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            Text("当前效果（实时数据）").dsFont(.xs, weight: .medium).foregroundStyle(DS.Palette.textSecondary)
+            Text(tr("当前效果（实时数据）")).dsFont(.xs, weight: .medium).foregroundStyle(DS.Palette.textSecondary)
             HStack(spacing: DS.Space.s3) {
                 preview(image: image, dark: false)
                 preview(image: image, dark: true)
@@ -470,7 +486,7 @@ private struct MenuBarPreview: View {
         .frame(height: DS.Size.controlHeight + DS.Space.s2)
         .background(dark ? Color(nsColor: NSColor(hex: 0x1F2937)) : Color(nsColor: NSColor(hex: 0xE5E7EB)),
                     in: RoundedRectangle(cornerRadius: DS.Radius.md))
-        .accessibilityLabel(dark ? "深色菜单栏预览" : "浅色菜单栏预览")
+        .accessibilityLabel(dark ? tr("深色菜单栏预览") : tr("浅色菜单栏预览"))
     }
 }
 
@@ -482,23 +498,23 @@ struct NetworkSettings: View {
     var body: some View {
         @Bindable var settings = model.settings
 
-        SettingsGroup(caption: "连接探测") {
+        SettingsGroup(caption: tr("连接探测")) {
             GroupRow(showsDivider: false) {
-                SettingRow(title: "定时探测网络", subtitle: "用 ping 测量延迟与丢包，在网络详情里以格子显示") {
-                    DSToggle(isOn: $settings.probeEnabled, label: "定时探测网络")
+                SettingRow(title: tr("定时探测网络"), subtitle: tr("用 ping 测量延迟与丢包，在网络详情里以格子显示")) {
+                    DSToggle(isOn: $settings.probeEnabled, label: tr("定时探测网络"))
                 }
             }
             GroupRow {
-                SettingRow(title: "探测间隔", subtitle: "打开网络详情时使用") {
+                SettingRow(title: tr("探测间隔"), subtitle: tr("打开网络详情时使用")) {
                     SegmentedControl(selection: $settings.probeSeconds,
-                                     options: AppSettings.probeOptions.map { ($0, "\($0) 秒") })
+                                     options: AppSettings.probeOptions.map { ($0, tr("\($0) 秒")) })
                         .frame(width: DS.Size.sidebarWidth)
                 }
             }
             .disabled(!settings.probeEnabled)
             GroupRow {
-                SettingRow(title: "探测目标", subtitle: "国内网络建议选阿里云或腾讯；选路由器只检测本地连接") {
-                    Picker("探测目标", selection: $settings.probeTarget) {
+                SettingRow(title: tr("探测目标"), subtitle: tr("国内网络建议选阿里云或腾讯；选路由器只检测本地连接")) {
+                    Picker(tr("探测目标"), selection: $settings.probeTarget) {
                         ForEach(ProbeTarget.allCases) { target in
                             Text(target.title).tag(target)
                         }
@@ -510,28 +526,28 @@ struct NetworkSettings: View {
             }
             .disabled(!settings.probeEnabled)
             GroupRow {
-                SettingRow(title: "后台低频探测",
-                           subtitle: "详情关闭时，菜单栏显示网络项期间每 \(NetworkController.backgroundProbeSeconds) 秒探测一次，打开详情就能看到最近的连接情况；关闭后只在打开详情时探测，更省电") {
-                    DSToggle(isOn: $settings.probeInBackground, label: "后台低频探测")
+                SettingRow(title: tr("后台低频探测"),
+                           subtitle: tr("详情关闭时，菜单栏显示网络项期间每 \(NetworkController.backgroundProbeSeconds) 秒探测一次，打开详情就能看到最近的连接情况；关闭后只在打开详情时探测，更省电")) {
+                    DSToggle(isOn: $settings.probeInBackground, label: tr("后台低频探测"))
                 }
             }
             .disabled(!settings.probeEnabled)
         }
 
-        SettingsGroup(caption: "公网 IP") {
+        SettingsGroup(caption: tr("公网 IP")) {
             GroupRow(showsDivider: false) {
-                SettingRow(title: "查询公网 IP",
+                SettingRow(title: tr("查询公网 IP"),
                            subtitle: model.geo.isAvailable
-                               ? "打开网络详情时向 Cloudflare（1.1.1.1）或 ipify 查询一次公网地址；归属地与 ASN 在本机数据库里查，10 分钟内不重复请求"
-                               : "打开网络详情时查询公网地址；本地数据库还没准备好时，归属地与 ASN 暂由 ipinfo.io 在线查询") {
-                    DSToggle(isOn: $settings.publicIPLookup, label: "查询公网 IP")
+                               ? tr("打开网络详情时向 Cloudflare（1.1.1.1）或 ipify 查询一次公网地址；归属地与 ASN 在本机数据库里查，10 分钟内不重复请求")
+                               : tr("打开网络详情时查询公网地址；本地数据库还没准备好时，归属地与 ASN 暂由 ipinfo.io 在线查询")) {
+                    DSToggle(isOn: $settings.publicIPLookup, label: tr("查询公网 IP"))
                 }
             }
         }
 
         GeoDatabaseSettings()
 
-        InfoBanner(icon: "lock.shield", text: "修改 DNS 需要管理员权限：已安装辅助工具时直接修改，否则每次弹出系统授权框。", tone: .neutral)
+        InfoBanner(icon: "lock.shield", text: tr("修改 DNS 需要管理员权限：已安装辅助工具时直接修改，否则每次弹出系统授权框。"), tone: .neutral)
     }
 }
 
@@ -543,43 +559,43 @@ private struct GeoDatabaseSettings: View {
         @Bindable var settings = model.settings
         let geo = model.geo
 
-        SettingsGroup(caption: "IP 归属地数据库") {
+        SettingsGroup(caption: tr("IP 归属地数据库")) {
             GroupRow(showsDivider: false) {
-                SettingRow(title: geo.isAvailable ? "本地 MaxMind GeoLite2" : "尚未下载",
+                SettingRow(title: geo.isAvailable ? tr("本地 MaxMind GeoLite2") : tr("尚未下载"),
                            subtitle: geo.isAvailable
-                               ? "国家、城市与 ASN 在本机查询，不经过任何在线服务"
-                               : "下载后归属地查询完全离线；数据库由 OpenStats 官网每周同步 MaxMind 的最新版本") {
-                    StatusBadge(text: geo.isAvailable ? "离线查询" : "在线查询", tone: geo.isAvailable ? .success : .neutral)
+                               ? tr("国家、城市与 ASN 在本机查询，不经过任何在线服务")
+                               : tr("下载后归属地查询完全离线；数据库由 OpenStats 官网每周同步 MaxMind 的最新版本")) {
+                    StatusBadge(text: geo.isAvailable ? tr("离线查询") : tr("在线查询"), tone: geo.isAvailable ? .success : .neutral)
                 }
             }
             ForEach(geo.installed.values.sorted { $0.edition < $1.edition }, id: \GeoDatabaseController.Installed.edition) { database in
                 GroupRow {
-                    SettingRow(title: title(database.edition), subtitle: "版本 \(database.build) · \(Format.bytes(UInt64(database.size), base: .decimal))") {
+                    SettingRow(title: title(database.edition), subtitle: tr("版本 \(database.build) · \(Format.bytes(UInt64(database.size), base: .decimal))")) {
                         Text(database.edition).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
                     }
                 }
             }
             GroupRow {
-                SettingRow(title: "包含城市数据", subtitle: "显示城市名称，数据库约 60 MB；关闭时只下载国家库（约 9 MB）") {
-                    DSToggle(isOn: $settings.geoIncludeCity, label: "包含城市数据")
+                SettingRow(title: tr("包含城市数据"), subtitle: tr("显示城市名称，数据库约 60 MB；关闭时只下载国家库（约 9 MB）")) {
+                    DSToggle(isOn: $settings.geoIncludeCity, label: tr("包含城市数据"))
                 }
             }
             GroupRow {
-                SettingRow(title: "自动更新", subtitle: geo.lastChecked.map { "每 3 天检查一次 · 上次检查 \($0.formatted(date: .abbreviated, time: .shortened))" } ?? "每 3 天检查一次") {
-                    DSToggle(isOn: $settings.geoAutoUpdate, label: "自动更新")
+                SettingRow(title: tr("自动更新"), subtitle: geo.lastChecked.map { tr("每 3 天检查一次 · 上次检查 \($0.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: L10n.locale)))") } ?? tr("每 3 天检查一次")) {
+                    DSToggle(isOn: $settings.geoAutoUpdate, label: tr("自动更新"))
                 }
             }
             GroupRow {
                 HStack(spacing: DS.Space.s2) {
-                    Button(geo.isUpdating ? "正在更新…" : geo.isAvailable ? "立即检查更新" : "下载数据库") {
+                    Button(geo.isUpdating ? tr("正在更新…") : geo.isAvailable ? tr("立即检查更新") : tr("下载数据库")) {
                         Task { await geo.update() }
                     }
                     .buttonStyle(DSButtonStyle(kind: .primary))
                     .disabled(geo.isUpdating)
-                    Button("从文件导入…") { importFile() }
+                    Button(tr("从文件导入…")) { importFile() }
                         .buttonStyle(DSButtonStyle(kind: .secondary))
                     if geo.isAvailable {
-                        Button("在访达中显示") { NSWorkspace.shared.activateFileViewerSelecting([geo.directory]) }
+                        Button(tr("在访达中显示")) { NSWorkspace.shared.activateFileViewerSelecting([geo.directory]) }
                             .buttonStyle(DSButtonStyle(kind: .ghost))
                     }
                     Spacer()
@@ -598,9 +614,9 @@ private struct GeoDatabaseSettings: View {
     }
 
     private func title(_ edition: String) -> String {
-        if edition.hasSuffix("-City") { return "城市库" }
-        if edition.hasSuffix("-Country") { return "国家库" }
-        if edition.hasSuffix("-ASN") { return "ASN 库" }
+        if edition.hasSuffix("-City") { return tr("城市库") }
+        if edition.hasSuffix("-Country") { return tr("国家库") }
+        if edition.hasSuffix("-ASN") { return tr("ASN 库") }
         return edition
     }
 
@@ -608,7 +624,7 @@ private struct GeoDatabaseSettings: View {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.init(filenameExtension: "mmdb") ?? .data]
         panel.allowsMultipleSelection = true
-        panel.message = "选择 GeoLite2 City / Country / ASN 的 .mmdb 文件"
+        panel.message = tr("选择 GeoLite2 City / Country / ASN 的 .mmdb 文件")
         guard panel.runModal() == .OK else { return }
         for url in panel.urls { model.geo.importDatabase(from: url) }
     }
@@ -623,9 +639,9 @@ struct FanSafetySettings: View {
     var body: some View {
         @Bindable var settings = model.settings
 
-        SettingsGroup(caption: "风扇设置") {
+        SettingsGroup(caption: tr("风扇设置")) {
             GroupRow(showsDivider: false) {
-                SettingRow(title: "安全温度", subtitle: "自定义转速时，CPU 达到该温度自动恢复系统控制") {
+                SettingRow(title: tr("安全温度"), subtitle: tr("自定义转速时，CPU 达到该温度自动恢复系统控制")) {
                     SegmentedControl(selection: $settings.fanSafetyTemperature,
                                      options: AppSettings.fanSafetyOptions.map { ($0, "\($0)°C") })
                         .frame(width: DS.Size.sidebarWidth + DS.Space.s12)
@@ -642,9 +658,9 @@ struct LidBatterySettings: View {
     var body: some View {
         @Bindable var settings = model.settings
 
-        SettingsGroup(caption: "合盖运行设置") {
+        SettingsGroup(caption: tr("合盖运行设置")) {
             GroupRow(showsDivider: false) {
-                SettingRow(title: "电量下限", subtitle: "使用电池且电量低于该值时，自动关闭合盖运行") {
+                SettingRow(title: tr("电量下限"), subtitle: tr("使用电池且电量低于该值时，自动关闭合盖运行")) {
                     SegmentedControl(selection: $settings.lidModeBatteryFloor,
                                      options: AppSettings.batteryFloorOptions.map { ($0, "\($0)%") })
                         .frame(width: DS.Size.sidebarWidth + DS.Space.s12)
@@ -664,37 +680,37 @@ struct HelperSettings: View {
 
         SettingsGroup {
             GroupRow(showsDivider: false) {
-                SettingRow(title: "OpenStats 辅助工具", subtitle: "以系统权限运行的后台服务，只接受本应用的请求", icon: "lock.shield") {
+                SettingRow(title: tr("OpenStats 辅助工具"), subtitle: tr("以系统权限运行的后台服务，只接受本应用的请求"), icon: "lock.shield") {
                     StatusBadge(text: helper.status.title, tone: tone(helper.status))
                 }
             }
             GroupRow {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    Text("它只做这几件事").dsFont(.sm, weight: .medium).foregroundStyle(DS.Palette.textPrimary)
-                    CapabilityLine(text: "设置风扇目标转速，或恢复系统自动控制")
-                    CapabilityLine(text: "开启 / 关闭“合盖不睡眠”（等同 pmset disablesleep）")
-                    CapabilityLine(text: "刷新 DNS 缓存、释放内存、为网络服务设置 DNS 服务器")
-                    CapabilityLine(text: "应用退出或断开连接时，自动恢复风扇与睡眠设置")
+                    Text(tr("它只做这几件事")).dsFont(.sm, weight: .medium).foregroundStyle(DS.Palette.textPrimary)
+                    CapabilityLine(text: tr("设置风扇目标转速，或恢复系统自动控制"))
+                    CapabilityLine(text: tr("开启 / 关闭“合盖不睡眠”（等同 pmset disablesleep）"))
+                    CapabilityLine(text: tr("刷新 DNS 缓存、释放内存、为网络服务设置 DNS 服务器"))
+                    CapabilityLine(text: tr("应用退出或断开连接时，自动恢复风扇与睡眠设置"))
                 }
             }
             GroupRow {
                 HStack(spacing: DS.Space.s2) {
                     switch helper.status {
                     case .notInstalled:
-                        Button("安装辅助工具") { helper.install() }
+                        Button(tr("安装辅助工具")) { helper.install() }
                             .buttonStyle(DSButtonStyle(kind: .primary))
                     case .requiresApproval:
-                        Button("打开登录项设置") { helper.openLoginItemsSettings() }
+                        Button(tr("打开登录项设置")) { helper.openLoginItemsSettings() }
                             .buttonStyle(DSButtonStyle(kind: .primary))
-                        Button("卸载") { Task { await helper.uninstall() } }
+                        Button(tr("卸载")) { Task { await helper.uninstall() } }
                             .buttonStyle(DSButtonStyle(kind: .secondary))
                     case .enabled:
-                        Button("卸载辅助工具") { Task { await helper.uninstall() } }
+                        Button(tr("卸载辅助工具")) { Task { await helper.uninstall() } }
                             .buttonStyle(DSButtonStyle(kind: .secondary))
                     case .unavailable:
                         EmptyView()
                     }
-                    Button("刷新状态") { helper.refreshStatus() }
+                    Button(tr("刷新状态")) { helper.refreshStatus() }
                         .buttonStyle(DSButtonStyle(kind: .ghost))
                     Spacer()
                 }
@@ -707,7 +723,7 @@ struct HelperSettings: View {
         }
         if helper.isReady && helper.isOutdated {
             InfoBanner(icon: "arrow.triangle.2.circlepath", text: HelperClient.outdatedMessage, tone: .warning) {
-                Button("重新安装") { Task { await helper.reinstall() } }
+                Button(tr("重新安装")) { Task { await helper.reinstall() } }
                     .buttonStyle(DSButtonStyle(kind: .primary))
                     .disabled(helper.isWorking)
             }
@@ -716,9 +732,9 @@ struct HelperSettings: View {
             InfoBanner(icon: "exclamationmark.triangle.fill", text: error, tone: .error)
         }
         if let team = CodeSigningInfo.currentTeamIdentifier() {
-            InfoBanner(icon: "checkmark.seal", text: "已使用 Developer ID 签名（团队 \(team)），辅助工具只接受同一团队签名的 OpenStats。", tone: .success)
+            InfoBanner(icon: "checkmark.seal", text: tr("已使用 Developer ID 签名（团队 \(team)），辅助工具只接受同一团队签名的 OpenStats。"), tone: .success)
         } else {
-            InfoBanner(icon: "info.circle", text: "当前为临时签名的开发构建，辅助工具只能校验应用标识。使用 Developer ID 证书构建后会自动启用团队校验。", tone: .neutral)
+            InfoBanner(icon: "info.circle", text: tr("当前为临时签名的开发构建，辅助工具只能校验应用标识。使用 Developer ID 证书构建后会自动启用团队校验。"), tone: .neutral)
         }
     }
 
@@ -749,7 +765,7 @@ private struct CapabilityLine: View {
 
 struct AboutSettings: View {
     var body: some View {
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "开发版"
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? tr("开发版")
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
 
         SettingsGroup {
@@ -758,7 +774,7 @@ struct AboutSettings: View {
                     AppGlyph(size: DS.Space.s12)
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                         Text("OpenStats").dsFont(.lg, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
-                        Text(verbatim: "版本 \(version)\(build.map { "（\($0)）" } ?? "")")
+                        Text(verbatim: tr("版本 \(version)\(build.map { tr("（\($0)）") } ?? "")"))
                             .dsFont(.sm)
                             .foregroundStyle(DS.Palette.textSecondary)
                     }
@@ -766,7 +782,7 @@ struct AboutSettings: View {
                 }
             }
             GroupRow {
-                Text("轻量的 macOS 菜单栏系统监控：CPU、GPU、内存、网络、温度、风扇、防休眠与清理。")
+                Text(tr("轻量的 macOS 菜单栏系统监控：CPU、GPU、内存、网络、温度、风扇、防休眠与清理。"))
                     .dsFont(.sm)
                     .foregroundStyle(DS.Palette.textSecondary)
             }
@@ -775,10 +791,10 @@ struct AboutSettings: View {
         UpdateSettings()
         DiagnosticsSettings()
 
-        SettingsGroup(caption: "致谢") {
+        SettingsGroup(caption: tr("致谢")) {
             GroupRow(showsDivider: false) {
-                SettingRow(title: "exelban/stats", subtitle: "SMC 通信与 Apple Silicon 风扇解锁流程移植自该项目 · MIT License") {
-                    Button("查看") {
+                SettingRow(title: "exelban/stats", subtitle: tr("SMC 通信与 Apple Silicon 风扇解锁流程移植自该项目 · MIT License")) {
+                    Button(tr("查看")) {
                         if let url = URL(string: "https://github.com/exelban/stats") { NSWorkspace.shared.open(url) }
                     }
                     .buttonStyle(DSButtonStyle(kind: .secondary))

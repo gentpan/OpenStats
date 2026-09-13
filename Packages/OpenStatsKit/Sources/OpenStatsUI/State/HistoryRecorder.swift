@@ -1,4 +1,5 @@
 import Foundation
+import Localization
 import Metrics
 import Observation
 
@@ -13,9 +14,9 @@ public final class HistoryRecorder {
 
         var title: String {
             switch self {
-            case .hour: "1 小时"
-            case .day: "24 小时"
-            case .week: "7 天"
+            case .hour: tr("1 小时")
+            case .day: tr("24 小时")
+            case .week: tr("7 天")
             }
         }
 

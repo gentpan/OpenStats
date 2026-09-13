@@ -1,4 +1,5 @@
 import Foundation
+import Localization
 import SQLite3
 
 /// 每分钟一条的历史记录；没有采集到的指标为 nil
@@ -64,7 +65,7 @@ public actor HistoryDatabase {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         var handle: OpaquePointer?
         guard sqlite3_open_v2(url.path, &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nil) == SQLITE_OK else {
-            let message = handle.map { String(cString: sqlite3_errmsg($0)) } ?? "无法打开"
+            let message = handle.map { String(cString: sqlite3_errmsg($0)) } ?? tr("无法打开")
             sqlite3_close(handle)
             throw Error.open(message)
         }

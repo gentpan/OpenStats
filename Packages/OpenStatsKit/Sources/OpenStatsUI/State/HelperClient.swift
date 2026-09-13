@@ -1,5 +1,6 @@
 import Foundation
 import HelperShared
+import Localization
 import Observation
 import ServiceManagement
 
@@ -15,10 +16,10 @@ public final class HelperClient {
 
         var title: String {
             switch self {
-            case .notInstalled: "未安装"
-            case .requiresApproval: "等待批准"
-            case .enabled: "已启用"
-            case .unavailable: "不可用"
+            case .notInstalled: tr("未安装")
+            case .requiresApproval: tr("等待批准")
+            case .enabled: tr("已启用")
+            case .unavailable: tr("不可用")
             }
         }
     }
@@ -39,7 +40,7 @@ public final class HelperClient {
 
     public var isReady: Bool { status == .enabled }
 
-    static let outdatedMessage = "辅助工具版本比应用旧，部分功能可能无法使用，请重新安装一次（需要管理员授权）。"
+    static let outdatedMessage = tr("辅助工具版本比应用旧，部分功能可能无法使用，请重新安装一次（需要管理员授权）。")
 
     /// 未安装、待批准或版本过旧，需要用户处理
     var needsAttention: Bool { !isReady || isOutdated }
@@ -55,8 +56,8 @@ public final class HelperClient {
                 .appendingPathComponent("Contents/Library/LaunchDaemons/\(HelperConstants.launchdPlistName)")
             status = FileManager.default.fileExists(atPath: plist.path)
                 ? .notInstalled
-                : .unavailable("应用包内未找到辅助工具，请使用完整构建的 OpenStats.app")
-        @unknown default: status = .unavailable("未知状态")
+                : .unavailable(tr("应用包内未找到辅助工具，请使用完整构建的 OpenStats.app"))
+        @unknown default: status = .unavailable(tr("未知状态"))
         }
     }
 
@@ -67,7 +68,7 @@ public final class HelperClient {
         do {
             try service.register()
         } catch {
-            lastError = "安装失败：\(error.localizedDescription)"
+            lastError = tr("安装失败：\(error.localizedDescription)")
             Log.helper.error("安装失败：\(error.localizedDescription, privacy: .public)")
         }
         refreshStatus()
@@ -90,7 +91,7 @@ public final class HelperClient {
                 }
             }
         } catch {
-            lastError = "卸载失败：\(error.localizedDescription)"
+            lastError = tr("卸载失败：\(error.localizedDescription)")
             Log.helper.error("卸载失败：\(error.localizedDescription, privacy: .public)")
         }
         refreshStatus()
@@ -194,16 +195,16 @@ public final class HelperClient {
 
     private func call(_ body: (OpenStatsHelperProtocol, @escaping @Sendable (String?) -> Void) -> Void) async -> String? {
         refreshStatus()
-        guard isReady else { return "辅助工具未启用" }
+        guard isReady else { return tr("辅助工具未启用") }
         let connection = ensureConnection()
         return await withCheckedContinuation { (continuation: CheckedContinuation<String?, Never>) in
             let once = ResumeOnce(continuation)
             let proxy = connection.remoteObjectProxyWithErrorHandler { error in
                 Log.helper.error("XPC 调用失败：\(error.localizedDescription, privacy: .public)")
-                once.resume("无法连接辅助工具：\(error.localizedDescription)")
+                once.resume(tr("无法连接辅助工具：\(error.localizedDescription)"))
             } as? OpenStatsHelperProtocol
             guard let proxy else {
-                once.resume("无法连接辅助工具")
+                once.resume(tr("无法连接辅助工具"))
                 return
             }
             body(proxy) { once.resume($0) }

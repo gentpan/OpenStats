@@ -1,4 +1,5 @@
 import AppKit
+import Localization
 import Metrics
 import SwiftUI
 
@@ -50,8 +51,8 @@ private struct PopoverHeader: View {
                 .foregroundStyle(DS.Palette.textPrimary)
             Spacer(minLength: DS.Space.s2)
             if item == .memory { PurgeMemoryButton() }
-            IconButton(systemName: "macwindow", help: "打开 OpenStats 主窗口") { model.openMainWindow(nil) }
-            IconButton(systemName: "gearshape", help: "设置") { model.openSettings() }
+            IconButton(systemName: "macwindow", help: tr("打开 OpenStats 主窗口")) { model.openMainWindow(nil) }
+            IconButton(systemName: "gearshape", help: tr("设置")) { model.openSettings() }
         }
     }
 }
@@ -131,7 +132,7 @@ struct CopyableText: View {
                 copied = false
             }
         } label: {
-            Text(verbatim: copied ? "已拷贝" : text)
+            Text(verbatim: copied ? tr("已拷贝") : text)
                 .foregroundStyle(copied ? DS.Palette.success : hovering ? DS.Palette.primary : DS.Palette.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.middle)
@@ -139,7 +140,7 @@ struct CopyableText: View {
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
-        .help("点击拷贝")
+        .help(tr("点击拷贝"))
         .disabled(text == "—")
     }
 }
@@ -191,7 +192,7 @@ struct HeroValue: View {
 struct ProcessList<Row: View>: View {
     let count: Int
     var rowCount = 5
-    var emptyText = "正在统计…"
+    var emptyText = tr("正在统计…")
     @ViewBuilder var row: (Int) -> Row
 
     var body: some View {

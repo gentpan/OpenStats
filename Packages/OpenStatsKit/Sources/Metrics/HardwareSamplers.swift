@@ -1,6 +1,7 @@
 import Foundation
 import IOKit
 import IOKit.ps
+import Localization
 
 // MARK: - 磁盘
 
@@ -12,7 +13,7 @@ public enum DiskSampler {
               let total = values.volumeTotalCapacity else { return nil }
         // “重要用途可用空间”包含可清除空间，与访达显示一致
         let available = values.volumeAvailableCapacityForImportantUsage ?? 0
-        return DiskUsage(volumeName: values.volumeLocalizedName ?? "磁盘",
+        return DiskUsage(volumeName: values.volumeLocalizedName ?? tr("磁盘"),
                          total: UInt64(total), available: UInt64(max(0, available)))
     }
 }

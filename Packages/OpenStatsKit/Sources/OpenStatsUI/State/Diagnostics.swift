@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import HelperShared
+import Localization
 import Metrics
 import Observation
 import os
@@ -33,7 +34,7 @@ final class DiagnosticsExporter {
     func export(model: AppModel) {
         guard phase != .collecting else { return }
         let panel = NSSavePanel()
-        panel.nameFieldStringValue = "OpenStats-诊断-\(Self.fileDate()).zip"
+        panel.nameFieldStringValue = tr("OpenStats-诊断-\(Self.fileDate()).zip")
         panel.allowedContentTypes = [.zip]
         panel.directoryURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
         NSApp.activate()
@@ -47,7 +48,7 @@ final class DiagnosticsExporter {
                 Log.app.notice("已导出诊断信息")
                 phase = .finished(destination)
             } catch {
-                phase = .failed("导出失败：\(error.localizedDescription)")
+                phase = .failed(tr("导出失败：\(error.localizedDescription)"))
             }
         }
     }
@@ -68,59 +69,59 @@ final class DiagnosticsExporter {
         func section(_ title: String) { lines.append(""); lines.append("## \(title)") }
         func row(_ key: String, _ value: Any?) { lines.append("\(key): \(value.map { "\($0)" } ?? "—")") }
 
-        lines.append("# OpenStats 诊断信息")
-        row("导出时间", ISO8601DateFormatter().string(from: Date()))
+        lines.append(tr("# OpenStats 诊断信息"))
+        row(tr("导出时间"), ISO8601DateFormatter().string(from: Date()))
 
-        section("应用")
-        row("版本", bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString"))
-        row("构建", bundle.object(forInfoDictionaryKey: "CFBundleVersion"))
-        row("位置", bundle.bundleURL.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
-        row("签名团队", CodeSigningInfo.currentTeamIdentifier() ?? "未签名（开发构建）")
-        row("已运行", Format.uptime(since: launchDate))
+        section(tr("应用"))
+        row(tr("版本"), bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString"))
+        row(tr("构建"), bundle.object(forInfoDictionaryKey: "CFBundleVersion"))
+        row(tr("位置"), bundle.bundleURL.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
+        row(tr("签名团队"), CodeSigningInfo.currentTeamIdentifier() ?? tr("未签名（开发构建）"))
+        row(tr("已运行"), Format.uptime(since: launchDate))
 
-        section("系统")
-        row("机型", "\(store.system.modelName)（\(store.system.modelIdentifier)）")
-        row("macOS", "\(store.system.osVersion)（\(store.system.osBuild)）")
-        row("处理器核心", process.activeProcessorCount)
-        row("内存", Format.bytes(process.physicalMemory))
-        row("开机以来", Format.uptime(since: Date().addingTimeInterval(-process.systemUptime)))
-        row("语言", Locale.preferredLanguages.prefix(3).joined(separator: ", "))
-        row("温度传感器", store.sensors.map { "\($0.temperatures.count) 组" })
-        row("风扇", store.sensors.map { "\($0.fans.count) 个" })
-        row("电池", store.battery.map { "\(Format.percent($0.level))，\($0.isPluggedIn ? "接通电源" : "使用电池")，健康 \($0.health.map(Format.percent) ?? "—")" } ?? "无")
+        section(tr("系统"))
+        row(tr("机型"), tr("\(store.system.modelName)（\(store.system.modelIdentifier)）"))
+        row("macOS", tr("\(store.system.osVersion)（\(store.system.osBuild)）"))
+        row(tr("处理器核心"), process.activeProcessorCount)
+        row(tr("内存"), Format.bytes(process.physicalMemory))
+        row(tr("开机以来"), Format.uptime(since: Date().addingTimeInterval(-process.systemUptime)))
+        row(tr("语言"), Locale.preferredLanguages.prefix(3).joined(separator: ", "))
+        row(tr("温度传感器"), store.sensors.map { tr("\($0.temperatures.count) 组") })
+        row(tr("风扇"), store.sensors.map { tr("\($0.fans.count) 个") })
+        row(tr("电池"), store.battery.map { tr("\(Format.percent($0.level))，\($0.isPluggedIn ? tr("接通电源") : tr("使用电池"))，健康 \($0.health.map(Format.percent) ?? "—")") } ?? tr("无"))
 
-        section("辅助工具")
-        row("状态", model.helper.status.title)
-        if case .unavailable(let reason) = model.helper.status { row("原因", reason) }
-        row("协议版本", "应用 \(HelperConstants.protocolVersion) / 辅助工具 \(remoteVersion.map(String.init) ?? "未连接")")
-        row("最近错误", model.helper.lastError)
+        section(tr("辅助工具"))
+        row(tr("状态"), model.helper.status.title)
+        if case .unavailable(let reason) = model.helper.status { row(tr("原因"), reason) }
+        row(tr("协议版本"), tr("应用 \(HelperConstants.protocolVersion) / 辅助工具 \(remoteVersion.map(String.init) ?? tr("未连接"))"))
+        row(tr("最近错误"), model.helper.lastError)
 
-        section("状态")
-        row("风扇模式", model.fans.mode.title)
-        row("防休眠", model.keepAwake.isActive ? model.keepAwake.mode.title : "关闭")
-        row("合盖运行", model.keepAwake.lidClosedActive ? "开启" : "关闭")
-        row("登录时启动", model.launchAtLoginEnabled ? "开启" : "关闭")
-        row("在线升级", "上次检查 \(model.updates.lastChecked.map { ISO8601DateFormatter().string(from: $0) } ?? "从未")，最新 \(model.updates.release?.version ?? "当前版本")")
+        section(tr("状态"))
+        row(tr("风扇模式"), model.fans.mode.title)
+        row(tr("防休眠"), model.keepAwake.isActive ? model.keepAwake.mode.title : tr("关闭"))
+        row(tr("合盖运行"), model.keepAwake.lidClosedActive ? tr("开启") : tr("关闭"))
+        row(tr("登录时启动"), model.launchAtLoginEnabled ? tr("开启") : tr("关闭"))
+        row(tr("在线升级"), tr("上次检查 \(model.updates.lastChecked.map { ISO8601DateFormatter().string(from: $0) } ?? tr("从未"))，最新 \(model.updates.release?.version ?? tr("当前版本"))"))
         let geo = model.geo.installed.values.sorted { $0.edition < $1.edition }.map { "\($0.edition) \($0.build)" }
-        row("归属地数据库", geo.isEmpty ? "未安装" : geo.joined(separator: "，"))
+        row(tr("归属地数据库"), geo.isEmpty ? tr("未安装") : geo.joined(separator: tr("，")))
 
-        section("设置")
-        row("菜单栏项目", settings.orderedMenuBarItems.map(\.rawValue).joined(separator: ", "))
-        row("菜单栏布局", settings.menuBarLayout.rawValue)
-        row("菜单栏风格", settings.menuBarStyle.rawValue)
-        row("刷新间隔", "\(settings.refreshSeconds) 秒")
-        row("外观", settings.appearance.rawValue)
-        row("连接探测", settings.probeEnabled ? "\(settings.probeTarget.rawValue)，\(settings.probeSeconds) 秒，后台\(settings.probeInBackground ? "开启" : "关闭")" : "关闭")
-        row("公网 IP 查询", settings.publicIPLookup ? "开启" : "关闭")
-        row("风扇安全温度", "\(settings.fanSafetyTemperature)°C")
-        row("合盖电量下限", "\(settings.lidModeBatteryFloor)%")
+        section(tr("设置"))
+        row(tr("菜单栏项目"), settings.orderedMenuBarItems.map(\.rawValue).joined(separator: ", "))
+        row(tr("菜单栏布局"), settings.menuBarLayout.rawValue)
+        row(tr("菜单栏风格"), settings.menuBarStyle.rawValue)
+        row(tr("刷新间隔"), tr("\(settings.refreshSeconds) 秒"))
+        row(tr("外观"), settings.appearance.rawValue)
+        row(tr("连接探测"), settings.probeEnabled ? tr("\(settings.probeTarget.rawValue)，\(settings.probeSeconds) 秒，后台\(settings.probeInBackground ? tr("开启") : tr("关闭"))") : tr("关闭"))
+        row(tr("公网 IP 查询"), settings.publicIPLookup ? tr("开启") : tr("关闭"))
+        row(tr("风扇安全温度"), "\(settings.fanSafetyTemperature)°C")
+        row(tr("合盖电量下限"), "\(settings.lidModeBatteryFloor)%")
         return lines.joined(separator: "\n") + "\n"
     }
 
     nonisolated static func writeArchive(summary: String, to destination: URL) throws {
         let manager = FileManager.default
         let work = manager.temporaryDirectory.appendingPathComponent("OpenStats-diagnostics-\(UUID().uuidString)")
-        let folder = work.appendingPathComponent("OpenStats-诊断-\(fileDate())")
+        let folder = work.appendingPathComponent(tr("OpenStats-诊断-\(fileDate())"))
         try manager.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? manager.removeItem(at: work) }
 

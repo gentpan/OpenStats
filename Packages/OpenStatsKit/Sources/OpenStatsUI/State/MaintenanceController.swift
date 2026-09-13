@@ -1,5 +1,6 @@
 import Foundation
 import HelperShared
+import Localization
 import Metrics
 import Observation
 
@@ -30,7 +31,7 @@ public final class MaintenanceController {
 
         let before = MemorySampler().sample()
         helper.refreshStatus()
-        let prompt = command == .flushDNS ? "OpenStats 需要管理员权限来刷新 DNS 缓存。" : "OpenStats 需要管理员权限来释放内存。"
+        let prompt = command == .flushDNS ? tr("OpenStats 需要管理员权限来刷新 DNS 缓存。") : tr("OpenStats 需要管理员权限来释放内存。")
         let error = helper.isReady
             ? await helper.run(command)
             : await Self.runWithAdministratorPrompt(shell: command.shellCommand, prompt: prompt)
@@ -42,11 +43,11 @@ public final class MaintenanceController {
         }
         switch command {
         case .flushDNS:
-            outcomes[command] = Outcome(text: "DNS 缓存已刷新", isError: false)
+            outcomes[command] = Outcome(text: tr("DNS 缓存已刷新"), isError: false)
         case .purgeMemory:
             let after = MemorySampler().sample()
             let freed = (before?.cached ?? 0) > (after?.cached ?? 0) ? before!.cached - after!.cached : 0
-            outcomes[command] = Outcome(text: freed > 0 ? "已释放 \(Format.bytes(freed)) 缓存内存" : "内存已整理", isError: false)
+            outcomes[command] = Outcome(text: freed > 0 ? tr("已释放 \(Format.bytes(freed)) 缓存内存") : tr("内存已整理"), isError: false)
         }
     }
 
@@ -55,7 +56,7 @@ public final class MaintenanceController {
         guard !isApplyingDNS else { return }
         guard DNSConfiguration.isValidServiceName(service), servers.count <= DNSConfiguration.maxServers,
               servers.allSatisfy(DNSConfiguration.isValidAddress) else {
-            dnsOutcome = Outcome(text: "DNS 地址格式不正确", isError: true)
+            dnsOutcome = Outcome(text: tr("DNS 地址格式不正确"), isError: true)
             return
         }
         isApplyingDNS = true
@@ -69,17 +70,17 @@ public final class MaintenanceController {
             // killall 在 mDNSResponder 恰好重启时可能返回非 0，不视为失败
             let shell = DNSConfiguration.shellCommand(service: service, servers: servers)
                 + " && /usr/bin/dscacheutil -flushcache && (/usr/bin/killall -HUP mDNSResponder || true)"
-            error = await Self.runWithAdministratorPrompt(shell: shell, prompt: "OpenStats 需要管理员权限来修改“\(service)”的 DNS。")
+            error = await Self.runWithAdministratorPrompt(shell: shell, prompt: tr("OpenStats 需要管理员权限来修改“\(service)”的 DNS。"))
         }
         if let error {
             Log.network.error("设置 DNS 失败：\(error, privacy: .public)")
             dnsOutcome = Outcome(text: error, isError: error != Self.cancelled)
         } else {
-            dnsOutcome = Outcome(text: servers.isEmpty ? "已恢复自动获取 DNS" : "DNS 已设置为 \(servers.joined(separator: "、"))", isError: false)
+            dnsOutcome = Outcome(text: servers.isEmpty ? tr("已恢复自动获取 DNS") : tr("DNS 已设置为 \(servers.joined(separator: tr("、")))"), isError: false)
         }
     }
 
-    nonisolated private static let cancelled = "已取消"
+    nonisolated private static let cancelled = tr("已取消")
 
     /// 未安装辅助工具时的回退：通过 AppleScript 请求一次性管理员授权执行命令。
     /// 命令只由固定路径与已校验的参数拼成，这里再做 AppleScript 字符串转义

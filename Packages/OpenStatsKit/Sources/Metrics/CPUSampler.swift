@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import Localization
 
 public struct CPUSampler {
     private var previousTicks: [[UInt32]] = []
@@ -13,7 +14,7 @@ public struct CPUSampler {
 
         guard levels > 1 else {
             return CPUTopology(brand: brand, logicalCores: logical,
-                               clusters: [CPUCluster(id: 0, name: "核心", coreIndices: Array(0..<logical))])
+                               clusters: [CPUCluster(id: 0, name: tr("核心"), coreIndices: Array(0..<logical))])
         }
 
         // 核心序号从最低性能档开始排列：perflevel(n-1) 在前，perflevel0 在后
@@ -31,10 +32,10 @@ public struct CPUSampler {
 
     private static func localizedClusterName(_ raw: String) -> String {
         switch raw.lowercased() {
-        case "super": "超级核"
-        case "performance": "性能核"
-        case "efficiency": "能效核"
-        default: raw.isEmpty ? "核心" : raw
+        case "super": tr("超级核")
+        case "performance": tr("性能核")
+        case "efficiency": tr("能效核")
+        default: raw.isEmpty ? tr("核心") : raw
         }
     }
 

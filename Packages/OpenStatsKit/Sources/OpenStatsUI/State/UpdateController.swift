@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import Localization
 import Observation
 import Updates
 
@@ -58,8 +59,8 @@ public final class UpdateController {
 
     /// 开发构建没有 Developer ID 签名，无法校验新版的签名团队，只能手动安装
     var installBlockedReason: String? {
-        guard let bundleID = Bundle.main.bundleIdentifier, bundleID == "com.openstats.app" else { return "开发构建不支持在线升级" }
-        guard UpdateInstaller.teamIdentifier(of: Bundle.main.bundleURL) != nil else { return "开发构建不支持在线升级，请下载安装包" }
+        guard let bundleID = Bundle.main.bundleIdentifier, bundleID == "com.openstats.app" else { return tr("开发构建不支持在线升级") }
+        guard UpdateInstaller.teamIdentifier(of: Bundle.main.bundleURL) != nil else { return tr("开发构建不支持在线升级，请下载安装包") }
         return nil
     }
 
@@ -104,9 +105,9 @@ public final class UpdateController {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             if let http = response as? HTTPURLResponse, http.statusCode != 200 {
-                return .failure(.download("服务器返回 \(http.statusCode)"))
+                return .failure(.download(tr("服务器返回 \(http.statusCode)")))
             }
-            guard let release = UpdateFeed.parse(data) else { return .failure(.download("版本清单格式不正确")) }
+            guard let release = UpdateFeed.parse(data) else { return .failure(.download(tr("版本清单格式不正确"))) }
             return .success(release)
         } catch {
             return .failure(.download(error.localizedDescription))
@@ -132,7 +133,7 @@ public final class UpdateController {
             return
         }
         guard UpdateFeed.systemSatisfies(release.minimumSystem) else {
-            phase = .failed("新版本需要 macOS \(release.minimumSystem) 或更高版本")
+            phase = .failed(tr("新版本需要 macOS \(release.minimumSystem) 或更高版本"))
             return
         }
         let app = Bundle.main.bundleURL
@@ -201,11 +202,11 @@ public final class UpdateController {
         // 旧版改名备份 → 新版移入；移入失败时还原旧版并以失败退出；成功后沿用旧版的属主
         let shell = "/bin/mv -f \(a) \(b) && { /bin/mv -f \(c) \(a) || { /bin/mv -f \(b) \(a); exit 1; }; }"
             + " && /usr/sbin/chown -R \"$(/usr/bin/stat -f %u:%g \(b))\" \(a)"
-        if let error = await MaintenanceController.runWithAdministratorPrompt(shell: shell, prompt: "OpenStats 需要授权以安装新版本。") {
+        if let error = await MaintenanceController.runWithAdministratorPrompt(shell: shell, prompt: tr("OpenStats 需要授权以安装新版本。")) {
             throw UpdateError.install(error)
         }
         guard FileManager.default.fileExists(atPath: app.appendingPathComponent("Contents/Info.plist").path) else {
-            throw UpdateError.install("替换后未找到应用")
+            throw UpdateError.install(tr("替换后未找到应用"))
         }
     }
 

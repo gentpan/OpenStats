@@ -1,4 +1,5 @@
 import Foundation
+import Localization
 
 /// 清理规则。目录清单参考了 Mole 的清理范围（仅参考范围，代码为独立实现）。
 public enum RuleCatalog {
@@ -17,8 +18,8 @@ public enum RuleCatalog {
     ]
 
     static let userCaches = CleanRule(
-        id: "system.caches", category: .system, title: "应用缓存",
-        detail: "~/Library/Caches 中各应用的缓存，删除后会按需重建", symbol: "archivebox",
+        id: "system.caches", category: .system, title: tr("应用缓存"),
+        detail: tr("~/Library/Caches 中各应用的缓存，删除后会按需重建"), symbol: "archivebox",
         checksOwnerApp: true
     ) { env in
         try children(of: env.home + "/Library/Caches").filter { url in
@@ -28,8 +29,8 @@ public enum RuleCatalog {
     }
 
     static let logs = CleanRule(
-        id: "system.logs", category: .system, title: "应用日志与崩溃报告",
-        detail: "~/Library/Logs 中的日志和诊断报告", symbol: "doc.text",
+        id: "system.logs", category: .system, title: tr("应用日志与崩溃报告"),
+        detail: tr("~/Library/Logs 中的日志和诊断报告"), symbol: "doc.text",
         checksOwnerApp: true
     ) { env in
         try children(of: env.home + "/Library/Logs")
@@ -67,8 +68,8 @@ public enum RuleCatalog {
 
     static func browserRule(_ browser: Browser) -> CleanRule {
         CleanRule(
-            id: "browser.\(browser.id)", category: .browser, title: "\(browser.name) 缓存",
-            detail: "网页缓存与脚本缓存，不涉及 Cookie、历史记录和密码", symbol: "globe",
+            id: "browser.\(browser.id)", category: .browser, title: tr("\(browser.name) 缓存"),
+            detail: tr("网页缓存与脚本缓存，不涉及 Cookie、历史记录和密码"), symbol: "globe",
             blockingApps: [(browser.bundleID, browser.name)], minimumAge: 0
         ) { env in
             let fileManager = FileManager.default
@@ -109,32 +110,32 @@ public enum RuleCatalog {
     // MARK: 开发者
 
     static let xcodeDerivedData = CleanRule(
-        id: "developer.derivedData", category: .developer, title: "Xcode 编译缓存",
-        detail: "DerivedData，下次编译时自动重建", symbol: "hammer",
+        id: "developer.derivedData", category: .developer, title: tr("Xcode 编译缓存"),
+        detail: tr("DerivedData，下次编译时自动重建"), symbol: "hammer",
         blockingApps: [("com.apple.dt.Xcode", "Xcode")]
     ) { env in
         try childrenIfExists(of: env.home + "/Library/Developer/Xcode/DerivedData")
     }
 
     static let simulatorCaches = CleanRule(
-        id: "developer.simulatorCaches", category: .developer, title: "模拟器缓存",
-        detail: "CoreSimulator 的动态库与运行时缓存", symbol: "iphone",
-        blockingApps: [("com.apple.iphonesimulator", "模拟器")]
+        id: "developer.simulatorCaches", category: .developer, title: tr("模拟器缓存"),
+        detail: tr("CoreSimulator 的动态库与运行时缓存"), symbol: "iphone",
+        blockingApps: [("com.apple.iphonesimulator", tr("模拟器"))]
     ) { env in
         try childrenIfExists(of: env.home + "/Library/Developer/CoreSimulator/Caches")
     }
 
     static let npmCache = CleanRule(
-        id: "developer.npm", category: .developer, title: "npm 缓存",
-        detail: "~/.npm/_cacache，安装依赖时自动重新下载", symbol: "shippingbox"
+        id: "developer.npm", category: .developer, title: tr("npm 缓存"),
+        detail: tr("~/.npm/_cacache，安装依赖时自动重新下载"), symbol: "shippingbox"
     ) { env in
         let path = env.home + "/.npm/_cacache"
         return FileManager.default.fileExists(atPath: path) ? [URL(fileURLWithPath: path)] : []
     }
 
     static let xcodeArchives = CleanRule(
-        id: "developer.archives", category: .developer, title: "Xcode 归档",
-        detail: "打包生成的 .xcarchive，删除后无法重新符号化旧版本崩溃日志", symbol: "archivebox.fill",
+        id: "developer.archives", category: .developer, title: tr("Xcode 归档"),
+        detail: tr("打包生成的 .xcarchive，删除后无法重新符号化旧版本崩溃日志"), symbol: "archivebox.fill",
         selectedByDefault: false, policy: .trash, minimumAge: 0
     ) { env in
         try childrenIfExists(of: env.home + "/Library/Developer/Xcode/Archives")
@@ -143,8 +144,8 @@ public enum RuleCatalog {
     // MARK: 下载
 
     static let incompleteDownloads = CleanRule(
-        id: "downloads.incomplete", category: .downloads, title: "未完成的下载",
-        detail: "超过 1 天未更新的 .crdownload / .part / .download", symbol: "arrow.down.circle",
+        id: "downloads.incomplete", category: .downloads, title: tr("未完成的下载"),
+        detail: tr("超过 1 天未更新的 .crdownload / .part / .download"), symbol: "arrow.down.circle",
         policy: .trash, minimumAge: 86_400
     ) { env in
         try childrenIfExists(of: env.home + "/Downloads")
@@ -152,8 +153,8 @@ public enum RuleCatalog {
     }
 
     static let installers = CleanRule(
-        id: "downloads.installers", category: .downloads, title: "安装包",
-        detail: "下载目录中的 .dmg / .pkg / .xip / .iso，移到废纸篓", symbol: "shippingbox.fill",
+        id: "downloads.installers", category: .downloads, title: tr("安装包"),
+        detail: tr("下载目录中的 .dmg / .pkg / .xip / .iso，移到废纸篓"), symbol: "shippingbox.fill",
         selectedByDefault: false, policy: .trash, minimumAge: 0
     ) { env in
         try childrenIfExists(of: env.home + "/Downloads")
@@ -163,8 +164,8 @@ public enum RuleCatalog {
     // MARK: 废纸篓
 
     static let trash = CleanRule(
-        id: "trash", category: .trash, title: "清空废纸篓",
-        detail: "永久删除废纸篓中的内容，无法恢复", symbol: "trash",
+        id: "trash", category: .trash, title: tr("清空废纸篓"),
+        detail: tr("永久删除废纸篓中的内容，无法恢复"), symbol: "trash",
         selectedByDefault: false, minimumAge: 0
     ) { env in
         try childrenIfExists(of: env.home + "/.Trash")

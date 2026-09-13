@@ -1,5 +1,6 @@
 import AppKit
 import Carbon.HIToolbox
+import Localization
 
 /// 可以绑定全局快捷键的操作
 public enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
@@ -9,10 +10,10 @@ public enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable 
 
     var title: String {
         switch self {
-        case .toggleMainWindow: "显示 / 隐藏主窗口"
-        case .showProcesses: "打开进程页"
-        case .toggleKeepAwake: "开关防休眠"
-        case .purgeMemory: "释放内存"
+        case .toggleMainWindow: tr("显示 / 隐藏主窗口")
+        case .showProcesses: tr("打开进程页")
+        case .toggleKeepAwake: tr("开关防休眠")
+        case .purgeMemory: tr("释放内存")
         }
     }
 
@@ -64,7 +65,7 @@ public struct HotKey: Codable, Equatable, Sendable {
 
     static func keyName(keyCode: UInt16, fallback: String) -> String {
         switch Int(keyCode) {
-        case kVK_Space: "空格"
+        case kVK_Space: tr("空格")
         case kVK_Return: "↩"
         case kVK_Tab: "⇥"
         case kVK_Delete: "⌫"

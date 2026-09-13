@@ -1,4 +1,5 @@
 import AppKit
+import Localization
 import Metrics
 
 /// 菜单栏上要画的读数，与数据来源解耦，设置页预览可以用示例数据绘制
@@ -64,11 +65,11 @@ struct MenuBarReading {
             switch item {
             case .cpu: cpu.map { "CPU \(Format.percent($0))" }
             case .gpu: gpu.map { "GPU \(Format.percent($0))" }
-            case .memory: memory.map { "内存 \(Format.percent($0))" }
+            case .memory: memory.map { tr("内存 \(Format.percent($0))") }
             case .network:
-                upload.flatMap { up in download.map { "上传 \(Format.menuBarRate(up)) · 下载 \(Format.menuBarRate($0))" } }
-            case .temperature: temperature.map { "CPU 温度 \(Format.temperature($0, fahrenheit: fahrenheit))" }
-            case .fan: fanRPM.map { "风扇 \(Format.rpm($0))" }
+                upload.flatMap { up in download.map { tr("上传 \(Format.menuBarRate(up)) · 下载 \(Format.menuBarRate($0))") } }
+            case .temperature: temperature.map { tr("CPU 温度 \(Format.temperature($0, fahrenheit: fahrenheit))") }
+            case .fan: fanRPM.map { tr("风扇 \(Format.rpm($0))") }
             }
         }
         .joined(separator: "\n")

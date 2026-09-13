@@ -1,4 +1,5 @@
 import Foundation
+import Localization
 
 public enum CleanCategory: String, Sendable, CaseIterable, Identifiable {
     case system, browser, developer, downloads, trash
@@ -7,11 +8,11 @@ public enum CleanCategory: String, Sendable, CaseIterable, Identifiable {
 
     public var title: String {
         switch self {
-        case .system: "系统"
-        case .browser: "浏览器"
-        case .developer: "开发者"
-        case .downloads: "下载"
-        case .trash: "废纸篓"
+        case .system: tr("系统")
+        case .browser: tr("浏览器")
+        case .developer: tr("开发者")
+        case .downloads: tr("下载")
+        case .trash: tr("废纸篓")
         }
     }
 }
@@ -31,10 +32,10 @@ public enum SkipReason: Sendable, Equatable, Hashable {
 
     public var title: String {
         switch self {
-        case .appRunning(let name): "\(name) 正在运行"
-        case .needsFullDiskAccess: "需要完全磁盘访问权限"
-        case .recentlyModified: "刚刚被使用"
-        case .protected: "受保护"
+        case .appRunning(let name): tr("\(name) 正在运行")
+        case .needsFullDiskAccess: tr("需要完全磁盘访问权限")
+        case .recentlyModified: tr("刚刚被使用")
+        case .protected: tr("受保护")
         }
     }
 }

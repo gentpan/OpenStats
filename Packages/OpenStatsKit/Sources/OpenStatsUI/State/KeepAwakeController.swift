@@ -1,5 +1,6 @@
 import Foundation
 import IOKit.pwr_mgt
+import Localization
 import Metrics
 import Observation
 
@@ -13,15 +14,15 @@ public final class KeepAwakeController {
 
         var title: String {
             switch self {
-            case .display: "屏幕保持常亮"
-            case .system: "仅系统不休眠"
+            case .display: tr("屏幕保持常亮")
+            case .system: tr("仅系统不休眠")
             }
         }
 
         var subtitle: String {
             switch self {
-            case .display: "屏幕和系统都不会因闲置而关闭或休眠"
-            case .system: "屏幕可按设置关闭，下载、编译等后台任务继续运行"
+            case .display: tr("屏幕和系统都不会因闲置而关闭或休眠")
+            case .system: tr("屏幕可按设置关闭，下载、编译等后台任务继续运行")
             }
         }
 
@@ -41,11 +42,11 @@ public final class KeepAwakeController {
 
         var title: String {
             switch self {
-            case .minutes15: "15 分钟"
-            case .hour1: "1 小时"
-            case .hours2: "2 小时"
-            case .hours5: "5 小时"
-            case .unlimited: "不限"
+            case .minutes15: tr("15 分钟")
+            case .hour1: tr("1 小时")
+            case .hours2: tr("2 小时")
+            case .hours5: tr("5 小时")
+            case .unlimited: tr("不限")
             }
         }
     }
@@ -106,7 +107,7 @@ public final class KeepAwakeController {
         releaseAssertion()
         if lidClosedActive {
             if let error = await helper.setSleepDisabled(false) {
-                show("恢复系统睡眠失败：\(error)", isError: true)
+                show(tr("恢复系统睡眠失败：\(error)"), isError: true)
                 return
             }
             lidClosedActive = false
@@ -127,7 +128,7 @@ public final class KeepAwakeController {
         Task {
             lidClosedRequested = false
             await applyLidMode()
-            show("电量低于 \(settings.lidModeBatteryFloor)%，已关闭合盖运行", isError: false)
+            show(tr("电量低于 \(settings.lidModeBatteryFloor)%，已关闭合盖运行"), isError: false)
         }
     }
 
@@ -152,12 +153,12 @@ public final class KeepAwakeController {
         var id: IOPMAssertionID = 0
         let result = IOPMAssertionCreateWithName(mode.assertionType as CFString,
                                                  IOPMAssertionLevel(kIOPMAssertionLevelOn),
-                                                 "OpenStats 防休眠" as CFString,
+                                                 tr("OpenStats 防休眠") as CFString,
                                                  &id)
         if result == kIOReturnSuccess {
             assertionID = id
         } else {
-            show("无法创建电源断言（\(result)）", isError: true)
+            show(tr("无法创建电源断言（\(result)）"), isError: true)
         }
     }
 
@@ -178,7 +179,7 @@ public final class KeepAwakeController {
         expiryTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(end.timeIntervalSinceNow))
             guard !Task.isCancelled else { return }
-            await self?.stop(reason: "已到设定时间，防休眠已关闭")
+            await self?.stop(reason: tr("已到设定时间，防休眠已关闭"))
         }
     }
 

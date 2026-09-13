@@ -1,3 +1,4 @@
+import Localization
 import Metrics
 import SwiftUI
 
@@ -20,61 +21,61 @@ struct HistoryPage: View {
                                  options: HistoryRecorder.Range.allCases.map { ($0, $0.title) })
                     .frame(width: DS.Size.sidebarWidth + DS.Space.s16)
                 Spacer()
-                Text(verbatim: hoverDate.map { "\($0.formatted(date: .abbreviated, time: .shortened))" }
-                     ?? (points.isEmpty ? "" : "每点 \(bucketTitle(history.range))"))
+                Text(verbatim: hoverDate.map { "\($0.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: L10n.locale)))" }
+                     ?? (points.isEmpty ? "" : tr("每点 \(bucketTitle(history.range))")))
                     .dsFont(.xs)
                     .foregroundStyle(DS.Palette.textSecondary)
                     .monospacedDigit()
             }
 
             if !settings.historyEnabled {
-                InfoBanner(icon: "pause.circle", text: "历史记录已关闭，下面是关闭前记录的数据。", tone: .warning) {
-                    Button("开启") { settings.historyEnabled = true }.buttonStyle(DSButtonStyle(kind: .primary))
+                InfoBanner(icon: "pause.circle", text: tr("历史记录已关闭，下面是关闭前记录的数据。"), tone: .warning) {
+                    Button(tr("开启")) { settings.historyEnabled = true }.buttonStyle(DSButtonStyle(kind: .primary))
                 }
             }
 
             if points.isEmpty {
                 Card {
-                    Text(history.isQuerying ? "正在读取…" : "这段时间还没有记录。OpenStats 运行时每分钟记录一次，睡眠与锁屏期间不记录。")
+                    Text(history.isQuerying ? tr("正在读取…") : tr("这段时间还没有记录。OpenStats 运行时每分钟记录一次，睡眠与锁屏期间不记录。"))
                         .dsFont(.sm)
                         .foregroundStyle(DS.Palette.textSecondary)
                 }
             } else {
                 HistoryChartCard(icon: "cpu", title: "CPU", points: points, start: start, end: end, hoverDate: $hoverDate,
-                                 series: [.init(label: "平均", color: DS.Palette.primary, value: \.cpu),
-                                          .init(label: "峰值", color: DS.Palette.primary.opacity(0.35), value: \.cpuMax, filled: false)],
+                                 series: [.init(label: tr("平均"), color: DS.Palette.primary, value: \.cpu),
+                                          .init(label: tr("峰值"), color: DS.Palette.primary.opacity(0.35), value: \.cpuMax, filled: false)],
                                  maxValue: 1, format: { Format.percent($0) })
-                HistoryChartCard(icon: "memorychip", title: "内存", points: points, start: start, end: end, hoverDate: $hoverDate,
-                                 series: [.init(label: "已用", color: DS.Palette.primary, value: \.memory)],
+                HistoryChartCard(icon: "memorychip", title: tr("内存"), points: points, start: start, end: end, hoverDate: $hoverDate,
+                                 series: [.init(label: tr("已用"), color: DS.Palette.primary, value: \.memory)],
                                  maxValue: 1, format: { Format.percent($0) },
                                  note: criticalNote(points))
-                HistoryChartCard(icon: "network", title: "网络", points: points, start: start, end: end, hoverDate: $hoverDate,
-                                 series: [.init(label: "下载", color: Color(nsColor: DS.NetworkPalette.download), value: \.download),
-                                          .init(label: "上传", color: Color(nsColor: DS.NetworkPalette.upload), value: \.upload, filled: false)],
+                HistoryChartCard(icon: "network", title: tr("网络"), points: points, start: start, end: end, hoverDate: $hoverDate,
+                                 series: [.init(label: tr("下载"), color: Color(nsColor: DS.NetworkPalette.download), value: \.download),
+                                          .init(label: tr("上传"), color: Color(nsColor: DS.NetworkPalette.upload), value: \.upload, filled: false)],
                                  maxValue: nil, format: { Format.menuBarRate($0) })
                 HistoryChartCard(icon: "square.3.layers.3d", title: "GPU", points: points, start: start, end: end, hoverDate: $hoverDate,
-                                 series: [.init(label: "占用", color: DS.Palette.primary, value: \.gpu)],
+                                 series: [.init(label: tr("占用"), color: DS.Palette.primary, value: \.gpu)],
                                  maxValue: 1, format: { Format.percent($0) },
-                                 emptyNote: "只在菜单栏显示 GPU 或打开 GPU 相关页面时记录")
-                HistoryChartCard(icon: "thermometer.medium", title: "CPU 温度", points: points, start: start, end: end, hoverDate: $hoverDate,
-                                 series: [.init(label: "最高", color: DS.Palette.warning, value: \.temperature)],
+                                 emptyNote: tr("只在菜单栏显示 GPU 或打开 GPU 相关页面时记录"))
+                HistoryChartCard(icon: "thermometer.medium", title: tr("CPU 温度"), points: points, start: start, end: end, hoverDate: $hoverDate,
+                                 series: [.init(label: tr("最高"), color: DS.Palette.warning, value: \.temperature)],
                                  maxValue: nil, format: { Format.temperature($0, fahrenheit: settings.useFahrenheit) },
-                                 emptyNote: "只在菜单栏显示温度、开启过热通知或打开温度页面时记录")
-                HistoryChartCard(icon: "bolt", title: "整机功耗", points: points, start: start, end: end, hoverDate: $hoverDate,
-                                 series: [.init(label: "平均", color: DS.Palette.warning, value: \.power)],
+                                 emptyNote: tr("只在菜单栏显示温度、开启过热通知或打开温度页面时记录"))
+                HistoryChartCard(icon: "bolt", title: tr("整机功耗"), points: points, start: start, end: end, hoverDate: $hoverDate,
+                                 series: [.init(label: tr("平均"), color: DS.Palette.warning, value: \.power)],
                                  maxValue: nil, format: { Format.watts($0) },
-                                 emptyNote: "只在打开温度与风扇页面时记录")
+                                 emptyNote: tr("只在打开温度与风扇页面时记录"))
             }
 
-            SettingsGroup(caption: "历史记录") {
+            SettingsGroup(caption: tr("历史记录")) {
                 GroupRow(showsDivider: false) {
-                    SettingRow(title: "记录历史数据", subtitle: "每分钟把主要指标的平均值与峰值写入本机数据库，保留 7 天，不上传") {
-                        DSToggle(isOn: $settings.historyEnabled, label: "记录历史数据")
+                    SettingRow(title: tr("记录历史数据"), subtitle: tr("每分钟把主要指标的平均值与峰值写入本机数据库，保留 7 天，不上传")) {
+                        DSToggle(isOn: $settings.historyEnabled, label: tr("记录历史数据"))
                     }
                 }
                 GroupRow {
-                    SettingRow(title: "清除历史", subtitle: "共 \(history.recordCount.formatted()) 条记录") {
-                        Button("清除…") { confirmingClear = true }
+                    SettingRow(title: tr("清除历史"), subtitle: tr("共 \(history.recordCount.formatted()) 条记录")) {
+                        Button(tr("清除…")) { confirmingClear = true }
                             .buttonStyle(DSButtonStyle(kind: .secondary))
                             .disabled(history.recordCount == 0)
                     }
@@ -89,21 +90,21 @@ struct HistoryPage: View {
                 if hoverDate == nil { history.load() }
             }
         }
-        .confirmationDialog("清除全部历史记录？", isPresented: $confirmingClear, titleVisibility: .visible) {
-            Button("清除", role: .destructive) { history.clear() }
-            Button("取消", role: .cancel) {}
+        .confirmationDialog(tr("清除全部历史记录？"), isPresented: $confirmingClear, titleVisibility: .visible) {
+            Button(tr("清除"), role: .destructive) { history.clear() }
+            Button(tr("取消"), role: .cancel) {}
         } message: {
-            Text("已记录的数据会从本机删除，无法恢复。")
+            Text(tr("已记录的数据会从本机删除，无法恢复。"))
         }
     }
 
     private func bucketTitle(_ range: HistoryRecorder.Range) -> String {
-        range.bucket >= 60 * 60 ? "\(range.bucket / 3600) 小时" : "\(range.bucket / 60) 分钟"
+        range.bucket >= 60 * 60 ? tr("\(range.bucket / 3600) 小时") : tr("\(range.bucket / 60) 分钟")
     }
 
     private func criticalNote(_ points: [HistoryPoint]) -> String? {
         let critical = points.filter { ($0.pressure ?? 0) >= MemoryPressure.critical.rawValue }.count
-        return critical > 0 ? "内存压力严重的时段：\(critical) 个（图上红色标记）" : nil
+        return critical > 0 ? tr("内存压力严重的时段：\(critical) 个（图上红色标记）") : nil
     }
 }
 
@@ -142,7 +143,7 @@ private struct HistoryChartCard: View {
                         }
                     }
                 } else if !values.isEmpty {
-                    Text(verbatim: "平均 \(format(values.reduce(0, +) / Double(values.count))) · 峰值 \(format(values.max() ?? 0))\(peakPoint.map { "（\(Self.moment($0.date))）" } ?? "")")
+                    Text(verbatim: tr("平均 \(format(values.reduce(0, +) / Double(values.count))) · 峰值 \(format(values.max() ?? 0))\(peakPoint.map { tr("（\(Self.moment($0.date))）") } ?? "")"))
                         .dsFont(.xs)
                         .foregroundStyle(DS.Palette.textTertiary)
                         .monospacedDigit()
@@ -156,7 +157,7 @@ private struct HistoryChartCard: View {
                     Spacer()
                     Text(verbatim: Self.moment(start.addingTimeInterval(end.timeIntervalSince(start) / 2)))
                     Spacer()
-                    Text("现在")
+                    Text(tr("现在"))
                 }
                 .dsFont(.xs)
                 .foregroundStyle(DS.Palette.textTertiary)
@@ -165,7 +166,7 @@ private struct HistoryChartCard: View {
                     Text(note).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
                 }
             } else {
-                Text(emptyNote ?? "这段时间没有记录").dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+                Text(emptyNote ?? tr("这段时间没有记录")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
             }
         }
     }
@@ -173,8 +174,8 @@ private struct HistoryChartCard: View {
     /// 同一天只显示时间，跨天带上日期
     static func moment(_ date: Date) -> String {
         Calendar.current.isDateInToday(date)
-            ? date.formatted(date: .omitted, time: .shortened)
-            : date.formatted(.dateTime.month(.abbreviated).day().hour().minute())
+            ? date.formatted(Date.FormatStyle(date: .omitted, time: .shortened, locale: L10n.locale))
+            : date.formatted(.dateTime.locale(L10n.locale).month(.abbreviated).day().hour().minute())
     }
 
     private var hoverPoint: HistoryPoint? {

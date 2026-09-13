@@ -1,4 +1,5 @@
 import Foundation
+import Localization
 
 public struct History<Element: Sendable>: Sendable {
     public let capacity: Int
@@ -82,16 +83,16 @@ public enum Format {
         let hours = minutes / 60
         let rest = minutes % 60
         switch (hours, rest) {
-        case (0, _): return "\(rest) 分钟"
-        case (_, 0): return "\(hours) 小时"
-        default: return "\(hours) 小时 \(rest) 分钟"
+        case (0, _): return tr("\(rest) 分钟")
+        case (_, 0): return tr("\(hours) 小时")
+        default: return tr("\(hours) 小时 \(rest) 分钟")
         }
     }
 
     /// CPU 时间：不到 1 分钟显示“12.34 秒”，不到 1 小时“12:34”，更长“1:02:03”
     public static func cpuTime(_ seconds: Double) -> String {
         let total = max(0, seconds)
-        if total < 60 { return "\(total.formatted(.number.precision(.fractionLength(2)))) 秒" }
+        if total < 60 { return tr("\(total.formatted(.number.precision(.fractionLength(2)))) 秒") }
         let whole = Int(total)
         let hours = whole / 3600, minutes = whole % 3600 / 60, secs = whole % 60
         return hours > 0 ? String(format: "%d:%02d:%02d", hours, minutes, secs) : String(format: "%d:%02d", minutes, secs)
@@ -101,8 +102,8 @@ public enum Format {
         let minutes = max(0, Int(now.timeIntervalSince(date) / 60))
         let days = minutes / (60 * 24)
         let hours = (minutes / 60) % 24
-        if days > 0 { return hours > 0 ? "\(days) 天 \(hours) 小时" : "\(days) 天" }
-        if hours > 0 { return "\(hours) 小时" }
-        return "\(minutes) 分钟"
+        if days > 0 { return hours > 0 ? tr("\(days) 天 \(hours) 小时") : tr("\(days) 天") }
+        if hours > 0 { return tr("\(hours) 小时") }
+        return tr("\(minutes) 分钟")
     }
 }

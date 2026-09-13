@@ -1,5 +1,6 @@
 import AppKit
 import HelperShared
+import Localization
 import Metrics
 import SwiftUI
 
@@ -14,9 +15,9 @@ struct NetworkPopover: View {
 
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s3) {
-                RateHero(title: "下载", bytesPerSecond: rate?.downloadBytesPerSecond, color: DS.NetworkPalette.download)
+                RateHero(title: tr("下载"), bytesPerSecond: rate?.downloadBytesPerSecond, color: DS.NetworkPalette.download)
                 Rectangle().fill(DS.Palette.border).frame(width: DS.Size.stroke, height: DS.Space.s8)
-                RateHero(title: "上传", bytesPerSecond: rate?.uploadBytesPerSecond, color: DS.NetworkPalette.upload)
+                RateHero(title: tr("上传"), bytesPerSecond: rate?.uploadBytesPerSecond, color: DS.NetworkPalette.upload)
             }
         }
 
@@ -66,7 +67,7 @@ private struct TrafficHistorySection: View {
         // 峰值放在标题行，图表上不压任何文字
         SectionCard(title: PopoverSection.networkHistory.title, trailing: {
             HStack(spacing: DS.Space.s1) {
-                Text("60 秒峰值")
+                Text(tr("60 秒峰值"))
                 peak("↑", upload, color: DS.NetworkPalette.upload)
                 peak("↓", download, color: DS.NetworkPalette.download)
             }
@@ -98,22 +99,22 @@ private struct ProbeSection: View {
 
         SectionCard(title: PopoverSection.networkProbe.title, trailing: {
             if settings.probeEnabled {
-                Text(verbatim: "\(network.probeAddress ?? "—") · 每 \(settings.probeSeconds) 秒")
+                Text(verbatim: tr("\(network.probeAddress ?? "—") · 每 \(settings.probeSeconds) 秒"))
             }
         }) {
             if settings.probeEnabled {
                 ProbeGrid(samples: network.probes.elements, columns: isDetailPage ? 40 : 20, rows: 3)
                 HStack(spacing: DS.Space.s3) {
-                    stat("延迟", network.latency.map(milliseconds) ?? "—")
-                    stat("抖动", network.jitter.map(milliseconds) ?? "—")
-                    stat("丢包", network.lossRate.map { Format.percent($0) } ?? "—",
+                    stat(tr("延迟"), network.latency.map(milliseconds) ?? "—")
+                    stat(tr("抖动"), network.jitter.map(milliseconds) ?? "—")
+                    stat(tr("丢包"), network.lossRate.map { Format.percent($0) } ?? "—",
                          tone: (network.lossRate ?? 0) > 0.05 ? .error : .neutral)
                 }
             } else {
                 HStack {
-                    Text("定时 ping 一个地址，记录网络是否通畅").dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
+                    Text(tr("定时 ping 一个地址，记录网络是否通畅")).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
                     Spacer(minLength: DS.Space.s2)
-                    Button("开启") { settings.probeEnabled = true }
+                    Button(tr("开启")) { settings.probeEnabled = true }
                         .buttonStyle(DSButtonStyle(kind: .ghost))
                 }
             }
@@ -148,31 +149,31 @@ private struct InterfaceSection: View {
 
         SectionCard(title: PopoverSection.networkInterface.title) {
             if let physical {
-                InfoRow(label: "接口", text: "\(physical.displayName)（\(physical.bsdName)）")
-                InfoRow(label: "状态") {
-                    StatusBadge(text: physical.isUp ? "已连接" : "未连接", tone: physical.isUp ? .success : .error)
+                InfoRow(label: tr("接口"), text: tr("\(physical.displayName)（\(physical.bsdName)）"))
+                InfoRow(label: tr("状态")) {
+                    StatusBadge(text: physical.isUp ? tr("已连接") : tr("未连接"), tone: physical.isUp ? .success : .error)
                 }
-                InfoRow(label: "物理地址") { CopyableText(text: physical.hardwareAddress ?? "—") }
+                InfoRow(label: tr("物理地址")) { CopyableText(text: physical.hardwareAddress ?? "—") }
                 if let wifi = physical.wifi {
-                    if let ssid = wifi.ssid { InfoRow(label: "网络名称", text: ssid) }
-                    InfoRow(label: "信号强度", text: "\(wifi.rssi) dBm · \(signalQuality(wifi.rssi))")
-                    InfoRow(label: "传输速率", text: "\(Int(wifi.transmitRate)) Mbps")
+                    if let ssid = wifi.ssid { InfoRow(label: tr("网络名称"), text: ssid) }
+                    InfoRow(label: tr("信号强度"), text: "\(wifi.rssi) dBm · \(signalQuality(wifi.rssi))")
+                    InfoRow(label: tr("传输速率"), text: "\(Int(wifi.transmitRate)) Mbps")
                 }
             } else {
-                Text(details == nil ? "正在读取…" : "未连接网络").dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+                Text(details == nil ? tr("正在读取…") : tr("未连接网络")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
             }
             if let tunnel = details?.tunnel {
-                InfoRow(label: "VPN / 代理", text: "\(tunnel.name)（\(tunnel.bsdName)）")
+                InfoRow(label: tr("VPN / 代理"), text: tr("\(tunnel.name)（\(tunnel.bsdName)）"))
             }
             if let totals {
-                InfoRow(label: "开机后下载", text: Format.bytes(totals.totalDownloaded, base: .decimal))
-                InfoRow(label: "开机后上传", text: Format.bytes(totals.totalUploaded, base: .decimal))
+                InfoRow(label: tr("开机后下载"), text: Format.bytes(totals.totalDownloaded, base: .decimal))
+                InfoRow(label: tr("开机后上传"), text: Format.bytes(totals.totalUploaded, base: .decimal))
             }
         }
     }
 
     private func signalQuality(_ rssi: Int) -> String {
-        rssi >= -50 ? "极好" : rssi >= -60 ? "良好" : rssi >= -70 ? "一般" : "较弱"
+        rssi >= -50 ? tr("极好") : rssi >= -60 ? tr("良好") : rssi >= -70 ? tr("一般") : tr("较弱")
     }
 }
 
@@ -189,20 +190,20 @@ private struct AddressSection: View {
 
         SectionCard(title: PopoverSection.networkAddresses.title, trailing: {
             if lookup {
-                MiniIconButton(systemName: "arrow.clockwise", help: "重新查询公网 IP") {
+                MiniIconButton(systemName: "arrow.clockwise", help: tr("重新查询公网 IP")) {
                     network.lookUpPublicAddresses()
                 }
                 .disabled(network.isLookingUpPublic)
             }
         }) {
-            InfoRow(label: "本地 IPv4") { CopyableText(text: physical?.ipv4.first ?? "—") }
-            InfoRow(label: "本地 IPv6") { CopyableText(text: physical?.ipv6.first ?? "—") }
-            InfoRow(label: "路由器") { CopyableText(text: physical?.router ?? "—") }
+            InfoRow(label: tr("本地 IPv4")) { CopyableText(text: physical?.ipv4.first ?? "—") }
+            InfoRow(label: tr("本地 IPv6")) { CopyableText(text: physical?.ipv6.first ?? "—") }
+            InfoRow(label: tr("路由器")) { CopyableText(text: physical?.router ?? "—") }
             if lookup {
-                InfoRow(label: "公网 IPv4") { publicValue(publicAddresses?.ipv4, loading: network.isLookingUpPublic) }
-                InfoRow(label: "公网 IPv6") { publicValue(publicAddresses?.ipv6, loading: network.isLookingUpPublic) }
+                InfoRow(label: tr("公网 IPv4")) { publicValue(publicAddresses?.ipv4, loading: network.isLookingUpPublic) }
+                InfoRow(label: tr("公网 IPv6")) { publicValue(publicAddresses?.ipv6, loading: network.isLookingUpPublic) }
                 if let publicAddresses, let code = publicAddresses.countryCode {
-                    InfoRow(label: "归属地") {
+                    InfoRow(label: tr("归属地")) {
                         HStack(spacing: DS.Space.s2) {
                             FlagImage(countryCode: code)
                             Text(verbatim: location(publicAddresses, code: code))
@@ -215,13 +216,13 @@ private struct AddressSection: View {
                     InfoRow(label: "ASN") { CopyableText(text: asn) }
                 }
                 if let organization = publicAddresses?.organization {
-                    InfoRow(label: "网络运营方") { Text(verbatim: organization).lineLimit(1).truncationMode(.middle) }
+                    InfoRow(label: tr("网络运营方")) { Text(verbatim: organization).lineLimit(1).truncationMode(.middle) }
                 }
                 if let publicAddresses, publicAddresses.countryCode != nil || publicAddresses.asn != nil {
-                    InfoRow(label: "数据来源", text: publicAddresses.source == .localDatabase ? "本地 GeoLite2（MaxMind）" : "ipinfo.io 在线查询")
+                    InfoRow(label: tr("数据来源"), text: publicAddresses.source == .localDatabase ? tr("本地 GeoLite2（MaxMind）") : tr("ipinfo.io 在线查询"))
                 }
             } else {
-                InfoRow(label: "公网 IP", text: "查询已关闭")
+                InfoRow(label: tr("公网 IP"), text: tr("查询已关闭"))
             }
         }
     }
@@ -229,14 +230,14 @@ private struct AddressSection: View {
     @ViewBuilder
     private func publicValue(_ value: String?, loading: Bool) -> some View {
         if loading && value == nil {
-            Text("查询中…").foregroundStyle(DS.Palette.textTertiary)
+            Text(tr("查询中…")).foregroundStyle(DS.Palette.textTertiary)
         } else {
             CopyableText(text: value ?? "—")
         }
     }
 
     private func location(_ addresses: PublicAddresses, code: String) -> String {
-        let country = Locale(identifier: "zh-Hans").localizedString(forRegionCode: code) ?? code
+        let country = Locale(identifier: L10n.isEnglish ? "en" : "zh-Hans").localizedString(forRegionCode: code) ?? code
         return [country, addresses.city].compactMap { $0 }.joined(separator: " · ")
     }
 }
@@ -258,13 +259,13 @@ private struct DNSSection: View {
         SectionCard(title: PopoverSection.networkDNS.title, trailing: {
             if let physical { Text(verbatim: physical.serviceName) }
         }) {
-            InfoRow(label: "正在使用") {
+            InfoRow(label: tr("正在使用")) {
                 Text(verbatim: network.details.map { $0.dnsServers.isEmpty ? "—" : $0.dnsServers.joined(separator: "\n") } ?? "—")
             }
-            InfoRow(label: "配置方式", text: manual.isEmpty ? "自动（由路由器分配）" : matched?.title ?? "手动")
+            InfoRow(label: tr("配置方式"), text: manual.isEmpty ? tr("自动（由路由器分配）") : matched?.title ?? tr("手动"))
 
             if let tunnel = network.details?.tunnel {
-                InfoBanner(icon: "info.circle", text: "流量经过 \(tunnel.name)，系统 DNS 可能由它接管，修改后不一定生效。", tone: .neutral)
+                InfoBanner(icon: "info.circle", text: tr("流量经过 \(tunnel.name)，系统 DNS 可能由它接管，修改后不一定生效。"), tone: .neutral)
             }
 
             if let physical {
@@ -275,7 +276,7 @@ private struct DNSSection: View {
                             apply(preset.servers, service: physical.serviceName)
                         }
                     }
-                    ChipButton(title: "手动", isSelected: editingManual || (!manual.isEmpty && matched == nil)) {
+                    ChipButton(title: tr("手动"), isSelected: editingManual || (!manual.isEmpty && matched == nil)) {
                         manualText = manual.joined(separator: ", ")
                         editingManual.toggle()
                     }
@@ -284,7 +285,7 @@ private struct DNSSection: View {
 
                 if editingManual {
                     HStack(spacing: DS.Space.s2) {
-                        TextField("例如 1.1.1.1, 8.8.8.8", text: $manualText)
+                        TextField(tr("例如 1.1.1.1, 8.8.8.8"), text: $manualText)
                             .textFieldStyle(.plain)
                             .dsFont(.xs)
                             .padding(.horizontal, DS.Space.s2)
@@ -292,7 +293,7 @@ private struct DNSSection: View {
                             .background(DS.Palette.surface, in: RoundedRectangle(cornerRadius: DS.Radius.md))
                             .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).strokeBorder(DS.Palette.neutral300, lineWidth: DS.Size.stroke))
                             .onSubmit { applyManual(service: physical.serviceName) }
-                        Button("应用") { applyManual(service: physical.serviceName) }
+                        Button(tr("应用")) { applyManual(service: physical.serviceName) }
                             .buttonStyle(DSButtonStyle(kind: .primary))
                             .disabled(DNSConfiguration.parse(manualText)?.isEmpty != false)
                     }
@@ -300,7 +301,7 @@ private struct DNSSection: View {
             }
 
             HStack(spacing: DS.Space.s2) {
-                Button(maintenance.running == .flushDNS ? "正在刷新…" : "刷新 DNS 缓存") {
+                Button(maintenance.running == .flushDNS ? tr("正在刷新…") : tr("刷新 DNS 缓存")) {
                     Task { await maintenance.run(.flushDNS) }
                 }
                 .buttonStyle(DSButtonStyle(kind: .secondary))
@@ -309,7 +310,7 @@ private struct DNSSection: View {
             }
 
             if maintenance.isApplyingDNS {
-                Text("正在修改 DNS…").dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
+                Text(tr("正在修改 DNS…")).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
             } else if let outcome = maintenance.dnsOutcome ?? maintenance.outcomes[.flushDNS] {
                 Text(outcome.text)
                     .dsFont(.xs)
@@ -343,11 +344,11 @@ private struct NetworkProcessesSection: View {
 
         SectionCard(title: PopoverSection.networkProcesses.title, trailing: {
             HStack(spacing: 0) {
-                Text("下载").frame(width: DS.Size.valueColumn, alignment: .trailing)
-                Text("上传").frame(width: DS.Size.valueColumn, alignment: .trailing)
+                Text(tr("下载")).frame(width: DS.Size.valueColumn, alignment: .trailing)
+                Text(tr("上传")).frame(width: DS.Size.valueColumn, alignment: .trailing)
             }
         }) {
-            ProcessList(count: processes.count, rowCount: 8, emptyText: "正在统计各进程流量…") { index in
+            ProcessList(count: processes.count, rowCount: 8, emptyText: tr("正在统计各进程流量…")) { index in
                 let process = processes[index]
                 HStack(spacing: 0) {
                     ProcessNameLabel(icon: AppIconCache.shared.image(bundlePath: process.appBundlePath), name: process.localizedName)

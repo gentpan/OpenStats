@@ -1,4 +1,5 @@
 import Cleaner
+import Localization
 import Metrics
 import SwiftUI
 import UniformTypeIdentifiers
@@ -38,11 +39,11 @@ struct UninstallerPage: View {
             }
             return true
         }
-        .confirmationDialog(uninstaller.selected.map { "卸载“\($0.name)”？" } ?? "", isPresented: $confirming, titleVisibility: .visible) {
-            Button("移到废纸篓", role: .destructive) { uninstaller.uninstall() }
-            Button("取消", role: .cancel) {}
+        .confirmationDialog(uninstaller.selected.map { tr("卸载“\($0.name)”？") } ?? "", isPresented: $confirming, titleVisibility: .visible) {
+            Button(tr("移到废纸篓"), role: .destructive) { uninstaller.uninstall() }
+            Button(tr("取消"), role: .cancel) {}
         } message: {
-            Text("应用与勾选的 \(max(0, uninstaller.chosen.count - 1)) 项残留会移到废纸篓，约 \(Format.bytes(uninstaller.chosenSize, base: .decimal))。清空废纸篓前都可以放回。")
+            Text(tr("应用与勾选的 \(max(0, uninstaller.chosen.count - 1)) 项残留会移到废纸篓，约 \(Format.bytes(uninstaller.chosenSize, base: .decimal))。清空废纸篓前都可以放回。"))
         }
     }
 }
@@ -62,17 +63,17 @@ private struct AppListColumn: View {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
                     .foregroundStyle(DS.Palette.textTertiary)
-                TextField("搜索应用", text: $search)
+                TextField(tr("搜索应用"), text: $search)
                     .textFieldStyle(.plain)
                     .dsFont(.sm)
-                IconButton(systemName: "arrow.clockwise", help: "重新扫描") { uninstaller.loadApps() }
+                IconButton(systemName: "arrow.clockwise", help: tr("重新扫描")) { uninstaller.loadApps() }
             }
             .padding(.leading, DS.Space.s2)
             .frame(height: DS.Size.controlHeight)
             .background(DS.Palette.elevated, in: RoundedRectangle(cornerRadius: DS.Radius.md))
             .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).strokeBorder(DS.Palette.neutral300, lineWidth: DS.Size.stroke))
 
-            Text(uninstaller.isLoading ? "正在扫描应用…" : "\(apps.count) 个应用，系统自带的不列出")
+            Text(uninstaller.isLoading ? tr("正在扫描应用…") : tr("\(apps.count) 个应用，系统自带的不列出"))
                 .dsFont(.xs)
                 .foregroundStyle(DS.Palette.textTertiary)
 
@@ -110,7 +111,7 @@ private struct AppListRow: View {
                         .dsFont(.sm, weight: isSelected ? .semibold : .regular)
                         .foregroundStyle(isSelected ? DS.Palette.primary : DS.Palette.textPrimary)
                         .lineLimit(1)
-                    Text(verbatim: size.map { Format.bytes($0, base: .decimal) } ?? "计算中")
+                    Text(verbatim: size.map { Format.bytes($0, base: .decimal) } ?? tr("计算中"))
                         .dsFont(.xs)
                         .foregroundStyle(DS.Palette.textTertiary)
                 }
@@ -143,7 +144,7 @@ private struct AppDetailCard: View {
                     .frame(width: DS.Space.s12, height: DS.Space.s12)
                 VStack(alignment: .leading, spacing: DS.Space.s1 / 2) {
                     Text(verbatim: app.name).dsFont(.lg, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
-                    Text(verbatim: [app.version.map { "版本 \($0)" }, app.bundleIdentifier].compactMap { $0 }.joined(separator: " · "))
+                    Text(verbatim: [app.version.map { tr("版本 \($0)") }, app.bundleIdentifier].compactMap { $0 }.joined(separator: " · "))
                         .dsFont(.xs)
                         .foregroundStyle(DS.Palette.textSecondary)
                         .lineLimit(1)
@@ -152,17 +153,17 @@ private struct AppDetailCard: View {
             }
 
             if running {
-                InfoBanner(icon: "exclamationmark.triangle", text: "\(app.name) 正在运行，卸载前需要先退出。", tone: .warning) {
-                    Button("退出应用") { uninstaller.quit(app) }
+                InfoBanner(icon: "exclamationmark.triangle", text: tr("\(app.name) 正在运行，卸载前需要先退出。"), tone: .warning) {
+                    Button(tr("退出应用")) { uninstaller.quit(app) }
                         .buttonStyle(DSButtonStyle(kind: .secondary))
                 }
             }
 
             HairlineDivider()
             HStack {
-                Text("将移到废纸篓").dsFont(.sm, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
+                Text(tr("将移到废纸篓")).dsFont(.sm, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
                 Spacer()
-                Text(verbatim: uninstaller.isScanning ? "正在查找残留…" : "已选 \(uninstaller.chosen.count) 项 · \(Format.bytes(uninstaller.chosenSize, base: .decimal))")
+                Text(verbatim: uninstaller.isScanning ? tr("正在查找残留…") : tr("已选 \(uninstaller.chosen.count) 项 · \(Format.bytes(uninstaller.chosenSize, base: .decimal))"))
                     .dsFont(.xs)
                     .foregroundStyle(DS.Palette.textTertiary)
             }
@@ -187,7 +188,7 @@ private struct AppDetailCard: View {
                                     .dsFont(.xs)
                                     .foregroundStyle(DS.Palette.textTertiary)
                                     .monospacedDigit()
-                                MiniIconButton(systemName: "magnifyingglass", help: "在访达中显示") {
+                                MiniIconButton(systemName: "magnifyingglass", help: tr("在访达中显示")) {
                                     NSWorkspace.shared.activateFileViewerSelecting([item.url])
                                 }
                             }
@@ -198,14 +199,14 @@ private struct AppDetailCard: View {
 
             HairlineDivider()
             HStack(spacing: DS.Space.s3) {
-                DSToggle(isOn: $uninstaller.removeFromDock, label: "从程序坞移除图标")
-                Text("同时从程序坞移除图标").dsFont(.sm).foregroundStyle(DS.Palette.textPrimary)
+                DSToggle(isOn: $uninstaller.removeFromDock, label: tr("从程序坞移除图标"))
+                Text(tr("同时从程序坞移除图标")).dsFont(.sm).foregroundStyle(DS.Palette.textPrimary)
                 Spacer()
-                Button(uninstaller.isRemoving ? "正在移除…" : "卸载") { confirm() }
+                Button(uninstaller.isRemoving ? tr("正在移除…") : tr("卸载")) { confirm() }
                     .buttonStyle(DSButtonStyle(kind: .primary))
                     .disabled(running || uninstaller.isScanning || uninstaller.isRemoving)
             }
-            Text("只查找以该应用包名命名的文件，以及 Application Support、Logs 下与应用同名的目录；钥匙串与其他应用共享的数据不会动")
+            Text(tr("只查找以该应用包名命名的文件，以及 Application Support、Logs 下与应用同名的目录；钥匙串与其他应用共享的数据不会动"))
                 .dsFont(.xs)
                 .foregroundStyle(DS.Palette.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -221,10 +222,10 @@ private struct DropHint: View {
             Image(systemName: "arrow.down.app")
                 .font(.system(size: DS.TextSize.xxl.rawValue))
                 .foregroundStyle(isTargeted ? DS.Palette.primary : DS.Palette.textTertiary)
-            Text("从左侧选择应用，或把应用拖到这里")
+            Text(tr("从左侧选择应用，或把应用拖到这里"))
                 .dsFont(.sm, weight: .medium)
                 .foregroundStyle(DS.Palette.textPrimary)
-            Text("会一并找出它留在资源库里的缓存、偏好设置、容器与登录启动项，全部移到废纸篓，可以放回")
+            Text(tr("会一并找出它留在资源库里的缓存、偏好设置、容器与登录启动项，全部移到废纸篓，可以放回"))
                 .dsFont(.xs)
                 .foregroundStyle(DS.Palette.textSecondary)
                 .multilineTextAlignment(.center)

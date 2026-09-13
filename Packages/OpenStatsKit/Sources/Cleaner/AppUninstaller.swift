@@ -1,4 +1,5 @@
 import Foundation
+import Localization
 
 /// 一个可以卸载的应用
 public struct InstalledApp: Sendable, Identifiable, Hashable {
@@ -26,15 +27,15 @@ public struct AppLeftover: Sendable, Identifiable, Hashable {
 
         public var title: String {
             switch self {
-            case .application: "应用本体"
-            case .support: "应用数据"
-            case .caches: "缓存"
-            case .preferences: "偏好设置"
-            case .containers: "沙盒容器"
-            case .savedState: "窗口状态"
-            case .logs: "日志与崩溃报告"
-            case .webData: "网页数据"
-            case .launchAgents: "登录启动项"
+            case .application: tr("应用本体")
+            case .support: tr("应用数据")
+            case .caches: tr("缓存")
+            case .preferences: tr("偏好设置")
+            case .containers: tr("沙盒容器")
+            case .savedState: tr("窗口状态")
+            case .logs: tr("日志与崩溃报告")
+            case .webData: tr("网页数据")
+            case .launchAgents: tr("登录启动项")
             }
         }
     }
@@ -53,10 +54,10 @@ public enum AppUninstallError: Error, Sendable, Equatable, CustomStringConvertib
 
     public var description: String {
         switch self {
-        case .systemApp: "系统自带的应用不能卸载"
-        case .running: "应用正在运行，请先退出"
-        case .notAnApp: "不是应用程序"
-        case .unsafePath(let path): "不在可卸载的位置：\(path)"
+        case .systemApp: tr("系统自带的应用不能卸载")
+        case .running: tr("应用正在运行，请先退出")
+        case .notAnApp: tr("不是应用程序")
+        case .unsafePath(let path): tr("不在可卸载的位置：\(path)")
         }
     }
 }

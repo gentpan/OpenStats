@@ -1,4 +1,5 @@
 import AppKit
+import Localization
 import SwiftUI
 import Updates
 
@@ -14,7 +15,7 @@ struct ReleaseSummary: View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             if showsHeader { header }
 
-            Text("更新内容").dsFont(.xs, weight: .medium).foregroundStyle(DS.Palette.textSecondary)
+            Text(tr("更新内容")).dsFont(.xs, weight: .medium).foregroundStyle(DS.Palette.textSecondary)
             notes
         }
     }
@@ -23,10 +24,10 @@ struct ReleaseSummary: View {
         HStack(spacing: DS.Space.s3) {
             AppGlyph(size: DS.Space.s12)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(verbatim: "OpenStats \(release.version) 已发布")
+                Text(verbatim: tr("OpenStats \(release.version) 已发布"))
                     .dsFont(.lg, weight: .semibold)
                     .foregroundStyle(DS.Palette.textPrimary)
-                Text(verbatim: "当前版本 \(currentVersion) · \(release.date) · \(ByteCountFormatter.string(fromByteCount: release.size, countStyle: .file))")
+                Text(verbatim: tr("当前版本 \(currentVersion) · \(release.date) · \(ByteCountFormatter.string(fromByteCount: release.size, countStyle: .file))"))
                     .dsFont(.xs)
                     .foregroundStyle(DS.Palette.textSecondary)
             }
@@ -47,7 +48,7 @@ struct ReleaseSummary: View {
             }
             if let changelog = release.changelog {
                 Button { NSWorkspace.shared.open(changelog) } label: {
-                    Text("查看完整更新日志").dsFont(.sm, weight: .medium).foregroundStyle(DS.Palette.primary)
+                    Text(tr("查看完整更新日志")).dsFont(.sm, weight: .medium).foregroundStyle(DS.Palette.primary)
                 }
                 .buttonStyle(.plain)
             }
@@ -77,7 +78,7 @@ struct UpdateProgress: View {
         case .downloading(let fraction):
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 HStack {
-                    Text("正在下载").dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
+                    Text(tr("正在下载")).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
                     Spacer()
                     Text(verbatim: "\(Int((fraction * 100).rounded()))%").dsFont(.xs, weight: .medium).monospacedDigit()
                         .foregroundStyle(DS.Palette.textPrimary)
@@ -85,13 +86,13 @@ struct UpdateProgress: View {
                 ProgressTrack(fraction: fraction)
             }
         case .verifying:
-            InfoBanner(icon: "checkmark.shield", text: "正在核对校验值、开发者签名与 Apple 公证…")
+            InfoBanner(icon: "checkmark.shield", text: tr("正在核对校验值、开发者签名与 Apple 公证…"))
         case .installing:
-            InfoBanner(icon: "arrow.triangle.2.circlepath", text: "正在安装，完成后 OpenStats 会自动重启。")
+            InfoBanner(icon: "arrow.triangle.2.circlepath", text: tr("正在安装，完成后 OpenStats 会自动重启。"))
         case .failed(let message):
             InfoBanner(icon: "exclamationmark.triangle", text: message, tone: .error) {
                 if updates.release != nil {
-                    Button("手动下载") { updates.openManualDownload() }
+                    Button(tr("手动下载")) { updates.openManualDownload() }
                         .buttonStyle(DSButtonStyle(kind: .secondary))
                 }
             }
@@ -116,16 +117,16 @@ struct UpdatePromptView: View {
             HStack(spacing: DS.Space.s2) {
                 if case .downloading = updates.phase {
                     Spacer()
-                    Button("取消") { updates.cancel() }.buttonStyle(DSButtonStyle(kind: .secondary))
+                    Button(tr("取消")) { updates.cancel() }.buttonStyle(DSButtonStyle(kind: .secondary))
                 } else {
-                    Button("跳过此版本") {
+                    Button(tr("跳过此版本")) {
                         updates.skipCurrentRelease()
                         close()
                     }
                     .buttonStyle(DSButtonStyle(kind: .ghost))
                     Spacer()
-                    Button("以后再说", action: close).buttonStyle(DSButtonStyle(kind: .secondary))
-                    Button("一键安装") { updates.install() }
+                    Button(tr("以后再说"), action: close).buttonStyle(DSButtonStyle(kind: .secondary))
+                    Button(tr("一键安装")) { updates.install() }
                         .buttonStyle(DSButtonStyle(kind: .primary))
                         .keyboardShortcut(.defaultAction)
                 }
@@ -148,17 +149,17 @@ struct UpdateSettings: View {
         @Bindable var settings = model.settings
         let updates = model.updates
 
-        SettingsGroup(caption: "软件更新") {
+        SettingsGroup(caption: tr("软件更新")) {
             GroupRow(showsDivider: false) {
                 SettingRow(title: statusTitle, subtitle: statusSubtitle) {
-                    Button(updates.phase == .checking ? "正在检查…" : "检查更新") { updates.check(userInitiated: true) }
+                    Button(updates.phase == .checking ? tr("正在检查…") : tr("检查更新")) { updates.check(userInitiated: true) }
                         .buttonStyle(DSButtonStyle(kind: .secondary))
                         .disabled(updates.isBusy)
                 }
             }
             GroupRow {
-                SettingRow(title: "自动检查更新", subtitle: "启动时和之后每天检查一次，发现新版本时显示更新摘要") {
-                    DSToggle(isOn: $settings.autoCheckUpdates, label: "自动检查更新")
+                SettingRow(title: tr("自动检查更新"), subtitle: tr("启动时和之后每天检查一次，发现新版本时显示更新摘要")) {
+                    DSToggle(isOn: $settings.autoCheckUpdates, label: tr("自动检查更新"))
                 }
             }
             if let release = updates.release {
@@ -169,9 +170,9 @@ struct UpdateSettings: View {
                         HStack {
                             Spacer()
                             if case .downloading = updates.phase {
-                                Button("取消") { updates.cancel() }.buttonStyle(DSButtonStyle(kind: .secondary))
+                                Button(tr("取消")) { updates.cancel() }.buttonStyle(DSButtonStyle(kind: .secondary))
                             } else {
-                                Button("一键安装") { updates.install() }
+                                Button(tr("一键安装")) { updates.install() }
                                     .buttonStyle(DSButtonStyle(kind: .primary))
                                     .disabled(updates.isBusy)
                             }
@@ -187,17 +188,17 @@ struct UpdateSettings: View {
     private var statusTitle: String {
         let updates = model.updates
         switch updates.phase {
-        case .checking: return "正在检查更新"
-        case .upToDate: return "已是最新版本"
-        case .failed where updates.release == nil: return "检查更新失败"
-        default: return updates.release.map { "发现新版本 \($0.version)" } ?? "当前版本 \(updates.currentVersion)"
+        case .checking: return tr("正在检查更新")
+        case .upToDate: return tr("已是最新版本")
+        case .failed where updates.release == nil: return tr("检查更新失败")
+        default: return updates.release.map { tr("发现新版本 \($0.version)") } ?? tr("当前版本 \(updates.currentVersion)")
         }
     }
 
     private var statusSubtitle: String {
-        let checked = model.updates.lastChecked.map { "上次检查：\($0.formatted(.relative(presentation: .named)))" } ?? "尚未检查"
+        let checked = model.updates.lastChecked.map { tr("上次检查：\($0.formatted(.relative(presentation: .named).locale(L10n.locale)))") } ?? tr("尚未检查")
         guard let release = model.updates.release else { return checked }
         let size = ByteCountFormatter.string(fromByteCount: release.size, countStyle: .file)
-        return "当前 \(model.updates.currentVersion) · 发布于 \(release.date) · \(size) · \(checked)"
+        return tr("当前 \(model.updates.currentVersion) · 发布于 \(release.date) · \(size) · \(checked)")
     }
 }

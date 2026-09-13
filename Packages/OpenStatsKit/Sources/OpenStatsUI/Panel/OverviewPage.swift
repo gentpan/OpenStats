@@ -1,4 +1,5 @@
 import AppKit
+import Localization
 import Metrics
 import SMC
 import SwiftUI
@@ -79,23 +80,23 @@ struct HealthReport {
     init(store: MetricsStore) {
         var issues: [(penalty: Int, text: String)] = []
         if let cpu = store.cpu {
-            if cpu.total >= 0.9 { issues.append((20, "CPU 负载很高")) } else if cpu.total >= 0.75 { issues.append((10, "CPU 负载偏高")) }
+            if cpu.total >= 0.9 { issues.append((20, tr("CPU 负载很高"))) } else if cpu.total >= 0.75 { issues.append((10, tr("CPU 负载偏高"))) }
         }
         switch store.memory?.pressure {
-        case .critical: issues.append((30, "内存压力严重"))
-        case .warning: issues.append((15, "内存压力偏高"))
+        case .critical: issues.append((30, tr("内存压力严重")))
+        case .warning: issues.append((15, tr("内存压力偏高")))
         default: break
         }
         if let hottest = store.sensors?.temperature(.cpu)?.maximum {
-            if hottest >= DS.Thermal.hot { issues.append((20, "CPU 温度过高")) } else if hottest >= 85 { issues.append((10, "CPU 温度偏高")) }
+            if hottest >= DS.Thermal.hot { issues.append((20, tr("CPU 温度过高"))) } else if hottest >= 85 { issues.append((10, tr("CPU 温度偏高"))) }
         }
         if let disk = store.disk {
-            if disk.usedFraction >= 0.95 { issues.append((15, "磁盘空间不足")) } else if disk.usedFraction >= 0.9 { issues.append((8, "磁盘空间偏紧")) }
+            if disk.usedFraction >= 0.95 { issues.append((15, tr("磁盘空间不足"))) } else if disk.usedFraction >= 0.9 { issues.append((8, tr("磁盘空间偏紧"))) }
         }
-        if let health = store.battery?.health, health < 0.8 { issues.append((5, "电池健康度下降")) }
+        if let health = store.battery?.health, health < 0.8 { issues.append((5, tr("电池健康度下降"))) }
 
         score = max(0, 100 - issues.reduce(0) { $0 + $1.penalty })
-        summary = issues.max { $0.penalty < $1.penalty }?.text ?? "各项指标正常"
+        summary = issues.max { $0.penalty < $1.penalty }?.text ?? tr("各项指标正常")
         tone = score >= 85 ? .success : score >= 60 ? .warning : .error
     }
 }
@@ -126,7 +127,7 @@ private struct HealthHeader: View {
                 Chip(text: Format.bytes(ProcessInfo.processInfo.physicalMemory).replacingOccurrences(of: ".0 ", with: " "))
                 Chip(text: store.system.osVersion)
                 if let boot = store.system.bootDate {
-                    Chip(text: "已运行 " + Format.uptime(since: boot))
+                    Chip(text: tr("已运行 ") + Format.uptime(since: boot))
                 }
                 Chip(text: shortModel(store.system.modelName))
             }
@@ -145,7 +146,7 @@ private struct HealthHeader: View {
         let base = name[..<open].trimmingCharacters(in: .whitespaces)
         let details = name[open...].dropFirst().split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
         if let inch = details.first(where: { $0.hasSuffix("-inch") }) {
-            return "\(base) \(inch.dropLast("-inch".count)) 英寸"
+            return tr("\(base) \(inch.dropLast("-inch".count)) 英寸")
         }
         return base
     }
@@ -154,7 +155,7 @@ private struct HealthHeader: View {
 // MARK: - 指标卡片
 
 private func loadLevel(_ value: Double) -> String {
-    value < 0.3 ? "低负载" : value < 0.7 ? "中等负载" : "高负载"
+    value < 0.3 ? tr("低负载") : value < 0.7 ? tr("中等负载") : tr("高负载")
 }
 
 private func splitRate(_ text: String) -> (String, String) {
@@ -177,7 +178,7 @@ private struct CPUTile: View {
                    value: store.cpu == nil ? "—" : "\(Int((total * 100).rounded()))", unit: "%") {
             BarHistoryChart(values: store.cpuTotal.elements, capacity: 20, height: DS.Size.tileChart)
         } footer: {
-            Text(verbatim: "\(loadLevel(total)) · 负载 \(load)/\(store.topology.logicalCores)")
+            Text(verbatim: tr("\(loadLevel(total)) · 负载 \(load)/\(store.topology.logicalCores)"))
         }
     }
 }
@@ -196,7 +197,7 @@ private struct GPUTile: View {
                    value: store.gpu == nil ? "—" : "\(Int((utilization * 100).rounded()))", unit: "%") {
             LineHistoryChart(values: store.gpuHistory.elements, capacity: 30, color: DS.Palette.secondary, height: DS.Size.tileChart)
         } footer: {
-            Text(verbatim: [loadLevel(utilization), store.gpu?.coreCount.map { "\($0) 核" }].compactMap { $0 }.joined(separator: " · "))
+            Text(verbatim: [loadLevel(utilization), store.gpu?.coreCount.map { tr("\($0) 核") }].compactMap { $0 }.joined(separator: " · "))
         }
     }
 }
@@ -207,8 +208,8 @@ private struct MemoryTile: View {
     var body: some View {
         let memory = model.store.memory
 
-        MetricTile(icon: "memorychip", title: "内存",
-                   chip: memory.map { "压力 \($0.pressure.title)" },
+        MetricTile(icon: "memorychip", title: tr("内存"),
+                   chip: memory.map { tr("压力 \($0.pressure.title)") },
                    chipTone: memory.map { tone($0.pressure) } ?? .neutral,
                    value: memory.map { "\(Int(($0.usedFraction * 100).rounded()))" } ?? "—", unit: "%") {
             LineHistoryChart(values: model.store.memoryHistory.elements, capacity: 30, height: DS.Size.tileChart)
@@ -232,7 +233,7 @@ private struct DiskTile: View {
     var body: some View {
         let disk = model.store.disk
 
-        MetricTile(icon: "internaldrive", title: "磁盘",
+        MetricTile(icon: "internaldrive", title: tr("磁盘"),
                    chip: disk.map { Format.bytes($0.total, base: .decimal).replacingOccurrences(of: ".0 ", with: " ") },
                    value: disk.map { "\(Int(($0.usedFraction * 100).rounded()))" } ?? "—", unit: "%") {
             VStack {
@@ -243,7 +244,7 @@ private struct DiskTile: View {
                 Spacer()
             }
         } footer: {
-            Text(verbatim: disk.map { "可用 \(Format.bytes($0.available, base: .decimal))" } ?? "—")
+            Text(verbatim: disk.map { tr("可用 \(Format.bytes($0.available, base: .decimal))") } ?? "—")
         }
     }
 }
@@ -256,7 +257,7 @@ private struct NetworkTile: View {
         let rate = store.network
         let total = splitRate(Format.menuBarRate((rate?.downloadBytesPerSecond ?? 0) + (rate?.uploadBytesPerSecond ?? 0)))
 
-        MetricTile(icon: "network", title: "网络",
+        MetricTile(icon: "network", title: tr("网络"),
                    chip: store.networkInterface.map { shortInterface($0) },
                    value: rate == nil ? "—" : total.0, unit: rate == nil ? nil : total.1) {
             DualLineChart(upload: store.uploadHistory.elements, download: store.downloadHistory.elements,
@@ -273,7 +274,7 @@ private struct NetworkTile: View {
     }
 
     private func shortInterface(_ info: NetworkInterfaceInfo) -> String {
-        info.displayName == "VPN 隧道" ? "VPN" : info.displayName
+        info.displayName == tr("VPN 隧道") ? "VPN" : info.displayName
     }
 }
 
@@ -289,9 +290,9 @@ private struct FanTile: View {
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s1) {
                 Image(systemName: "fan").font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
-                Text("风扇").dsFont(.xs, weight: .semibold)
+                Text(tr("风扇")).dsFont(.xs, weight: .semibold)
                 Spacer(minLength: DS.Space.s1)
-                if !fans.isEmpty { Chip(text: "转速 \(Format.percent(average))") }
+                if !fans.isEmpty { Chip(text: tr("转速 \(Format.percent(average))")) }
             }
             .foregroundStyle(DS.Palette.textSecondary)
 
@@ -330,10 +331,10 @@ private struct CoreLoadCard: View {
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s1) {
                 Image(systemName: "square.grid.3x3.fill").font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
-                Text("核心负载").dsFont(.xs, weight: .semibold)
+                Text(tr("核心负载")).dsFont(.xs, weight: .semibold)
                 Spacer()
-                LegendItem(color: DS.Palette.primary, label: "用户", value: cpu.map { Format.percent($0.user) } ?? "—")
-                LegendItem(color: DS.Palette.secondary, label: "系统", value: cpu.map { Format.percent($0.system) } ?? "—")
+                LegendItem(color: DS.Palette.primary, label: tr("用户"), value: cpu.map { Format.percent($0.user) } ?? "—")
+                LegendItem(color: DS.Palette.secondary, label: tr("系统"), value: cpu.map { Format.percent($0.system) } ?? "—")
             }
             .foregroundStyle(DS.Palette.textSecondary)
             CoreClusterBars(topology: model.store.topology, perCore: cpu?.perCore ?? [], barHeight: DS.Space.s12 + DS.Space.s4)
@@ -353,10 +354,10 @@ private struct BatteryCard: View {
                 HStack(spacing: DS.Space.s1) {
                     Image(systemName: battery.isCharging ? "battery.100.bolt" : "battery.75")
                         .font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
-                    Text("电池").dsFont(.xs, weight: .semibold)
+                    Text(tr("电池")).dsFont(.xs, weight: .semibold)
                     Spacer(minLength: DS.Space.s1)
                     if let health = battery.health {
-                        Chip(text: "健康 \(Format.percent(health))", tone: health < 0.8 ? .warning : .neutral)
+                        Chip(text: tr("健康 \(Format.percent(health))"), tone: health < 0.8 ? .warning : .neutral)
                     }
                 }
                 .foregroundStyle(DS.Palette.textSecondary)
@@ -393,17 +394,17 @@ private struct BatteryCard: View {
     }
 
     private func stateText(_ battery: BatteryStatus) -> String {
-        if battery.isCharging { return "充电中" }
-        if battery.isPluggedIn { return battery.isFullyCharged ? "已充满" : "电源供电" }
-        return "电池供电"
+        if battery.isCharging { return tr("充电中") }
+        if battery.isPluggedIn { return battery.isFullyCharged ? tr("已充满") : tr("电源供电") }
+        return tr("电池供电")
     }
 
     private func detailText(_ battery: BatteryStatus) -> String {
         var parts: [String] = []
         if let minutes = battery.minutesRemaining {
-            parts.append(battery.isCharging ? "\(Format.duration(minutes: minutes))后充满" : "剩余 \(Format.duration(minutes: minutes))")
+            parts.append(battery.isCharging ? tr("\(Format.duration(minutes: minutes))后充满") : tr("剩余 \(Format.duration(minutes: minutes))"))
         }
-        if let cycles = battery.cycleCount { parts.append("循环 \(cycles) 次") }
+        if let cycles = battery.cycleCount { parts.append(tr("循环 \(cycles) 次")) }
         return parts.joined(separator: " · ")
     }
 }
@@ -421,10 +422,10 @@ private struct TopProcessesCard: View {
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s1) {
                 Image(systemName: "chart.bar.fill").font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
-                Text("高占用进程").dsFont(.xs, weight: .semibold)
+                Text(tr("高占用进程")).dsFont(.xs, weight: .semibold)
                 Spacer()
                 Text("CPU").dsFont(.xs, weight: .medium).frame(width: DS.Size.valueColumn, alignment: .trailing)
-                Text("内存").dsFont(.xs, weight: .medium).frame(width: DS.Size.valueColumn, alignment: .trailing)
+                Text(tr("内存")).dsFont(.xs, weight: .medium).frame(width: DS.Size.valueColumn, alignment: .trailing)
                 Color.clear.frame(width: DS.Size.iconInline)
             }
             .foregroundStyle(DS.Palette.textSecondary)
@@ -470,19 +471,19 @@ private struct TopProcessesCard: View {
         } else {
             Menu {
                 if let path = process.appBundlePath ?? process.executablePath {
-                    Button("在访达中显示") {
+                    Button(tr("在访达中显示")) {
                         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
                     }
                 }
-                Button("拷贝 PID \(String(process.pid))") {
+                Button(tr("拷贝 PID \(String(process.pid))")) {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(String(process.pid), forType: .string)
                 }
                 if ProcessExplainer.isSupported {
-                    Button("用 Apple 智能解释") { model.explainProcess(.init(process)) }
+                    Button(tr("用 Apple 智能解释")) { model.explainProcess(.init(process)) }
                 }
                 Divider()
-                Button("查看全部进程") { model.settings.panelTab = .processes }
+                Button(tr("查看全部进程")) { model.settings.panelTab = .processes }
             } label: {
                 icon
             }
@@ -512,23 +513,23 @@ private struct QuickActionsCard: View {
         Card(padding: DS.Space.s3, spacing: 0) {
             HStack(spacing: DS.Space.s1) {
                 Image(systemName: "switch.2").font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
-                Text("快捷开关").dsFont(.xs, weight: .semibold)
+                Text(tr("快捷开关")).dsFont(.xs, weight: .semibold)
             }
             .foregroundStyle(DS.Palette.textSecondary)
             .padding(.bottom, DS.Space.s1)
 
-            QuickToggleRow(icon: "cup.and.saucer", title: "防休眠",
-                           detail: keepAwake.isActive ? "保持唤醒" : "按系统休眠",
+            QuickToggleRow(icon: "cup.and.saucer", title: tr("防休眠"),
+                           detail: keepAwake.isActive ? tr("保持唤醒") : tr("按系统休眠"),
                            isOn: Binding(get: { keepAwake.isActive },
                                          set: { value in Task { await keepAwake.setActive(value) } }))
             HairlineDivider()
-            QuickToggleRow(icon: "laptopcomputer", title: "合盖运行",
-                           detail: keepAwake.lidClosedActive ? "继续运行" : "合盖睡眠",
+            QuickToggleRow(icon: "laptopcomputer", title: tr("合盖运行"),
+                           detail: keepAwake.lidClosedActive ? tr("继续运行") : tr("合盖睡眠"),
                            isOn: Binding(get: { keepAwake.lidClosedRequested },
                                          set: { model.requestLidMode($0) }))
             HairlineDivider()
-            QuickToggleRow(icon: "fan", title: "散热模式",
-                           detail: fans.mode == .automatic ? "系统调节" : "\(fans.mode.title)中",
+            QuickToggleRow(icon: "fan", title: tr("散热模式"),
+                           detail: fans.mode == .automatic ? tr("系统调节") : tr("\(fans.mode.title)中"),
                            isOn: Binding(get: { fans.mode != .automatic },
                                          set: { model.requestFanMode($0 ? .cooling : .automatic) }))
         }

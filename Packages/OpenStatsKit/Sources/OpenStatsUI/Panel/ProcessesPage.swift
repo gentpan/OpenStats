@@ -1,4 +1,5 @@
 import AppKit
+import Localization
 import Metrics
 import SwiftUI
 
@@ -9,9 +10,9 @@ struct ProcessesPage: View {
 
         var title: String {
             switch self {
-            case .all: "全部"
-            case .mine: "我的"
-            case .system: "系统"
+            case .all: tr("全部")
+            case .mine: tr("我的")
+            case .system: tr("系统")
             }
         }
     }
@@ -19,7 +20,7 @@ struct ProcessesPage: View {
     enum Grouping: String, CaseIterable {
         case processes, apps
 
-        var title: String { self == .processes ? "按进程" : "按应用" }
+        var title: String { self == .processes ? tr("按进程") : tr("按应用") }
     }
 
     @Environment(AppModel.self) private var model
@@ -51,7 +52,7 @@ struct ProcessesPage: View {
                 }
                 HairlineDivider()
                 if rows.isEmpty {
-                    Text(model.store.processes.isEmpty ? "正在读取进程…" : "没有匹配的进程")
+                    Text(model.store.processes.isEmpty ? tr("正在读取进程…") : tr("没有匹配的进程"))
                         .dsFont(.sm)
                         .foregroundStyle(DS.Palette.textSecondary)
                         .frame(maxWidth: .infinity)
@@ -89,15 +90,15 @@ struct ProcessesPage: View {
         }
         .padding(DS.Space.s3)
         .frame(maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
-        .confirmationDialog(pendingQuit.map { "结束“\($0.title)”？" } ?? "", isPresented: Binding(get: { pendingQuit != nil }, set: { if !$0 { pendingQuit = nil } }),
+        .confirmationDialog(pendingQuit.map { tr("结束“\($0.title)”？") } ?? "", isPresented: Binding(get: { pendingQuit != nil }, set: { if !$0 { pendingQuit = nil } }),
                             titleVisibility: .visible, presenting: pendingQuit) { row in
-            Button("退出") { quit(row, force: false) }
-            Button("强制退出", role: .destructive) { quit(row, force: true) }
-            Button("取消", role: .cancel) {}
+            Button(tr("退出")) { quit(row, force: false) }
+            Button(tr("强制退出"), role: .destructive) { quit(row, force: true) }
+            Button(tr("取消"), role: .cancel) {}
         } message: { row in
             Text(row.count > 1
-                 ? "会结束这个应用的 \(row.count) 个进程，未保存的内容可能会丢失。强制退出会立即结束，不给应用保存的机会。"
-                 : "未保存的内容可能会丢失。强制退出会立即结束，不给应用保存的机会。")
+                 ? tr("会结束这个应用的 \(row.count) 个进程，未保存的内容可能会丢失。强制退出会立即结束，不给应用保存的机会。")
+                 : tr("未保存的内容可能会丢失。强制退出会立即结束，不给应用保存的机会。"))
         }
     }
 
@@ -109,11 +110,11 @@ struct ProcessesPage: View {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
                     .foregroundStyle(DS.Palette.textTertiary)
-                TextField("搜索名称、PID 或用户", text: $search)
+                TextField(tr("搜索名称、PID 或用户"), text: $search)
                     .textFieldStyle(.plain)
                     .dsFont(.sm)
                 if !search.isEmpty {
-                    MiniIconButton(systemName: "xmark.circle.fill", help: "清除搜索") { search = "" }
+                    MiniIconButton(systemName: "xmark.circle.fill", help: tr("清除搜索")) { search = "" }
                 }
             }
             .padding(.horizontal, DS.Space.s2)
@@ -135,18 +136,18 @@ struct ProcessesPage: View {
         let counts = model.store.systemCounts
         return HStack(spacing: DS.Space.s4) {
             if let cpu {
-                LegendItem(color: DS.Palette.primary, label: "用户", value: Format.percent(cpu.user))
-                LegendItem(color: DS.Palette.secondary, label: "系统", value: Format.percent(cpu.system))
-                LegendItem(color: DS.Palette.track, label: "空闲", value: Format.percent(max(0, 1 - cpu.total)))
+                LegendItem(color: DS.Palette.primary, label: tr("用户"), value: Format.percent(cpu.user))
+                LegendItem(color: DS.Palette.secondary, label: tr("系统"), value: Format.percent(cpu.system))
+                LegendItem(color: DS.Palette.track, label: tr("空闲"), value: Format.percent(max(0, 1 - cpu.total)))
             }
             Spacer(minLength: DS.Space.s2)
             if let counts {
-                Text(verbatim: "进程 \(counts.processes.formatted()) · 线程 \(counts.threads.formatted())")
+                Text(verbatim: tr("进程 \(counts.processes.formatted()) · 线程 \(counts.threads.formatted())"))
                     .dsFont(.xs)
                     .monospacedDigit()
                     .foregroundStyle(DS.Palette.textSecondary)
             }
-            Text(verbatim: "显示 \(count) 项").dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+            Text(verbatim: tr("显示 \(count) 项")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
         }
         .padding(.horizontal, DS.Space.s1)
     }
@@ -154,20 +155,20 @@ struct ProcessesPage: View {
     @ViewBuilder
     private func menu(for row: ProcessRowModel) -> some View {
         if ProcessExplainer.isSupported {
-            Button("用 Apple 智能解释") { model.explainProcess(.init(row.representative)) }
+            Button(tr("用 Apple 智能解释")) { model.explainProcess(.init(row.representative)) }
             Divider()
         }
         if let path = row.bundlePath ?? row.representative.executablePath {
-            Button("在访达中显示") { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)]) }
+            Button(tr("在访达中显示")) { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)]) }
         }
         if let pid = row.pid {
-            Button("拷贝 PID") {
+            Button(tr("拷贝 PID")) {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(String(pid), forType: .string)
             }
         }
         Divider()
-        Button(row.count > 1 ? "退出应用…" : "结束进程…") { selection = row.id; pendingQuit = row }
+        Button(row.count > 1 ? tr("退出应用…") : tr("结束进程…")) { selection = row.id; pendingQuit = row }
             .disabled(row.quitBlockedReason != nil)
     }
 
@@ -245,7 +246,7 @@ struct ProcessRowModel: Identifiable {
         let representative = group.max { $0.memory < $1.memory } ?? group[0]
         id = "app-\(key)"
         self.title = title
-        subtitle = group.count > 1 ? "\(group.count) 个进程" : "PID \(representative.pid)"
+        subtitle = group.count > 1 ? tr("\(group.count) 个进程") : "PID \(representative.pid)"
         bundlePath = representative.appBundlePath
         cpu = group.reduce(0) { $0 + $1.cpu }
         cpuTime = group.reduce(0) { $0 + $1.cpuTime }
@@ -286,9 +287,9 @@ struct ProcessRowModel: Identifiable {
 
     /// 不能从这里结束的原因；nil 表示可以结束
     var quitBlockedReason: String? {
-        if !isOwned { return "系统或其他用户的进程，OpenStats 不提供结束" }
-        if processes.contains(where: { $0.pid == getpid() }) { return "请从菜单退出 OpenStats" }
-        if processes.contains(where: { ProcessActions.protectedNames.contains($0.name) }) { return "结束它会注销当前用户，已禁止" }
+        if !isOwned { return tr("系统或其他用户的进程，OpenStats 不提供结束") }
+        if processes.contains(where: { $0.pid == getpid() }) { return tr("请从菜单退出 OpenStats") }
+        if processes.contains(where: { ProcessActions.protectedNames.contains($0.name) }) { return tr("结束它会注销当前用户，已禁止") }
         return nil
     }
 }
@@ -312,14 +313,14 @@ enum ProcessColumn: CaseIterable {
 
     var title: String {
         switch self {
-        case .name: "进程"
+        case .name: tr("进程")
         case .cpu: "CPU"
-        case .cpuTime: "CPU 时间"
-        case .memory: "内存"
-        case .threads: "线程"
-        case .wakeups: "唤醒"
-        case .disk: "磁盘"
-        case .user: "用户"
+        case .cpuTime: tr("CPU 时间")
+        case .memory: tr("内存")
+        case .threads: tr("线程")
+        case .wakeups: tr("唤醒")
+        case .disk: tr("磁盘")
+        case .user: tr("用户")
         }
     }
 
@@ -328,18 +329,18 @@ enum ProcessColumn: CaseIterable {
         case .name: nil
         case .cpu, .memory, .user: DS.Size.valueColumn
         case .cpuTime, .disk: DS.Size.valueColumn + DS.Space.s4
-        case .threads, .wakeups: DS.Size.labelColumn
+        case .threads, .wakeups: DS.Size.valueColumn
         }
     }
 
     var help: String {
         switch self {
-        case .cpu: "以单核满载为 100%"
-        case .cpuTime: "进程启动以来累计占用的 CPU 时间"
-        case .memory: "自己的进程为实际占用内存，系统进程为常驻内存"
-        case .threads: "线程数（只能读取自己的进程）"
-        case .wakeups: "每秒让 CPU 从空闲中唤醒的次数，越高越耗电"
-        case .disk: "每秒读写磁盘的字节数"
+        case .cpu: tr("以单核满载为 100%")
+        case .cpuTime: tr("进程启动以来累计占用的 CPU 时间")
+        case .memory: tr("自己的进程为实际占用内存，系统进程为常驻内存")
+        case .threads: tr("线程数（只能读取自己的进程）")
+        case .wakeups: tr("每秒让 CPU 从空闲中唤醒的次数，越高越耗电")
+        case .disk: tr("每秒读写磁盘的字节数")
         default: ""
         }
     }
@@ -466,7 +467,7 @@ private struct ProcessInspector: View {
                     .frame(width: DS.Size.controlHeight, height: DS.Size.controlHeight)
                 VStack(alignment: .leading, spacing: DS.Space.s1 / 2) {
                     Text(verbatim: row.title).dsFont(.sm, weight: .semibold).foregroundStyle(DS.Palette.textPrimary).lineLimit(1)
-                    Text(verbatim: row.bundlePath ?? row.representative.executablePath ?? "路径不可读")
+                    Text(verbatim: row.bundlePath ?? row.representative.executablePath ?? tr("路径不可读"))
                         .dsFont(.xs)
                         .foregroundStyle(DS.Palette.textTertiary)
                         .lineLimit(1)
@@ -480,15 +481,15 @@ private struct ProcessInspector: View {
                 }
                 Spacer(minLength: DS.Space.s3)
                 if ProcessExplainer.isSupported {
-                    Button { onExplain() } label: { Label("Apple 智能解释", systemImage: "sparkles") }
+                    Button { onExplain() } label: { Label(tr("Apple 智能解释"), systemImage: "sparkles") }
                         .buttonStyle(DSButtonStyle(kind: .secondary))
                 }
                 if let path = row.bundlePath ?? row.representative.executablePath {
-                    IconButton(systemName: "folder", help: "在访达中显示") {
+                    IconButton(systemName: "folder", help: tr("在访达中显示")) {
                         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
                     }
                 }
-                Button(row.count > 1 ? "退出应用…" : "结束进程…") { onQuit() }
+                Button(row.count > 1 ? tr("退出应用…") : tr("结束进程…")) { onQuit() }
                     .buttonStyle(DSButtonStyle(kind: .secondary))
                     .disabled(row.quitBlockedReason != nil)
                     .help(row.quitBlockedReason ?? "")
@@ -504,10 +505,10 @@ private struct ProcessInspector: View {
     }
 
     private var details: String {
-        var parts = [row.pid.map { "PID \($0)" } ?? "\(row.count) 个进程", "用户 \(row.user)"]
-        if let threads = row.threads { parts.append("线程 \(threads)") }
-        parts.append("CPU 时间 \(Format.cpuTime(row.cpuTime))")
-        if let disk = row.disk { parts.append("读 \(Format.menuBarRate(disk.read)) · 写 \(Format.menuBarRate(disk.write))") }
+        var parts = [row.pid.map { "PID \($0)" } ?? tr("\(row.count) 个进程"), tr("用户 \(row.user)")]
+        if let threads = row.threads { parts.append(tr("线程 \(threads)")) }
+        parts.append(tr("CPU 时间 \(Format.cpuTime(row.cpuTime))"))
+        if let disk = row.disk { parts.append(tr("读 \(Format.menuBarRate(disk.read)) · 写 \(Format.menuBarRate(disk.write))")) }
         return parts.joined(separator: " · ")
     }
 }
@@ -526,10 +527,10 @@ enum ProcessActions {
         if let bundle = row.bundlePath,
            let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleURL?.path == bundle }) {
             let sent = force ? app.forceTerminate() : app.terminate()
-            return sent ? nil : "应用拒绝退出，可以试试强制退出"
+            return sent ? nil : tr("应用拒绝退出，可以试试强制退出")
         }
         for process in row.processes where kill(process.pid, force ? SIGKILL : SIGTERM) != 0 {
-            return "结束 \(process.name) 失败：\(String(cString: strerror(errno)))"
+            return tr("结束 \(process.name) 失败：\(String(cString: strerror(errno)))")
         }
         return nil
     }
@@ -547,16 +548,16 @@ private struct ProcessExplanationCard: View {
                     Image(systemName: "sparkles")
                         .font(.system(size: DS.TextSize.sm.rawValue, weight: .semibold))
                         .foregroundStyle(DS.Palette.primary)
-                    Text("Apple 智能解释").dsFont(.sm, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
+                    Text(tr("Apple 智能解释")).dsFont(.sm, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
                     Text(verbatim: "\(subject.displayName) · PID \(subject.pid)")
                         .dsFont(.xs)
                         .foregroundStyle(DS.Palette.textSecondary)
                         .lineLimit(1)
                     Spacer(minLength: DS.Space.s2)
                     if explainer.phase == .done {
-                        MiniIconButton(systemName: "arrow.clockwise", help: "重新生成") { explainer.explain(subject) }
+                        MiniIconButton(systemName: "arrow.clockwise", help: tr("重新生成")) { explainer.explain(subject) }
                     }
-                    MiniIconButton(systemName: "xmark", help: "关闭") { explainer.dismiss() }
+                    MiniIconButton(systemName: "xmark", help: tr("关闭")) { explainer.dismiss() }
                 }
 
                 switch explainer.phase {
@@ -566,7 +567,7 @@ private struct ProcessExplanationCard: View {
                     if explainer.text.isEmpty {
                         HStack(spacing: DS.Space.s2) {
                             ProgressView().controlSize(.small)
-                            Text("正在本机生成…").dsFont(.sm).foregroundStyle(DS.Palette.textSecondary)
+                            Text(tr("正在本机生成…")).dsFont(.sm).foregroundStyle(DS.Palette.textSecondary)
                         }
                     } else {
                         Text(explainer.text)
@@ -577,7 +578,7 @@ private struct ProcessExplanationCard: View {
                     }
                 }
 
-                Text("由 Apple 智能在这台 Mac 上生成，不联网；内容可能不准确，结束进程前请自行确认。")
+                Text(tr("由 Apple 智能在这台 Mac 上生成，不联网；内容可能不准确，结束进程前请自行确认。"))
                     .dsFont(.xs)
                     .foregroundStyle(DS.Palette.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)

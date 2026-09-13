@@ -1,5 +1,6 @@
 import AppKit
 import Cleaner
+import Localization
 import ServiceManagement
 import SwiftUI
 
@@ -34,7 +35,7 @@ final class StartupItemsController {
                 message = (error, true)
             } else {
                 Log.app.notice("\(enabled ? "启用" : "停用", privacy: .public)启动项 \(item.label, privacy: .public)")
-                message = ("已\(enabled ? "启用" : "停用")“\(item.label)”", false)
+                message = (tr("已\(enabled ? tr("启用") : tr("停用"))“\(item.label)”"), false)
             }
             isLoading = false
             refresh()
@@ -50,8 +51,8 @@ struct StartupItemsPage: View {
 
         PageScroll {
             InfoBanner(icon: "info.circle",
-                       text: "这里列出资源库里的 LaunchAgents 与 LaunchDaemons。停用只写入系统的停用记录并卸载，不删除文件，随时可以重新启用；登录时打开的应用与后台权限在系统设置里管理。") {
-                Button("登录项设置") { SMAppService.openSystemSettingsLoginItems() }
+                       text: tr("这里列出资源库里的 LaunchAgents 与 LaunchDaemons。停用只写入系统的停用记录并卸载，不删除文件，随时可以重新启用；登录时打开的应用与后台权限在系统设置里管理。")) {
+                Button(tr("登录项设置")) { SMAppService.openSystemSettingsLoginItems() }
                     .buttonStyle(DSButtonStyle(kind: .secondary))
             }
             if let message = controller.message {
@@ -67,12 +68,12 @@ struct StartupItemsPage: View {
                                 .dsFont(.xs)
                                 .foregroundStyle(DS.Palette.textTertiary)
                             if scope == .user {
-                                IconButton(systemName: "arrow.clockwise", help: "刷新") { controller.refresh() }
+                                IconButton(systemName: "arrow.clockwise", help: tr("刷新")) { controller.refresh() }
                             }
                         }
                     }
                     if items.isEmpty {
-                        Text(controller.isLoading && controller.items.isEmpty ? "正在读取…" : "没有启动项").dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+                        Text(controller.isLoading && controller.items.isEmpty ? tr("正在读取…") : tr("没有启动项")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
                     }
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                         if index > 0 { HairlineDivider() }
@@ -88,8 +89,8 @@ struct StartupItemsPage: View {
 
     private func scopeDetail(_ scope: LaunchItem.Scope, count: Int) -> String {
         switch scope {
-        case .user: "\(count) 项 · 可直接停用"
-        case .allUsers, .system: "\(count) 项 · 需要管理员权限，只读"
+        case .user: tr("\(count) 项 · 可直接停用")
+        case .allUsers, .system: tr("\(count) 项 · 需要管理员权限，只读")
         }
     }
 }
@@ -129,14 +130,14 @@ private struct StartupItemRow: View {
                 }
             }
             Spacer(minLength: DS.Space.s2)
-            MiniIconButton(systemName: "magnifyingglass", help: "在访达中显示") {
+            MiniIconButton(systemName: "magnifyingglass", help: tr("在访达中显示")) {
                 NSWorkspace.shared.activateFileViewerSelecting([item.plist])
             }
             if item.scope == .user {
                 if isWorking {
                     ProgressView().controlSize(.small)
                 } else {
-                    DSToggle(isOn: Binding(get: { !disabled }, set: { setEnabled($0) }), label: "启用 \(title)")
+                    DSToggle(isOn: Binding(get: { !disabled }, set: { setEnabled($0) }), label: tr("启用 \(title)"))
                 }
             }
         }
@@ -150,17 +151,17 @@ private struct StartupItemRow: View {
     }
 
     private var flags: String {
-        [item.runAtLoad ? "登录时运行" : nil, item.keepAlive ? "保持运行" : nil].compactMap { $0 }.joined(separator: "、")
+        [item.runAtLoad ? tr("登录时运行") : nil, item.keepAlive ? tr("保持运行") : nil].compactMap { $0 }.joined(separator: tr("、"))
     }
 
     @ViewBuilder
     private func badge(disabled: Bool) -> some View {
         if disabled {
-            StatusBadge(text: "已停用")
+            StatusBadge(text: tr("已停用"))
         } else if let pid = status.pid(item) {
-            StatusBadge(text: "运行中 · PID \(pid)", tone: .success)
+            StatusBadge(text: tr("运行中 · PID \(pid)"), tone: .success)
         } else if status.isLoaded(item) {
-            StatusBadge(text: "已加载", tone: .primary)
+            StatusBadge(text: tr("已加载"), tone: .primary)
         }
     }
 }

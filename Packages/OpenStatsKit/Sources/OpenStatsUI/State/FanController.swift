@@ -1,4 +1,5 @@
 import Foundation
+import Localization
 import Metrics
 import Observation
 import SMC
@@ -13,10 +14,10 @@ public final class FanController {
 
         var title: String {
             switch self {
-            case .automatic: "自动"
-            case .cooling: "降温"
-            case .maximum: "强冷"
-            case .custom: "自定义"
+            case .automatic: tr("自动")
+            case .cooling: tr("降温")
+            case .maximum: tr("强冷")
+            case .custom: tr("自定义")
             }
         }
 
@@ -72,7 +73,7 @@ public final class FanController {
         Task {
             mode = .automatic
             _ = await apply()
-            show("CPU 温度达到 \(Format.temperature(hottest, fahrenheit: settings.useFahrenheit))，已恢复系统自动控制", isError: false)
+            show(tr("CPU 温度达到 \(Format.temperature(hottest, fahrenheit: settings.useFahrenheit))，已恢复系统自动控制"), isError: false)
         }
     }
 
@@ -87,7 +88,7 @@ public final class FanController {
 
     private func apply() async -> String? {
         let fans = store.sensors?.fans ?? []
-        guard !fans.isEmpty else { return "未检测到可调节的风扇" }
+        guard !fans.isEmpty else { return tr("未检测到可调节的风扇") }
         isApplying = true
         defer { isApplying = false }
 

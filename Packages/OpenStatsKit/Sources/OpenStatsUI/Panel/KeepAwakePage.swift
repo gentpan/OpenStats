@@ -1,3 +1,4 @@
+import Localization
 import Metrics
 import SwiftUI
 
@@ -38,7 +39,7 @@ private struct HeroCard: View {
                             .foregroundStyle(keepAwake.isActive ? DS.Palette.onPrimary : DS.Palette.textSecondary)
                     }
                 VStack(alignment: .leading, spacing: DS.Space.s1 / 2) {
-                    Text("防休眠")
+                    Text(tr("防休眠"))
                         .dsFont(.lg, weight: .semibold)
                         .foregroundStyle(DS.Palette.textPrimary)
                     StatusLine()
@@ -46,7 +47,7 @@ private struct HeroCard: View {
                 Spacer()
                 DSToggle(isOn: Binding(get: { keepAwake.isActive },
                                        set: { value in Task { await keepAwake.setActive(value) } }),
-                         label: "防休眠")
+                         label: tr("防休眠"))
             }
 
             if let notice = keepAwake.notice {
@@ -73,14 +74,14 @@ private struct StatusLine: View {
 
     private func text(now: Date) -> String {
         let keepAwake = model.keepAwake
-        guard keepAwake.isActive else { return "未开启，Mac 按系统设置休眠" }
+        guard keepAwake.isActive else { return tr("未开启，Mac 按系统设置休眠") }
         var parts = [keepAwake.mode.title]
-        if keepAwake.lidClosedActive { parts.append("合盖运行") }
+        if keepAwake.lidClosedActive { parts.append(tr("合盖运行")) }
         if let end = keepAwake.endDate {
             let minutes = max(1, Int(ceil(end.timeIntervalSince(now) / 60)))
-            parts.append("剩余 \(Format.duration(minutes: minutes))")
+            parts.append(tr("剩余 \(Format.duration(minutes: minutes))"))
         } else {
-            parts.append("不限时")
+            parts.append(tr("不限时"))
         }
         return parts.joined(separator: " · ")
     }
@@ -91,7 +92,7 @@ private struct ModeCard: View {
 
     var body: some View {
         Card {
-            Text("模式").dsFont(.sm, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
+            Text(tr("模式")).dsFont(.sm, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
             ForEach(Array(KeepAwakeController.Mode.allCases.enumerated()), id: \.element) { index, mode in
                 if index > 0 { HairlineDivider() }
                 RadioRow(title: mode.title, subtitle: mode.subtitle, isSelected: model.keepAwake.mode == mode) {
@@ -109,20 +110,20 @@ private struct LidCard: View {
         let keepAwake = model.keepAwake
 
         Card {
-            SettingRow(title: "合盖后继续运行",
-                       subtitle: "合上屏幕时 Mac 不进入睡眠，下载、渲染、远程连接不中断。") {
+            SettingRow(title: tr("合盖后继续运行"),
+                       subtitle: tr("合上屏幕时 Mac 不进入睡眠，下载、渲染、远程连接不中断。")) {
                 DSToggle(isOn: Binding(get: { keepAwake.lidClosedRequested },
                                        set: { value in Task { await keepAwake.setLidClosed(value) } }),
-                         label: "合盖后继续运行")
+                         label: tr("合盖后继续运行"))
                     .disabled(!model.helper.isReady)
             }
 
             if model.helper.needsAttention {
-                HelperRequiredBanner(text: "合盖运行需要修改系统睡眠设置，需安装辅助工具（管理员授权一次）。")
+                HelperRequiredBanner(text: tr("合盖运行需要修改系统睡眠设置，需安装辅助工具（管理员授权一次）。"))
             }
 
             InfoBanner(icon: "exclamationmark.triangle",
-                       text: "合盖运行时散热变差，请勿放入包中。使用电池且电量低于 \(model.settings.lidModeBatteryFloor)% 时会自动关闭。",
+                       text: tr("合盖运行时散热变差，请勿放入包中。使用电池且电量低于 \(model.settings.lidModeBatteryFloor)% 时会自动关闭。"),
                        tone: .warning)
         }
     }
@@ -133,11 +134,11 @@ private struct DurationCard: View {
 
     var body: some View {
         Card {
-            Text("持续时间").dsFont(.sm, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
+            Text(tr("持续时间")).dsFont(.sm, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
             SegmentedControl(selection: Binding(get: { model.keepAwake.duration },
                                                 set: { model.keepAwake.setDuration($0) }),
                              options: KeepAwakeController.Duration.allCases.map { ($0, $0.title) })
-            Text("到时后自动恢复系统默认的睡眠行为。")
+            Text(tr("到时后自动恢复系统默认的睡眠行为。"))
                 .dsFont(.xs)
                 .foregroundStyle(DS.Palette.textTertiary)
         }

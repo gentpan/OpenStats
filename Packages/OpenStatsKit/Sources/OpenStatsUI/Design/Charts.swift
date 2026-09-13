@@ -1,3 +1,4 @@
+import Localization
 import Metrics
 import SwiftUI
 
@@ -205,7 +206,7 @@ struct CoreClusterBars: View {
             .frame(height: DS.TextSize.xs.rawValue * 1.5)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("各核心负载")
+        .accessibilityLabel(tr("各核心负载"))
     }
 
     private func label(_ cluster: CPUCluster) -> String {
@@ -261,7 +262,7 @@ struct CoreHeatmap: View {
             .frame(height: height)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("核心热力图")
+        .accessibilityLabel(tr("核心热力图"))
     }
 
     static func color(_ value: Double?) -> Color {
@@ -275,13 +276,13 @@ struct CoreHeatmap: View {
 struct HeatLegend: View {
     var body: some View {
         HStack(spacing: DS.Space.s1) {
-            Text("闲").dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+            Text(tr("闲")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
             ForEach([0.05, 0.3, 0.55, 0.8, 0.9], id: \.self) { value in
                 RoundedRectangle(cornerRadius: DS.Radius.sm / 2)
                     .fill(CoreHeatmap.color(value))
                     .frame(width: DS.Space.s2, height: DS.Space.s2)
             }
-            Text("忙").dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+            Text(tr("忙")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
         }
     }
 }
@@ -311,7 +312,7 @@ struct PressureStrip: View {
         }
         .frame(height: DS.Space.s2)
         .accessibilityElement()
-        .accessibilityLabel("最近的内存压力走势")
+        .accessibilityLabel(tr("最近的内存压力走势"))
     }
 }
 
@@ -419,6 +420,6 @@ struct ProbeGrid: View {
         .aspectRatio(CGFloat(columns) / CGFloat(rows), contentMode: .fit)
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement()
-        .accessibilityLabel("连接探测历史")
+        .accessibilityLabel(tr("连接探测历史"))
     }
 }

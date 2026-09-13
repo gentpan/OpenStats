@@ -1,5 +1,6 @@
 import Foundation
 import IOKit
+import Localization
 
 /// 已连接蓝牙设备的电量
 public struct BluetoothDevice: Sendable, Equatable, Identifiable {
@@ -26,9 +27,9 @@ public enum BluetoothBatteryReader {
         var devices = parseSystemProfiler(runSystemProfiler())
         for (product, percent) in hidBatteries() {
             if let index = devices.firstIndex(where: { $0.name == product }) {
-                if devices[index].batteries.isEmpty { devices[index].batteries = [("电量", percent)] }
+                if devices[index].batteries.isEmpty { devices[index].batteries = [(tr("电量"), percent)] }
             } else {
-                devices.append(BluetoothDevice(name: product, address: "", kind: kind(forName: product, minorType: nil), batteries: [("电量", percent)]))
+                devices.append(BluetoothDevice(name: product, address: "", kind: kind(forName: product, minorType: nil), batteries: [(tr("电量"), percent)]))
             }
         }
         return devices.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
@@ -43,9 +44,9 @@ public enum BluetoothBatteryReader {
             for entry in section["device_connected"] as? [[String: Any]] ?? [] {
                 for (name, value) in entry {
                     guard let info = value as? [String: Any] else { continue }
-                    let labels: [(String, String)] = [("device_batteryLevelMain", "电量"), ("device_batteryLevel", "电量"),
-                                                      ("device_batteryLevelLeft", "左耳"), ("device_batteryLevelRight", "右耳"),
-                                                      ("device_batteryLevelCase", "充电盒")]
+                    let labels: [(String, String)] = [("device_batteryLevelMain", tr("电量")), ("device_batteryLevel", tr("电量")),
+                                                      ("device_batteryLevelLeft", tr("左耳")), ("device_batteryLevelRight", tr("右耳")),
+                                                      ("device_batteryLevelCase", tr("充电盒"))]
                     var batteries: [(String, Int)] = []
                     for (key, label) in labels {
                         if let percent = percentValue(info[key]), !batteries.contains(where: { $0.0 == label }) {

@@ -1,4 +1,5 @@
 import AppKit
+import Localization
 import Metrics
 import SwiftUI
 
@@ -91,7 +92,7 @@ private struct MainSidebar: View {
             HStack(spacing: DS.Space.s1) {
                 ThemeToggle()
                 Spacer(minLength: 0)
-                IconButton(systemName: "power", help: "退出 OpenStats") { model.quit() }
+                IconButton(systemName: "power", help: tr("退出 OpenStats")) { model.quit() }
             }
             .padding(.leading, DS.Space.s2)
         }
@@ -104,9 +105,9 @@ private struct MainSidebar: View {
 
     private var navigation: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
-            group("监控", PanelTab.monitors)
-            group("工具", PanelTab.tools)
-            group("设置", PanelTab.settings)
+            group(tr("监控"), PanelTab.monitors)
+            group(tr("工具"), PanelTab.tools)
+            group(tr("设置"), PanelTab.settings)
         }
         .sidebarGlider()
         // 光条的发光向左溢出几个点，留出空间避免被滚动区域裁掉
@@ -156,13 +157,13 @@ private struct PageHeader: View {
             .background(WindowDragArea())
 
             if model.keepAwake.isActive {
-                Chip(text: "防休眠已开启", icon: "cup.and.saucer.fill", tone: .primary)
+                Chip(text: tr("防休眠已开启"), icon: "cup.and.saucer.fill", tone: .primary)
             }
             if tab == .memory { PurgeMemoryButton() }
             if let item = tab.menuBarItem {
-                Text("在菜单栏显示").dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
+                Text(tr("在菜单栏显示")).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
                 DSToggle(isOn: Binding(get: { settings.isEnabled(item) }, set: { settings.setEnabled(item, $0) }),
-                         label: "在菜单栏显示\(item.title)")
+                         label: tr("在菜单栏显示\(item.title)"))
             }
         }
         .padding(.horizontal, DS.Space.s3 + DS.Space.s1)
@@ -177,7 +178,7 @@ private struct ThemeToggle: View {
 
     var body: some View {
         let isDark = colorScheme == .dark
-        IconButton(systemName: isDark ? "sun.max" : "moon", help: isDark ? "切换到浅色" : "切换到深色") {
+        IconButton(systemName: isDark ? "sun.max" : "moon", help: isDark ? tr("切换到浅色") : tr("切换到深色")) {
             model.settings.appearance = isDark ? .light : .dark
         }
     }

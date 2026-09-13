@@ -1,3 +1,4 @@
+import Localization
 import Metrics
 import SwiftUI
 
@@ -231,7 +232,7 @@ struct SidebarButton: View {
                 Spacer()
                 if let badge {
                     Circle().fill(badge.color).frame(width: DS.Space.s2, height: DS.Space.s2)
-                        .accessibilityLabel("需要注意")
+                        .accessibilityLabel(tr("需要注意"))
                 }
             }
             .foregroundStyle(isSelected ? DS.Palette.primary : hovering ? DS.Palette.textPrimary : DS.Palette.textSecondary)
@@ -375,7 +376,7 @@ struct DSToggle: View {
         .buttonStyle(.plain)
         .animation(DS.Motion.quick, value: isOn)
         .accessibilityLabel(label)
-        .accessibilityValue(isOn ? "开" : "关")
+        .accessibilityValue(isOn ? tr("开") : tr("关"))
     }
 }
 

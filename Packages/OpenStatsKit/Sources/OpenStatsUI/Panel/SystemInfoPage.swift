@@ -1,4 +1,5 @@
 import AppKit
+import Localization
 import Metrics
 import SwiftUI
 
@@ -25,7 +26,7 @@ struct SystemInfoPage: View {
                         Text(verbatim: localizedModel(system.modelName))
                             .dsFont(.xl, weight: .semibold)
                             .foregroundStyle(DS.Palette.textPrimary)
-                        Text(verbatim: "\(system.osVersion)（\(system.osBuild)）")
+                        Text(verbatim: tr("\(system.osVersion)（\(system.osBuild)）"))
                             .dsFont(.sm)
                             .foregroundStyle(DS.Palette.textSecondary)
                         FlowLayout(spacing: DS.Space.s2) {
@@ -35,7 +36,7 @@ struct SystemInfoPage: View {
                                 Chip(text: Format.bytes(disk.total, base: .decimal).replacingOccurrences(of: ".0 ", with: " "))
                             }
                             if let boot = system.bootDate {
-                                Chip(text: "已运行 " + Format.uptime(since: boot))
+                                Chip(text: tr("已运行 ") + Format.uptime(since: boot))
                             }
                         }
                     }
@@ -44,67 +45,68 @@ struct SystemInfoPage: View {
             }
 
             WeightedRow(weights: [1, 1]) {
-                InfoCard(icon: "cpu", title: "处理器") {
-                    InfoRow(label: "芯片", text: topology.brand)
-                    InfoRow(label: "核心", text: "\(topology.logicalCores) 核")
+                InfoCard(icon: "cpu", title: tr("处理器")) {
+                    InfoRow(label: tr("芯片"), text: topology.brand)
+                    InfoRow(label: tr("核心"), text: tr("\(topology.logicalCores) 核"))
                     ForEach(topology.clusters) { cluster in
-                        InfoRow(label: cluster.name, text: "\(cluster.coreIndices.count) 核")
+                        InfoRow(label: cluster.name, text: tr("\(cluster.coreIndices.count) 核"))
                     }
                 }
-                InfoCard(icon: "memorychip", title: "内存与图形") {
-                    InfoRow(label: "内存", text: Format.bytes(ProcessInfo.processInfo.physicalMemory))
-                    InfoRow(label: "图形", text: store.gpu?.name ?? topology.brand)
-                    InfoRow(label: "图形核心", text: store.gpu?.coreCount.map { "\($0) 核" } ?? "—")
-                    InfoRow(label: "内存类型", text: "统一内存（CPU 与 GPU 共享）")
+                InfoCard(icon: "memorychip", title: tr("内存与图形")) {
+                    InfoRow(label: tr("内存"), text: Format.bytes(ProcessInfo.processInfo.physicalMemory))
+                    InfoRow(label: tr("图形"), text: store.gpu?.name ?? topology.brand)
+                    InfoRow(label: tr("图形核心"), text: store.gpu?.coreCount.map { tr("\($0) 核") } ?? "—")
+                    InfoRow(label: tr("内存类型"), text: tr("统一内存（CPU 与 GPU 共享）"))
                 }
             }
 
             WeightedRow(weights: [1, 1]) {
-                InfoCard(icon: "internaldrive", title: "存储") {
+                InfoCard(icon: "internaldrive", title: tr("存储")) {
                     if let disk = store.disk {
-                        InfoRow(label: "卷", text: disk.volumeName)
-                        InfoRow(label: "容量", text: Format.bytes(disk.total, base: .decimal))
-                        InfoRow(label: "可用", text: Format.bytes(disk.available, base: .decimal))
+                        InfoRow(label: tr("卷"), text: disk.volumeName)
+                        InfoRow(label: tr("容量"), text: Format.bytes(disk.total, base: .decimal))
+                        InfoRow(label: tr("可用"), text: Format.bytes(disk.available, base: .decimal))
                         ProgressTrack(fraction: disk.usedFraction,
                                       color: disk.usedFraction > 0.9 ? DS.Palette.warning : DS.Palette.primary)
                     } else {
-                        Text("正在读取…").dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+                        Text(tr("正在读取…")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
                     }
                 }
-                InfoCard(icon: "battery.75", title: "电池") {
+                InfoCard(icon: "battery.75", title: tr("电池")) {
                     if let battery = store.battery {
-                        InfoRow(label: "电量", text: Format.percent(battery.level))
-                        InfoRow(label: "健康度", text: battery.health.map { Format.percent($0) } ?? "—")
-                        InfoRow(label: "循环次数", text: battery.cycleCount.map(String.init) ?? "—")
-                        InfoRow(label: "电源", text: battery.isPluggedIn ? "电源适配器\(battery.adapterWatts.map { " · \($0)W" } ?? "")" : "电池供电")
+                        InfoRow(label: tr("电量"), text: Format.percent(battery.level))
+                        InfoRow(label: tr("健康度"), text: battery.health.map { Format.percent($0) } ?? "—")
+                        InfoRow(label: tr("循环次数"), text: battery.cycleCount.map(String.init) ?? "—")
+                        InfoRow(label: tr("电源"), text: battery.isPluggedIn ? tr("电源适配器\(battery.adapterWatts.map { " · \($0)W" } ?? "")") : tr("电池供电"))
                         // macOS 26 起系统自带充电上限；新款机型已不开放第三方写入 SMC 充电控制键，不另做一套
                         if ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 0)) {
                             HStack(spacing: DS.Space.s2) {
-                                Text("充电上限可在系统设置中设为 80%–100%，长期接电源时有助于延缓电池老化")
+                                Text(tr("充电上限可在系统设置中设为 80%–100%，长期接电源时有助于延缓电池老化"))
                                     .dsFont(.xs)
                                     .foregroundStyle(DS.Palette.textTertiary)
                                     .fixedSize(horizontal: false, vertical: true)
                                 Spacer(minLength: 0)
-                                Button("电池设置") {
+                                Button(tr("电池设置")) {
                                     if let url = URL(string: "x-apple.systempreferences:com.apple.Battery-Settings.extension") {
                                         NSWorkspace.shared.open(url)
                                     }
                                 }
                                 .buttonStyle(DSButtonStyle(kind: .secondary))
+                                .fixedSize()
                             }
                         }
                     } else {
-                        Text("这台 Mac 没有电池").dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+                        Text(tr("这台 Mac 没有电池")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
                     }
                 }
             }
 
             BluetoothCard()
 
-            InfoCard(icon: "display.2", title: "显示器") {
+            InfoCard(icon: "display.2", title: tr("显示器")) {
                 let displays = DisplayInfo.all()
                 if displays.isEmpty {
-                    Text("没有检测到显示器").dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+                    Text(tr("没有检测到显示器")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
                 }
                 ForEach(Array(displays.enumerated()), id: \.offset) { index, display in
                     if index > 0 { HairlineDivider() }
@@ -118,15 +120,15 @@ struct SystemInfoPage: View {
                             Text(verbatim: display.summary).dsFont(.xs).monospacedDigit().foregroundStyle(DS.Palette.textSecondary)
                         }
                         Spacer(minLength: 0)
-                        if display.isMain { Chip(text: "主显示器", tone: .primary) }
+                        if display.isMain { Chip(text: tr("主显示器"), tone: .primary) }
                     }
                 }
             }
 
-            InfoCard(icon: "number", title: "标识") {
-                InfoRow(label: "机型标识符") { CopyableText(text: system.modelIdentifier.isEmpty ? "—" : system.modelIdentifier) }
-                InfoRow(label: "系统版号") { CopyableText(text: system.osBuild.isEmpty ? "—" : system.osBuild) }
-                InfoRow(label: "序列号") {
+            InfoCard(icon: "number", title: tr("标识")) {
+                InfoRow(label: tr("机型标识符")) { CopyableText(text: system.modelIdentifier.isEmpty ? "—" : system.modelIdentifier) }
+                InfoRow(label: tr("系统版号")) { CopyableText(text: system.osBuild.isEmpty ? "—" : system.osBuild) }
+                InfoRow(label: tr("序列号")) {
                     HStack(spacing: DS.Space.s1) {
                         if revealSerial, !isSnapshot, let serial = system.serialNumber {
                             CopyableText(text: serial)
@@ -134,14 +136,14 @@ struct SystemInfoPage: View {
                             Text(verbatim: system.serialNumber.map { String(repeating: "•", count: min(12, $0.count)) } ?? "—")
                         }
                         if system.serialNumber != nil, !isSnapshot {
-                            MiniIconButton(systemName: revealSerial ? "eye.slash" : "eye", help: revealSerial ? "隐藏序列号" : "显示序列号") {
+                            MiniIconButton(systemName: revealSerial ? "eye.slash" : "eye", help: revealSerial ? tr("隐藏序列号") : tr("显示序列号")) {
                                 revealSerial.toggle()
                             }
                         }
                     }
                 }
                 if let boot = system.bootDate {
-                    InfoRow(label: "启动于", text: boot.formatted(date: .abbreviated, time: .shortened))
+                    InfoRow(label: tr("启动于"), text: boot.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: L10n.locale)))
                 }
             }
         }
@@ -155,10 +157,10 @@ struct SystemInfoPage: View {
             .split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
         var size = ""
         if let index = details.firstIndex(where: { $0.hasSuffix("-inch") }) {
-            size = " \(details[index].dropLast("-inch".count)) 英寸"
+            size = tr(" \(details[index].dropLast("-inch".count)) 英寸")
             details.remove(at: index)
         }
-        return details.isEmpty ? base + size : "\(base)\(size)（\(details.joined(separator: "，"))）"
+        return details.isEmpty ? base + size : tr("\(base)\(size)（\(details.joined(separator: tr("，")))）")
     }
 
     private func chipName(_ brand: String) -> String {
@@ -198,11 +200,11 @@ struct DisplayInfo {
             let millimeters = CGDisplayScreenSize(id)
             if millimeters.width > 0 {
                 let inches = (millimeters.width * millimeters.width + millimeters.height * millimeters.height).squareRoot() / 25.4
-                parts.append("\(Int(inches.rounded())) 英寸")
+                parts.append(tr("\(Int(inches.rounded())) 英寸"))
             }
             if let native = nativeResolution(id) { parts.append("\(native.width)×\(native.height)") }
             let points = screen.frame.size
-            parts.append("显示为 \(Int(points.width))×\(Int(points.height))")
+            parts.append(tr("显示为 \(Int(points.width))×\(Int(points.height))"))
             if screen.maximumFramesPerSecond > 0 { parts.append("\(screen.maximumFramesPerSecond)Hz") }
             return DisplayInfo(name: screen.localizedName, isBuiltIn: CGDisplayIsBuiltin(id) != 0,
                                isMain: CGDisplayIsMain(id) != 0, summary: parts.joined(separator: " · "))
@@ -226,10 +228,10 @@ private struct BluetoothCard: View {
     @State private var devices: [BluetoothDevice]?
 
     var body: some View {
-        InfoCard(icon: "dot.radiowaves.left.and.right", title: "蓝牙设备") {
+        InfoCard(icon: "dot.radiowaves.left.and.right", title: tr("蓝牙设备")) {
             if let devices {
                 if devices.isEmpty {
-                    Text("没有已连接的蓝牙设备").dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+                    Text(tr("没有已连接的蓝牙设备")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
                 }
                 ForEach(devices) { device in
                     HStack(spacing: DS.Space.s2) {
@@ -243,7 +245,7 @@ private struct BluetoothCard: View {
                             .lineLimit(1)
                         Spacer(minLength: DS.Space.s2)
                         if device.batteries.isEmpty {
-                            Text("不提供电量").dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+                            Text(tr("不提供电量")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
                         }
                         ForEach(device.batteries, id: \.label) { battery in
                             HStack(spacing: DS.Space.s1) {
@@ -263,7 +265,7 @@ private struct BluetoothCard: View {
                     }
                 }
             } else {
-                Text("正在读取…").dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+                Text(tr("正在读取…")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
             }
         }
         .task {

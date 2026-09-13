@@ -1,4 +1,5 @@
 import Foundation
+import Localization
 
 public enum SafetyError: Error, Sendable, Equatable, CustomStringConvertible {
     case notAbsolute
@@ -11,13 +12,13 @@ public enum SafetyError: Error, Sendable, Equatable, CustomStringConvertible {
 
     public var description: String {
         switch self {
-        case .notAbsolute: "不是绝对路径"
-        case .traversal: "路径包含 .."
-        case .controlCharacter: "路径包含控制字符"
-        case .outsideAllowedRoots: "不在允许清理的目录内"
-        case .isRoot: "不能删除清理目录本身"
-        case .protectedName(let name): "受保护的项目：\(name)"
-        case .applicationSupportNotCache: "Application Support 中只允许清理缓存目录"
+        case .notAbsolute: tr("不是绝对路径")
+        case .traversal: tr("路径包含 ..")
+        case .controlCharacter: tr("路径包含控制字符")
+        case .outsideAllowedRoots: tr("不在允许清理的目录内")
+        case .isRoot: tr("不能删除清理目录本身")
+        case .protectedName(let name): tr("受保护的项目：\(name)")
+        case .applicationSupportNotCache: tr("Application Support 中只允许清理缓存目录")
         }
     }
 }

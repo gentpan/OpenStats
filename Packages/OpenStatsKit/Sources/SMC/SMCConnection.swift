@@ -8,6 +8,7 @@
 
 import Foundation
 import IOKit
+import Localization
 
 public struct SMCKey: Hashable, Sendable, CustomStringConvertible {
     public let code: UInt32
@@ -39,11 +40,11 @@ public enum SMCError: Error, Sendable, CustomStringConvertible {
 
     public var description: String {
         switch self {
-        case .serviceNotFound: "未找到 AppleSMC 服务"
-        case .openFailed(let kr): "打开 SMC 失败 (\(Self.message(kr)))"
-        case .callFailed(let key, let kr): "SMC [\(key)] 调用失败 (\(Self.message(kr)))"
-        case .firmwareRejected(let key, let code): "SMC [\(key)] 被固件拒绝 (0x\(String(code, radix: 16)))"
-        case .unsupportedType(let key, let type): "SMC [\(key)] 不支持的数据类型 \(type)"
+        case .serviceNotFound: tr("未找到 AppleSMC 服务")
+        case .openFailed(let kr): tr("打开 SMC 失败 (\(Self.message(kr)))")
+        case .callFailed(let key, let kr): tr("SMC [\(key)] 调用失败 (\(Self.message(kr)))")
+        case .firmwareRejected(let key, let code): tr("SMC [\(key)] 被固件拒绝 (0x\(String(code, radix: 16)))")
+        case .unsupportedType(let key, let type): tr("SMC [\(key)] 不支持的数据类型 \(type)")
         }
     }
 

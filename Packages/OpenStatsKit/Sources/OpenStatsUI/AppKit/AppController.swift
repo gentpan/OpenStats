@@ -1,4 +1,5 @@
 import AppKit
+import Localization
 import Metrics
 import SwiftUI
 
@@ -18,7 +19,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
         _ = DiagnosticsExporter.launchDate
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "开发版"
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? tr("开发版")
         Log.app.notice("OpenStats \(version, privacy: .public) 启动，macOS \(ProcessInfo.processInfo.operatingSystemVersionString, privacy: .public)")
         NSApp.mainMenu = MainMenu.make(target: self, settingsAction: #selector(openSettingsFromMenu),
                                        updateAction: #selector(checkForUpdatesFromMenu))
@@ -270,8 +271,20 @@ public enum OpenStatsApplication {
     @MainActor
     public static func main() {
         let app = NSApplication.shared
+        // 界面语言在创建任何界面之前确定，切换后重启生效
+        let stored = UserDefaults.standard.string(forKey: AppSettings.languageKey).flatMap(AppLanguage.init(rawValue:)) ?? .system
+        L10n.configure(stored)
         if let index = CommandLine.arguments.firstIndex(of: "--snapshot") {
             let path = CommandLine.arguments.dropFirst(index + 1).first ?? "snapshots"
+            // --language en：渲染英文截图，并把没有翻译的中文记到 untranslated.txt
+            if let languageIndex = CommandLine.arguments.firstIndex(of: "--language"),
+               CommandLine.arguments.dropFirst(languageIndex + 1).first == "en" {
+                L10n.configure(.english)
+                let log = URL(fileURLWithPath: path).appendingPathComponent("untranslated.txt")
+                try? FileManager.default.createDirectory(at: URL(fileURLWithPath: path), withIntermediateDirectories: true)
+                try? FileManager.default.removeItem(at: log)
+                L10n.missLog = log
+            }
             app.setActivationPolicy(.prohibited)
             Task {
                 await SnapshotRenderer.run(outputDirectory: URL(fileURLWithPath: path))
@@ -280,6 +293,7 @@ public enum OpenStatsApplication {
             app.run()
             return
         }
+        stored.applyToProcessLocale()
 
         let controller = AppController()
         app.delegate = controller

@@ -1,4 +1,5 @@
 import AppKit
+import Localization
 import SwiftUI
 
 /// 菜单栏图标：每项独立时一个指标一个图标，点击弹出该项详情；合并时只有一个图标，点击打开主窗口
@@ -143,10 +144,10 @@ final class MenuBarController: NSObject {
     private func showContextMenu(for statusItem: NSStatusItem) {
         dismissPopovers()
         let menu = NSMenu()
-        menu.addItem(withTitle: "打开 OpenStats", action: #selector(openMainWindow), keyEquivalent: "").target = self
-        menu.addItem(withTitle: "设置…", action: #selector(openSettings), keyEquivalent: ",").target = self
+        menu.addItem(withTitle: tr("打开 OpenStats"), action: #selector(openMainWindow), keyEquivalent: "").target = self
+        menu.addItem(withTitle: tr("设置…"), action: #selector(openSettings), keyEquivalent: ",").target = self
         menu.addItem(.separator())
-        menu.addItem(withTitle: "退出 OpenStats", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        menu.addItem(withTitle: tr("退出 OpenStats"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         statusItem.menu = menu
         statusItem.button?.performClick(nil)
         statusItem.menu = nil

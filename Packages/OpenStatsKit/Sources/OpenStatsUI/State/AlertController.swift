@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import Localization
 import Metrics
 import Network
 import Observation
@@ -13,23 +14,23 @@ public enum AlertKind: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .cpuTemperature: "CPU 过热"
-        case .memoryPressure: "内存压力严重"
-        case .diskSpace: "磁盘空间不足"
-        case .networkDown: "网络断开"
-        case .batteryHealth: "电池健康度下降"
-        case .bluetoothBattery: "蓝牙设备电量低"
+        case .cpuTemperature: tr("CPU 过热")
+        case .memoryPressure: tr("内存压力严重")
+        case .diskSpace: tr("磁盘空间不足")
+        case .networkDown: tr("网络断开")
+        case .batteryHealth: tr("电池健康度下降")
+        case .bluetoothBattery: tr("蓝牙设备电量低")
         }
     }
 
     var detail: String {
         switch self {
-        case .cpuTemperature: "CPU 温度持续 1 分钟高于设定值"
-        case .memoryPressure: "内存压力持续 30 秒处于严重，系统开始大量换页"
-        case .diskSpace: "启动磁盘可用空间低于 10% 或 10 GB，每 10 分钟检查一次"
-        case .networkDown: "网络连接中断超过 20 秒，恢复后再提示一次"
-        case .batteryHealth: "电池最大容量低于 80%，每 30 天最多提醒一次"
-        case .bluetoothBattery: "已连接的键盘、鼠标、耳机等电量低于 15%，每 10 分钟检查一次"
+        case .cpuTemperature: tr("CPU 温度持续 1 分钟高于设定值")
+        case .memoryPressure: tr("内存压力持续 30 秒处于严重，系统开始大量换页")
+        case .diskSpace: tr("启动磁盘可用空间低于 10% 或 10 GB，每 10 分钟检查一次")
+        case .networkDown: tr("网络连接中断超过 20 秒，恢复后再提示一次")
+        case .batteryHealth: tr("电池最大容量低于 80%，每 30 天最多提醒一次")
+        case .bluetoothBattery: tr("已连接的键盘、鼠标、耳机等电量低于 15%，每 10 分钟检查一次")
         }
     }
 
@@ -176,11 +177,11 @@ public final class AlertController: NSObject {
            let cpu = store.sensors?.temperatures.first(where: { $0.group == .cpu })?.maximum {
             let limit = Double(settings.alertCPUTemperature)
             fireIfNeeded(.cpuTemperature, isActive: cpu >= limit, now: now,
-                         body: "CPU 温度 \(Format.temperature(cpu, fahrenheit: settings.useFahrenheit))，已持续超过 1 分钟。可以检查高占用进程，或在“温度与风扇”里提高风扇转速。")
+                         body: tr("CPU 温度 \(Format.temperature(cpu, fahrenheit: settings.useFahrenheit))，已持续超过 1 分钟。可以检查高占用进程，或在“温度与风扇”里提高风扇转速。"))
         }
         if enabled.contains(.memoryPressure), let memory = store.memory {
             fireIfNeeded(.memoryPressure, isActive: memory.pressure == .critical, now: now,
-                         body: "可用内存只剩 \(Format.bytes(memory.available))，系统正在压缩和交换内存。关闭不用的应用可以缓解。")
+                         body: tr("可用内存只剩 \(Format.bytes(memory.available))，系统正在压缩和交换内存。关闭不用的应用可以缓解。"))
         }
     }
 
@@ -189,14 +190,14 @@ public final class AlertController: NSObject {
         if enabled.contains(.diskSpace), let disk = DiskSampler.sample() {
             let low = disk.total > 0 && (Double(disk.available) / Double(disk.total) < 0.1 || disk.available < 10_000_000_000)
             fireIfNeeded(.diskSpace, isActive: low, now: now,
-                         body: "“\(disk.volumeName)”只剩 \(Format.bytes(disk.available, base: .decimal)) 可用。可以用 OpenStats 的清理功能释放缓存。")
+                         body: tr("“\(disk.volumeName)”只剩 \(Format.bytes(disk.available, base: .decimal)) 可用。可以用 OpenStats 的清理功能释放缓存。"))
         }
         if enabled.contains(.batteryHealth), let health = BatterySampler.sample()?.health {
             // 冷却时间跨越重启，记在偏好设置里
             let last = defaults.object(forKey: Keys.batteryNotified) as? Date
             if health < 0.8, last.map({ now.timeIntervalSince($0) >= AlertKind.batteryHealth.cooldown }) ?? true {
                 defaults.set(now, forKey: Keys.batteryNotified)
-                send(.batteryHealth, body: "电池最大容量为 \(Format.percent(health))，续航会明显缩短。可以在“系统设置 › 电池”查看是否建议维修。")
+                send(.batteryHealth, body: tr("电池最大容量为 \(Format.percent(health))，续航会明显缩短。可以在“系统设置 › 电池”查看是否建议维修。"))
             }
         }
     }
@@ -212,7 +213,7 @@ public final class AlertController: NSObject {
             if let last = bluetoothNotified[device.id], now.timeIntervalSince(last) < AlertKind.bluetoothBattery.cooldown { continue }
             bluetoothNotified[device.id] = now
             let part = device.batteries.count > 1 ? "\(lowest.label)" : ""
-            send(.bluetoothBattery, title: "\(device.name)电量低", body: "\(device.name)\(part)只剩 \(lowest.percent)%，记得充电。")
+            send(.bluetoothBattery, title: tr("\(device.name)电量低"), body: tr("\(device.name)\(part)只剩 \(lowest.percent)%，记得充电。"))
         }
     }
 
@@ -238,7 +239,7 @@ public final class AlertController: NSObject {
         if satisfied {
             if networkNotified {
                 networkNotified = false
-                send(.networkDown, title: "网络已恢复", body: "网络连接已经恢复。")
+                send(.networkDown, title: tr("网络已恢复"), body: tr("网络连接已经恢复。"))
             }
             return
         }
@@ -248,7 +249,7 @@ public final class AlertController: NSObject {
             guard !Task.isCancelled, let self else { return }
             self.networkNotified = true
             Log.network.notice("网络断开超过 20 秒")
-            self.send(.networkDown, body: "网络连接已中断超过 20 秒。可以打开网络详情查看接口与路由器状态。")
+            self.send(.networkDown, body: tr("网络连接已中断超过 20 秒。可以打开网络详情查看接口与路由器状态。"))
         }
     }
 
@@ -290,7 +291,7 @@ public final class AlertController: NSObject {
             requestAuthorization { [weak self] in self?.sendTest() }
             return
         }
-        send(.cpuTemperature, title: "OpenStats 通知测试", body: "通知可以正常显示。发生你打开的状况时，会像这样提醒你。")
+        send(.cpuTemperature, title: tr("OpenStats 通知测试"), body: tr("通知可以正常显示。发生你打开的状况时，会像这样提醒你。"))
     }
 
     private func send(_ kind: AlertKind, title: String? = nil, body: String) {

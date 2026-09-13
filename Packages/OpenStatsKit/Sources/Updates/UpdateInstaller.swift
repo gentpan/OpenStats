@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import Localization
 import Security
 
 public enum UpdateError: Error, LocalizedError, Equatable {
@@ -13,13 +14,13 @@ public enum UpdateError: Error, LocalizedError, Equatable {
 
     public var errorDescription: String? {
         switch self {
-        case .download(let reason): "下载失败：\(reason)"
-        case .checksumMismatch: "安装包校验值与版本清单不一致，已放弃安装"
-        case .archive(let reason): "解压失败：\(reason)"
-        case .invalidBundle(let reason): "安装包内容不正确：\(reason)"
-        case .signature(let reason): "签名校验未通过：\(reason)"
-        case .gatekeeper: "新版本未通过 Apple 公证检查，已放弃安装"
-        case .install(let reason): "替换应用失败：\(reason)"
+        case .download(let reason): tr("下载失败：\(reason)")
+        case .checksumMismatch: tr("安装包校验值与版本清单不一致，已放弃安装")
+        case .archive(let reason): tr("解压失败：\(reason)")
+        case .invalidBundle(let reason): tr("安装包内容不正确：\(reason)")
+        case .signature(let reason): tr("签名校验未通过：\(reason)")
+        case .gatekeeper: tr("新版本未通过 Apple 公证检查，已放弃安装")
+        case .install(let reason): tr("替换应用失败：\(reason)")
         }
     }
 }
@@ -56,7 +57,7 @@ public enum UpdateInstaller {
         guard result.status == 0 else { throw UpdateError.archive(result.output) }
         let apps = (try? FileManager.default.contentsOfDirectory(at: output, includingPropertiesForKeys: nil))?
             .filter { $0.pathExtension == "app" } ?? []
-        guard apps.count == 1, let app = apps.first else { throw UpdateError.archive("压缩包里应当只有一个 .app") }
+        guard apps.count == 1, let app = apps.first else { throw UpdateError.archive(tr("压缩包里应当只有一个 .app")) }
         return app
     }
 
@@ -64,28 +65,28 @@ public enum UpdateInstaller {
 
     /// 包名、版本号、签名团队必须与预期一致，并通过严格签名校验与 Gatekeeper（公证）检查
     public static func verify(_ app: URL, bundleIdentifier: String, version: String, teamIdentifier: String) throws {
-        guard let bundle = Bundle(url: app) else { throw UpdateError.invalidBundle("无法读取") }
+        guard let bundle = Bundle(url: app) else { throw UpdateError.invalidBundle(tr("无法读取")) }
         guard bundle.bundleIdentifier == bundleIdentifier else {
-            throw UpdateError.invalidBundle("包名是 \(bundle.bundleIdentifier ?? "空")")
+            throw UpdateError.invalidBundle(tr("包名是 \(bundle.bundleIdentifier ?? tr("空"))"))
         }
         let bundleVersion = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
         guard bundleVersion == version else {
-            throw UpdateError.invalidBundle("版本是 \(bundleVersion ?? "空")，清单写的是 \(version)")
+            throw UpdateError.invalidBundle(tr("版本是 \(bundleVersion ?? tr("空"))，清单写的是 \(version)"))
         }
 
         var staticCode: SecStaticCode?
         guard SecStaticCodeCreateWithPath(app as CFURL, [], &staticCode) == errSecSuccess, let code = staticCode else {
-            throw UpdateError.signature("无法读取签名")
+            throw UpdateError.signature(tr("无法读取签名"))
         }
         let requirementText = "anchor apple generic and identifier \"\(bundleIdentifier)\" and certificate leaf[subject.OU] = \"\(teamIdentifier)\""
         var requirement: SecRequirement?
         guard SecRequirementCreateWithString(requirementText as CFString, [], &requirement) == errSecSuccess else {
-            throw UpdateError.signature("无法创建签名要求")
+            throw UpdateError.signature(tr("无法创建签名要求"))
         }
         let flags = SecCSFlags(rawValue: kSecCSCheckAllArchitectures | kSecCSCheckNestedCode | kSecCSStrictValidate)
         let status = SecStaticCodeCheckValidity(code, flags, requirement)
         guard status == errSecSuccess else {
-            throw UpdateError.signature("不是团队 \(teamIdentifier) 签名的完整应用（\(status)）")
+            throw UpdateError.signature(tr("不是团队 \(teamIdentifier) 签名的完整应用（\(status)）"))
         }
 
         let assessment = run("/usr/sbin/spctl", ["--assess", "--type", "execute", "-vv", app.path])
@@ -198,7 +199,7 @@ private final class Downloader: NSObject, URLSessionDownloadDelegate, @unchecked
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
         if let response = downloadTask.response as? HTTPURLResponse, !(200..<300).contains(response.statusCode) {
-            moveError = UpdateError.download("服务器返回 \(response.statusCode)")
+            moveError = UpdateError.download(tr("服务器返回 \(response.statusCode)"))
             return
         }
         do {

@@ -1,4 +1,5 @@
 import Foundation
+import Localization
 
 public enum CleanEngine {
     // MARK: 扫描
@@ -120,7 +121,7 @@ public enum CleanEngine {
                     report.removedCount += 1
                     log?.record(item: item, rule: scan.rule, action: useTrash ? "trash" : "delete", detail: nil)
                 } catch {
-                    report.failures.append("\(item.url.lastPathComponent)：\(error.localizedDescription)")
+                    report.failures.append(tr("\(item.url.lastPathComponent)：\(error.localizedDescription)"))
                     log?.record(item: item, rule: scan.rule, action: "fail", detail: error.localizedDescription)
                 }
             }

@@ -1,6 +1,7 @@
 import AppKit
 import Cleaner
 import Foundation
+import Localization
 import Metrics
 import Observation
 
@@ -70,7 +71,7 @@ public final class UninstallerController {
     /// 拖进来的 .app
     func select(url: URL) {
         guard let app = AppUninstaller.app(at: url) else {
-            outcome = ("不是应用程序", true)
+            outcome = (tr("不是应用程序"), true)
             return
         }
         do {
@@ -117,14 +118,14 @@ public final class UninstallerController {
                 guard let self else { return }
                 self.isRemoving = false
                 if movedCount == 0 {
-                    self.outcome = ("没有移动任何文件\(message.map { "：\($0)" } ?? "")", true)
+                    self.outcome = (tr("没有移动任何文件\(message.map { tr("：\($0)") } ?? "")"), true)
                     return
                 }
                 var dock = false
                 if self.removeFromDock { dock = Self.removeDockTile(for: app.url) }
                 Log.app.notice("卸载 \(app.bundleIdentifier, privacy: .public)，移到废纸篓 \(movedCount) 项")
-                let partial = movedCount < urls.count ? "，\(urls.count - movedCount) 项未能移动" : ""
-                self.outcome = ("已将 \(app.name) 与 \(movedCount - 1) 项残留移到废纸篓，约 \(Format.bytes(freed, base: .decimal))\(dock ? "，已从程序坞移除" : "")\(partial)。需要时可以在废纸篓里放回。",
+                let partial = movedCount < urls.count ? tr("，\(urls.count - movedCount) 项未能移动") : ""
+                self.outcome = (tr("已将 \(app.name) 与 \(movedCount - 1) 项残留移到废纸篓，约 \(Format.bytes(freed, base: .decimal))\(dock ? tr("，已从程序坞移除") : "")\(partial)。需要时可以在废纸篓里放回。"),
                                 message != nil)
                 self.selected = nil
                 self.leftovers = []
