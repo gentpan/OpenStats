@@ -220,13 +220,13 @@ public enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
 
 /// 主窗口侧边栏的页面
 public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
-    case overview, system, cpu, gpu, memory, disk, network, thermal, processes, keepAwake, cleaner, uninstaller
+    case overview, system, cpu, gpu, memory, disk, network, thermal, processes, keepAwake, cleaner, uninstaller, startupItems
     case settingsGeneral, settingsMenuBar, settingsNotifications, settingsHelper, settingsAbout
 
     public var id: String { rawValue }
 
     static let monitors: [PanelTab] = [.overview, .system, .cpu, .gpu, .memory, .disk, .network, .thermal]
-    static let tools: [PanelTab] = [.processes, .keepAwake, .cleaner, .uninstaller]
+    static let tools: [PanelTab] = [.processes, .startupItems, .keepAwake, .cleaner, .uninstaller]
     static let settings: [PanelTab] = [.settingsGeneral, .settingsMenuBar, .settingsNotifications, .settingsHelper, .settingsAbout]
 
     var isSettings: Bool { Self.settings.contains(self) }
@@ -248,6 +248,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .keepAwake: "防休眠"
         case .cleaner: "清理"
         case .uninstaller: "卸载应用"
+        case .startupItems: "启动项"
         case .settingsGeneral: "通用"
         case .settingsMenuBar: "菜单栏"
         case .settingsNotifications: "通知"
@@ -270,6 +271,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .keepAwake: "cup.and.saucer"
         case .cleaner: "sparkles"
         case .uninstaller: "trash"
+        case .startupItems: "power"
         case .settingsGeneral: "gearshape"
         case .settingsMenuBar: "menubar.rectangle"
         case .settingsNotifications: "bell.badge"

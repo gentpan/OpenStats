@@ -41,6 +41,9 @@ enum SnapshotRenderer {
         // 清理页展示真实扫描结果（只读，不删除任何文件）
         model.cleaner.scan()
         while model.cleaner.isBusy { try? await Task.sleep(for: .milliseconds(200)) }
+        model.startupItems.refresh()
+        model.uninstaller.loadApps()
+        try? await Task.sleep(for: .seconds(2))
         model.updates.showPreview(UpdateRelease(
             version: "0.3.0", build: "3", date: "2026-09-20", minimumSystem: "14.0",
             url: URL(string: "https://getopenstats.com/download/OpenStats-0.3.0.zip")!, sha256: String(repeating: "0", count: 64),
