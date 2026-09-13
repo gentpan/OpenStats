@@ -116,8 +116,10 @@ struct LiveSamplerTests {
 
     @Test func processesIncludeCurrentProcess() {
         var sampler = ProcessSampler()
-        let processes = sampler.sample(limit: .max)
-        #expect(processes.contains { $0.pid == getpid() })
+        let processes = sampler.sample(includeSystem: true)
+        #expect(processes.contains { $0.pid == getpid() && $0.isOwned && $0.threads != nil })
+        // 系统进程来自 ps：launchd（PID 1）属于 root
+        #expect(processes.contains { $0.pid == 1 && !$0.isOwned && $0.userName == "root" })
     }
 
     @Test func diskHasCapacity() throws {
@@ -191,5 +193,34 @@ struct LiveSamplerTests {
         #expect(result?.countryCode == nil)
         #expect(result?.asn == nil)
         #expect(result?.organization == "Cloudflare")
+    }
+}
+
+@Suite struct ProcessParsingTests {
+    @Test func parsesPSOutput() {
+        let output = """
+            1     0  99:12.26  28144 /sbin/launchd
+          412    88 712:02.63 378656 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer
+          913   501   0:00.51   9120 /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+        broken
+        """
+        let entries = ProcessSampler.parsePS(output)
+        #expect(entries.count == 3)
+        #expect(entries[0].pid == 1 && entries[0].uid == 0)
+        #expect(entries[1].cpuTime == 712 * 60 + 2.63)
+        #expect(entries[1].residentBytes == 378_656 * 1024)
+        #expect(entries[2].command == "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
+    }
+
+    @Test func parsesCPUTimeWithHours() {
+        #expect(ProcessSampler.parseCPUTime("1:02:03.50") == 3723.5)
+        #expect(ProcessSampler.parseCPUTime("0:00.51") == 0.51)
+        #expect(ProcessSampler.parseCPUTime("abc") == nil)
+    }
+
+    @Test func readsSystemCounts() throws {
+        let counts = try #require(SystemCounts.read())
+        #expect(counts.processes > 0)
+        #expect(counts.threads >= counts.processes)
     }
 }

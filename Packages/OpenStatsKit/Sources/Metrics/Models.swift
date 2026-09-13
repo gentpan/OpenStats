@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import SMC
 
@@ -103,7 +104,47 @@ public struct ProcessUsage: Sendable, Equatable, Identifiable {
     public let executablePath: String?
     public let appBundlePath: String?
     public var cpu: Double              // 以单核为 100%，与活动监视器一致
-    public var memory: UInt64           // phys_footprint
+    public var memory: UInt64           // 自己的进程为 phys_footprint；其他用户的进程为常驻内存
+    public var uid: UInt32 = 0
+    public var userName: String = ""
+    /// 累计 CPU 时间（秒）
+    public var cpuTime: Double = 0
+    /// 以下只有当前用户自己的进程能读到
+    public var threads: Int?
+    public var idleWakeups: Double?     // 每秒
+    public var diskRead: Double?        // 字节 / 秒
+    public var diskWrite: Double?
+    /// 是否属于当前用户：可以读取详细数据，也可以结束
+    public var isOwned: Bool = true
+
+    public init(pid: Int32, name: String, executablePath: String?, appBundlePath: String?, cpu: Double, memory: UInt64) {
+        self.pid = pid
+        self.name = name
+        self.executablePath = executablePath
+        self.appBundlePath = appBundlePath
+        self.cpu = cpu
+        self.memory = memory
+    }
+}
+
+/// 全系统的进程数与线程数（包括无权读取详情的系统进程）
+public struct SystemCounts: Sendable, Equatable {
+    public var processes: Int
+    public var threads: Int
+
+    public static func read() -> SystemCounts? {
+        var set: processor_set_name_t = 0
+        guard processor_set_default(mach_host_self(), &set) == KERN_SUCCESS else { return nil }
+        var load = processor_set_load_info()
+        var count = mach_msg_type_number_t(MemoryLayout<processor_set_load_info>.size / MemoryLayout<integer_t>.size)
+        let result = withUnsafeMutablePointer(to: &load) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                processor_set_statistics(set, PROCESSOR_SET_LOAD_INFO, $0, &count)
+            }
+        }
+        guard result == KERN_SUCCESS else { return nil }
+        return SystemCounts(processes: Int(load.task_count), threads: Int(load.thread_count))
+    }
 }
 
 public struct TemperatureSummary: Sendable, Equatable, Identifiable {
@@ -144,6 +185,7 @@ public struct MetricsSnapshot: Sendable {
     public var battery: BatteryStatus?
     public var gpu: GPUUsage?
     public var processes: [ProcessUsage]?
+    public var systemCounts: SystemCounts?
     public var sensors: SensorReadings?
 
     public init() {}

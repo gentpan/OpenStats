@@ -46,10 +46,10 @@ Developed and tested on Apple Silicon. The interface is in Simplified Chinese.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Not released yet · **40** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Not released yet · **43** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-09-13</b> · Unreleased · 27 added · 7 style · 6 fixed</summary>
+<summary><b>2026-09-13</b> · Unreleased · 28 added · 9 style · 6 fixed</summary>
 
 **Added**
 
@@ -65,6 +65,7 @@ Not released yet · **40** changes in development · [full changelog](CHANGELOG.
 - CPU 详情：顶部是占用、状态（空闲 / 适中 / 繁忙 / 满载）、与 30 秒前相比的变化和温度余量，下面是走势线与用户 / 系统 / 空闲构成条；核心热力图（每行一个核心、每列一次采样）；核心分工（各类核心平均占用与最忙的核心）；排队程度（平均负载折算到每个核心，并提示负载在上升还是下降）；按应用汇总 CPU。
 - 内存详情：顶部是还可用多少、压力状态与最近 60 秒的压力走势条；内存水位条（App / 联动 / 压缩 / 缓存 / 空闲）；压缩与交换（压缩省下的内存、压缩比、交换区用量与实时换入换出速率，持续写盘时提示）；按应用汇总内存（合并辅助进程，显示占已用内存的比例）。
 - 用 Apple 智能解释进程：在进程上右键或点进程页的星形按钮，由系统自带的本机大模型说明它是什么、占用是否正常、能否退出；把路径、所属应用和签名方一起交给模型以减少猜测，全程不联网（需要 macOS 26 并开启 Apple 智能）。
+- 进程管理器（主窗口“进程”页）：包括 root 与其他用户的系统进程（通过系统自带的 ps 读取，不需要辅助工具）；列出 CPU、CPU 时间、内存、线程、唤醒次数、磁盘读写与用户，点列标题排序；可搜索名称、PID 或用户，筛选全部 / 我的 / 系统，切换按进程或按应用合并；选中后显示路径与详情，可在访达中显示、用 Apple 智能解释、退出或强制退出（二次确认，系统进程与 loginwindow 等禁止结束）；底部汇总用户 / 系统 / 空闲与全系统进程数、线程数。
 - 进程显示应用的本地化名称（如“微信”）；按应用汇总时，同一应用的主进程与辅助进程合并计算。
 - 仪表盘顶部是健康评分和芯片、内存、系统版本、运行时长、机型徽章，下面是 CPU 柱状历史、GPU 折线、内存面积图、磁盘、网络双线、风扇三列卡片，以及核心负载、电池环形图、高占用进程和快捷开关。
 - CPU 按超级核、性能核、能效核分组显示各核心负载；内存口径与活动监视器一致，并显示内存压力；网速读取 64 位计数器，大流量下不会回绕。
@@ -83,6 +84,8 @@ Not released yet · **40** changes in development · [full changelog](CHANGELOG.
 
 **Style**
 
+- 仪表盘“快捷开关”改为开关样式：防休眠、合盖运行、散热模式各一行，右侧开关，下面一行小字说明当前状态。
+- 进程表按窗口宽度自动隐藏次要列，窄窗口里名称列不会被挤没。
 - 内存详情的“释放内存”移到标题栏，执行中与完成后在按钮上显示进度和结果；主窗口内存页顶栏同样提供。
 - 主窗口默认 1072×720、设置窗口默认 920×720，两者都可自由调整大小；滚动条改为浮层样式，只在滚动时出现。
 - 菜单栏字号缩小并统一：两行布局为 7pt 标签加 10pt 数值，单行布局 11pt，网速两行 9pt；每种风格内部只用一套字号，指标之间留出更宽的间距。

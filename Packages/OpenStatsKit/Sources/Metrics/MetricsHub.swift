@@ -10,6 +10,8 @@ public struct MetricsDemand: Sendable, Equatable {
     public var disk = false
     public var battery = false
     public var processes = false
+    /// 进程管理器打开时：连同其他用户与系统的进程一起采集
+    public var systemProcesses = false
     public var temperatures: Set<TemperatureGroup> = []
     public var fans = false
 
@@ -124,7 +126,10 @@ public actor MetricsHub {
             snapshot.battery = BatterySampler.sample()
             lastBattery = now
         }
-        if demand.processes { snapshot.processes = processes.sample() }
+        if demand.processes || demand.systemProcesses {
+            snapshot.processes = processes.sample(includeSystem: demand.systemProcesses)
+            snapshot.systemCounts = SystemCounts.read()
+        }
         if !demand.temperatures.isEmpty || demand.fans {
             snapshot.sensors = sensors.sample(groups: demand.temperatures, includeFans: demand.fans)
         }

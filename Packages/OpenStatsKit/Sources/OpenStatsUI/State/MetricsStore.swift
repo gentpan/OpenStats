@@ -34,6 +34,7 @@ public final class MetricsStore {
     /// 启动时读取一次，确保面板首次打开时布局（是否有电池卡片）就已确定
     public private(set) var battery: BatteryStatus? = BatterySampler.sample()
     public private(set) var processes: [ProcessUsage] = []
+    public private(set) var systemCounts: SystemCounts?
     public private(set) var sensors: SensorReadings?
     public private(set) var lastUpdate: Date?
 
@@ -70,6 +71,7 @@ public final class MetricsStore {
         if let disk = snapshot.disk { self.disk = disk }
         if let battery = snapshot.battery { self.battery = battery }
         if let processes = snapshot.processes { self.processes = processes }
+        if let counts = snapshot.systemCounts { systemCounts = counts }
         if let sensors = snapshot.sensors { mergeSensors(sensors) }
     }
 

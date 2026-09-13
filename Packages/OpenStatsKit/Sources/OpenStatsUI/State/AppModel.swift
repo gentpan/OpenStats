@@ -59,6 +59,7 @@ public final class AppModel {
         demand.disk = window && (tab == .overview || tab == .cleaner)
         demand.battery = (window && (tab == .overview || tab == .keepAwake)) || keepAwake.lidClosedActive
         demand.processes = (window && [.processes, .overview].contains(tab)) || showing(.cpu, .cpu) || showing(.memory, .memory)
+        demand.systemProcesses = window && tab == .processes
 
         var groups = Set<TemperatureGroup>()
         if window && tab == .overview { groups.formUnion([.cpu, .gpu]) }

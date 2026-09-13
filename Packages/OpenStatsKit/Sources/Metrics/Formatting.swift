@@ -79,6 +79,15 @@ public enum Format {
         }
     }
 
+    /// CPU 时间：不到 1 分钟显示“12.34 秒”，不到 1 小时“12:34”，更长“1:02:03”
+    public static func cpuTime(_ seconds: Double) -> String {
+        let total = max(0, seconds)
+        if total < 60 { return "\(total.formatted(.number.precision(.fractionLength(2)))) 秒" }
+        let whole = Int(total)
+        let hours = whole / 3600, minutes = whole % 3600 / 60, secs = whole % 60
+        return hours > 0 ? String(format: "%d:%02d:%02d", hours, minutes, secs) : String(format: "%d:%02d", minutes, secs)
+    }
+
     public static func uptime(since date: Date, now: Date = Date()) -> String {
         let minutes = max(0, Int(now.timeIntervalSince(date) / 60))
         let days = minutes / (60 * 24)

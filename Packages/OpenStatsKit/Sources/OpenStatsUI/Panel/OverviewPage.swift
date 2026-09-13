@@ -508,63 +508,54 @@ private struct QuickActionsCard: View {
 
     var body: some View {
         let keepAwake = model.keepAwake
-        Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
+        let fans = model.fans
+        Card(padding: DS.Space.s3, spacing: 0) {
             HStack(spacing: DS.Space.s1) {
                 Image(systemName: "switch.2").font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
                 Text("快捷开关").dsFont(.xs, weight: .semibold)
             }
             .foregroundStyle(DS.Palette.textSecondary)
+            .padding(.bottom, DS.Space.s1)
 
-            QuickAction(icon: "cup.and.saucer", activeIcon: "cup.and.saucer.fill", title: "防休眠",
-                        detail: keepAwake.isActive ? "已开启" : "关闭", isActive: keepAwake.isActive) {
-                Task { await keepAwake.setActive(!keepAwake.isActive) }
-            }
-            QuickAction(icon: "laptopcomputer", activeIcon: "laptopcomputer", title: "合盖运行",
-                        detail: keepAwake.lidClosedActive ? "已开启" : "关闭", isActive: keepAwake.lidClosedActive) {
-                model.requestLidMode(!keepAwake.lidClosedRequested)
-            }
-            QuickAction(icon: "fan", activeIcon: "fan.fill", title: "散热模式",
-                        detail: model.fans.mode.title, isActive: model.fans.mode != .automatic) {
-                model.settings.panelTab = .thermal
-            }
+            QuickToggleRow(icon: "cup.and.saucer", title: "防休眠",
+                           detail: keepAwake.isActive ? "保持唤醒" : "按系统休眠",
+                           isOn: Binding(get: { keepAwake.isActive },
+                                         set: { value in Task { await keepAwake.setActive(value) } }))
+            HairlineDivider()
+            QuickToggleRow(icon: "laptopcomputer", title: "合盖运行",
+                           detail: keepAwake.lidClosedActive ? "继续运行" : "合盖睡眠",
+                           isOn: Binding(get: { keepAwake.lidClosedRequested },
+                                         set: { model.requestLidMode($0) }))
+            HairlineDivider()
+            QuickToggleRow(icon: "fan", title: "散热模式",
+                           detail: fans.mode == .automatic ? "系统调节" : "\(fans.mode.title)中",
+                           isOn: Binding(get: { fans.mode != .automatic },
+                                         set: { model.requestFanMode($0 ? .cooling : .automatic) }))
         }
     }
 }
 
-private struct QuickAction: View {
+/// 快捷开关的一行：图标、名称与当前状态，右侧开关
+private struct QuickToggleRow: View {
     let icon: String
-    let activeIcon: String
     let title: String
     let detail: String
-    let isActive: Bool
-    let action: () -> Void
-    @State private var hovering = false
+    @Binding var isOn: Bool
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: DS.Space.s2) {
-                Image(systemName: isActive ? activeIcon : icon)
-                    .font(.system(size: DS.TextSize.sm.rawValue, weight: .medium))
-                    .frame(width: DS.Size.iconStandalone)
-                Text(title).dsFont(.sm, weight: .medium).lineLimit(1)
-                Spacer(minLength: DS.Space.s1)
-                Text(detail).dsFont(.xs).foregroundStyle(isActive ? DS.Palette.primary : DS.Palette.textTertiary)
+        HStack(spacing: DS.Space.s2) {
+            Image(systemName: icon)
+                .font(.system(size: DS.TextSize.sm.rawValue, weight: .medium))
+                .foregroundStyle(isOn ? DS.Palette.primary : DS.Palette.textSecondary)
+                .frame(width: DS.Size.iconStandalone)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(title).dsFont(.sm, weight: .medium).foregroundStyle(DS.Palette.textPrimary).lineLimit(1)
+                Text(detail).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary).lineLimit(1)
             }
-            .foregroundStyle(isActive ? DS.Palette.primary : DS.Palette.textPrimary)
-            .padding(.horizontal, DS.Space.s2)
-            .frame(maxWidth: .infinity)
-            .frame(height: DS.Size.controlHeight)
-            .background(background, in: RoundedRectangle(cornerRadius: DS.Radius.md))
-            .contentShape(Rectangle())
+            Spacer(minLength: DS.Space.s2)
+            DSToggle(isOn: $isOn, label: title)
         }
-        .buttonStyle(.plain)
-        .onHover { hovering = $0 }
-        .accessibilityAddTraits(isActive ? .isSelected : [])
-    }
-
-    private var background: Color {
-        if isActive { return DS.Palette.primary.opacity(0.12) }
-        return hovering ? DS.Palette.surfaceHover : DS.Palette.track
+        .padding(.vertical, DS.Space.s2)
     }
 }
 
