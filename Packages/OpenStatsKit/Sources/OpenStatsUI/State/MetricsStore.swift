@@ -14,9 +14,15 @@ public final class MetricsStore {
 
     public private(set) var cpu: CPULoad?
     public private(set) var cpuTotal = History<Double>(capacity: historyCapacity)
+    /// 每次采样各核心的占用，用于核心热力图
+    public private(set) var coreHistory = History<[Double]>(capacity: historyCapacity)
 
     public private(set) var memory: MemoryUsage?
     public private(set) var memoryHistory = History<Double>(capacity: historyCapacity)
+    public private(set) var pressureHistory = History<MemoryPressure>(capacity: historyCapacity)
+    /// 交换区换入 / 换出速率（字节 / 秒）
+    public private(set) var swapRate: (swapIn: Double, swapOut: Double)?
+    @ObservationIgnored private var lastSwap: (date: Date, swapIn: UInt64, swapOut: UInt64)?
     public private(set) var network: NetworkRate?
     public private(set) var downloadHistory = History<Double>(capacity: historyCapacity)
     public private(set) var uploadHistory = History<Double>(capacity: historyCapacity)
@@ -38,10 +44,18 @@ public final class MetricsStore {
         if let cpu = snapshot.cpu {
             self.cpu = cpu
             cpuTotal.append(cpu.total)
+            coreHistory.append(cpu.perCore)
         }
         if let memory = snapshot.memory {
             self.memory = memory
             memoryHistory.append(memory.usedFraction)
+            pressureHistory.append(memory.pressure)
+            if let last = lastSwap, snapshot.date > last.date {
+                let seconds = snapshot.date.timeIntervalSince(last.date)
+                swapRate = (Double(memory.swapInBytes >= last.swapIn ? memory.swapInBytes - last.swapIn : 0) / seconds,
+                            Double(memory.swapOutBytes >= last.swapOut ? memory.swapOutBytes - last.swapOut : 0) / seconds)
+            }
+            lastSwap = (snapshot.date, memory.swapInBytes, memory.swapOutBytes)
         }
         if let network = snapshot.network {
             self.network = network

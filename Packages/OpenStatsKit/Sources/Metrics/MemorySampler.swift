@@ -28,7 +28,9 @@ public struct MemorySampler {
 
         var swap = xsw_usage()
         var swapSize = MemoryLayout<xsw_usage>.size
-        let swapUsed = sysctlbyname("vm.swapusage", &swap, &swapSize, nil, 0) == 0 ? swap.xsu_used : 0
+        let hasSwap = sysctlbyname("vm.swapusage", &swap, &swapSize, nil, 0) == 0
+        let swapUsed = hasSwap ? swap.xsu_used : 0
+        let swapTotal = hasSwap ? swap.xsu_total : 0
 
         let level = Sysctl.int("kern.memorystatus_vm_pressure_level") ?? 1
         return MemoryUsage(total: total,
@@ -37,6 +39,10 @@ public struct MemorySampler {
                            compressed: UInt64(stats.compressor_page_count) * pageSize,
                            cached: (UInt64(stats.external_page_count) + purgeable) * pageSize,
                            swapUsed: swapUsed,
-                           pressure: MemoryPressure(rawValue: level) ?? .normal)
+                           swapTotal: swapTotal,
+                           pressure: MemoryPressure(rawValue: level) ?? .normal,
+                           uncompressed: stats.total_uncompressed_pages_in_compressor * pageSize,
+                           swapInBytes: stats.swapins * pageSize,
+                           swapOutBytes: stats.swapouts * pageSize)
     }
 }

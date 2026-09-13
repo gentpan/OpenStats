@@ -20,7 +20,8 @@ public struct ProcessSampler {
     public init() {}
 
     /// 返回按 CPU 排序的进程；无权限读取的进程（通常属于 root）会被跳过。
-    public mutating func sample(limit: Int = 50) -> [ProcessUsage] {
+    /// 默认返回全部可读进程：按应用汇总内存时，CPU 很低但内存很大的进程也要算进去
+    public mutating func sample(limit: Int = .max) -> [ProcessUsage] {
         let capacity = Int(proc_listallpids(nil, 0)) + 64
         guard capacity > 64 else { return [] }
         var pids = [pid_t](repeating: 0, count: capacity)

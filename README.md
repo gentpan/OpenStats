@@ -62,10 +62,10 @@ Not released yet · **38** changes in development · [full changelog](CHANGELOG.
 - 网络详情：上下镜像的流量历史；连接探测格子（每 1 / 2 / 5 秒 ping 一次 Cloudflare、Google、阿里云、腾讯或路由器，显示延迟、抖动、丢包）；接口、物理地址、Wi-Fi 信号与速率、VPN / 代理；本地 IPv4 / IPv6、路由器、公网 IPv4 / IPv6，点击即可拷贝；归属地显示 SVG 国旗、城市、ASN 与网络运营方；各进程上传下载速率。
 - DNS：显示正在使用的 DNS 与配置方式，一键刷新 DNS 缓存，一键切换为自动、Cloudflare、Google、腾讯 DNSPod、阿里云，或手动填写地址（逐个校验为 IPv4 / IPv6）。流量经过 VPN / 代理时提示 DNS 可能被接管。
 - 主窗口：左侧边栏切换仪表盘、CPU、GPU、内存、网络、温度与风扇、进程、防休眠、清理；指标页右上角直接开关该项的菜单栏显示；宽度与高度都可调整，卡片按比例放大。打开主窗口时应用出现在程序坞中，关闭后回到仅菜单栏运行。
-- CPU 详情：顶部温度、占用、负载三个圆环；负载历史面积图；核心负载按超级核 / 性能核分色；详细信息列出用户、系统、空闲与各类核心平均占用；新增 1 / 5 / 15 分钟平均负载。
-- 内存详情：内存压力仪表（正常、偏高、严重三段加指针）与按 App / 联动 / 压缩分段的占用圆环；内存构成补充已用、可用与交换区。
+- CPU 详情：顶部是占用、状态（空闲 / 适中 / 繁忙 / 满载）、与 30 秒前相比的变化和温度余量，下面是走势线与用户 / 系统 / 空闲构成条；核心热力图（每行一个核心、每列一次采样）；核心分工（各类核心平均占用与最忙的核心）；排队程度（平均负载折算到每个核心，并提示负载在上升还是下降）；按应用汇总 CPU。
+- 内存详情：顶部是还可用多少、压力状态与最近 60 秒的压力走势条；内存水位条（App / 联动 / 压缩 / 缓存 / 空闲）；压缩与交换（压缩省下的内存、压缩比、交换区用量与实时换入换出速率，持续写盘时提示）；按应用汇总内存（合并辅助进程，显示占已用内存的比例）。
 - 用 Apple 智能解释进程：在进程上右键或点进程页的星形按钮，由系统自带的本机大模型说明它是什么、占用是否正常、能否退出；把路径、所属应用和签名方一起交给模型以减少猜测，全程不联网（需要 macOS 26 并开启 Apple 智能）。
-- 进程显示应用的本地化名称（如“微信”），详情弹窗的高占用进程列表增加到 8 行。
+- 进程显示应用的本地化名称（如“微信”）；按应用汇总时，同一应用的主进程与辅助进程合并计算。
 - 仪表盘顶部是健康评分和芯片、内存、系统版本、运行时长、机型徽章，下面是 CPU 柱状历史、GPU 折线、内存面积图、磁盘、网络双线、风扇三列卡片，以及核心负载、电池环形图、高占用进程和快捷开关。
 - CPU 按超级核、性能核、能效核分组显示各核心负载；内存口径与活动监视器一致，并显示内存压力；网速读取 64 位计数器，大流量下不会回绕。
 - 温度与风扇：启动时枚举一次 SMC 键并按前缀归类，不按芯片型号硬编码，显示 CPU、GPU、内存、电池和掌托温度。
@@ -139,8 +139,10 @@ Not released yet · **38** changes in development · [full changelog](CHANGELOG.
 
 **Detail popovers** — each metric gets its own menu-bar item; click it for a narrow popover.
 Choose which sections each popover shows in Settings. `Esc` closes it.
-- **CPU.** Load history, per-core load grouped by core type, processor info, busiest processes.
-- **Memory.** Usage history, breakdown with one-click purge, busiest processes.
+- **CPU.** Usage with a status and 30-second change, thermal headroom; a per-core heatmap; load by core type;
+  queueing (load average per core, rising or falling); usage summed by app.
+- **Memory.** What is still available with a pressure timeline; a waterline bar; memory saved by compression and
+  live swap I/O; usage summed by app.
 - **Network.** Traffic history; a connection-probe grid (latency, jitter, loss); interface,
   Wi-Fi signal, VPN / proxy; local and public IPv4 / IPv6 with a flag, region and ASN; DNS flush
   and one-click switching to Cloudflare, Google, Tencent, Alibaba Cloud or manual servers;

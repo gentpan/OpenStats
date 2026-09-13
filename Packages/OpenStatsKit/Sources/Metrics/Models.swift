@@ -40,10 +40,21 @@ public struct MemoryUsage: Sendable, Equatable {
     public var compressed: UInt64
     public var cached: UInt64
     public var swapUsed: UInt64
+    public var swapTotal: UInt64
     public var pressure: MemoryPressure
+    /// 被压缩的内容原本的大小；与 compressed 之差就是压缩省下的内存
+    public var uncompressed: UInt64
+    /// 开机以来从交换区换入 / 换出的累计字节数，用相邻两次采样算速率
+    public var swapInBytes: UInt64
+    public var swapOutBytes: UInt64
 
     public var used: UInt64 { app + wired + compressed }
     public var usedFraction: Double { total == 0 ? 0 : min(1, Double(used) / Double(total)) }
+    public var available: UInt64 { total > used ? total - used : 0 }
+    /// 空闲 = 总量 - 已用 - 缓存文件
+    public var free: UInt64 { total > used + cached ? total - used - cached : 0 }
+    public var compressionSavings: UInt64 { uncompressed > compressed ? uncompressed - compressed : 0 }
+    public var compressionRatio: Double? { compressed > 0 && uncompressed > 0 ? Double(uncompressed) / Double(compressed) : nil }
 }
 
 public struct NetworkInterfaceInfo: Sendable, Equatable {

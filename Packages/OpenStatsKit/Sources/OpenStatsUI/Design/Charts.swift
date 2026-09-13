@@ -213,82 +213,134 @@ struct CoreClusterBars: View {
     }
 }
 
-/// 分段圆环：各段首尾相接（内存的 App / 联动 / 压缩），剩余为底槽
-struct SegmentedRing<Center: View>: View {
-    let segments: [(fraction: Double, color: Color)]
-    var lineWidth: CGFloat = DS.Space.s2
-    var size: CGFloat = DS.Space.s16
-    @ViewBuilder var center: Center
+/// 核心热力图：每行一个核心（按类型分组，高性能档在上），每列一次采样，最新在右。
+/// 颜色越深越忙，超过 85% 用警告色
+struct CoreHeatmap: View {
+    let topology: CPUTopology
+    let history: [[Double]]
+    var columns = 40
+    var rowHeight: CGFloat = DS.Space.s1 - DS.Size.stroke
+
+    private static let gap = DS.Size.stroke
+    private static let groupGap = DS.Space.s1
 
     var body: some View {
-        ZStack {
-            Circle().stroke(DS.Palette.track, lineWidth: lineWidth)
-            ForEach(Array(ranges.enumerated()), id: \.offset) { _, range in
-                Circle()
-                    .trim(from: range.start, to: range.end)
-                    .stroke(range.color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .butt))
-                    .rotationEffect(.degrees(-90))
+        let clusters = topology.clusters.sorted { $0.id < $1.id }
+        let height = clusters.reduce(CGFloat(0)) { $0 + CGFloat($1.coreIndices.count) * (rowHeight + Self.gap) }
+            + CGFloat(max(0, clusters.count - 1)) * Self.groupGap
+
+        HStack(alignment: .top, spacing: DS.Space.s2) {
+            VStack(alignment: .leading, spacing: Self.groupGap) {
+                ForEach(clusters) { cluster in
+                    Text(verbatim: cluster.name)
+                        .dsFont(.xs)
+                        .foregroundStyle(DS.Palette.textTertiary)
+                        .lineLimit(1)
+                        .frame(height: CGFloat(cluster.coreIndices.count) * (rowHeight + Self.gap), alignment: .center)
+                }
             }
-            center
+            .fixedSize()
+
+            Canvas { context, size in
+                let recent = Array(history.suffix(columns))
+                let cellWidth = (size.width - Self.gap * CGFloat(columns - 1)) / CGFloat(columns)
+                let offset = columns - recent.count
+                var y: CGFloat = 0
+                for cluster in clusters {
+                    for core in cluster.coreIndices.reversed() {
+                        for column in 0..<columns {
+                            let rect = CGRect(x: CGFloat(column) * (cellWidth + Self.gap), y: y, width: cellWidth, height: rowHeight)
+                            let value = column >= offset ? recent[column - offset][safe: core] : nil
+                            context.fill(Path(rect), with: .color(Self.color(value)))
+                        }
+                        y += rowHeight + Self.gap
+                    }
+                    y += Self.groupGap
+                }
+            }
+            .frame(height: height)
         }
-        .padding(lineWidth / 2)
-        .frame(width: size, height: size)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("核心热力图")
     }
 
-    private var ranges: [(start: Double, end: Double, color: Color)] {
-        var start = 0.0
-        return segments.map { segment in
-            let end = min(1, start + max(0, segment.fraction))
-            defer { start = end }
-            return (start, end, segment.color)
+    static func color(_ value: Double?) -> Color {
+        guard let value else { return DS.Palette.track }
+        if value >= 0.85 { return DS.Palette.warning }
+        return DS.Palette.primary.opacity(0.08 + 0.92 * min(1, max(0, value)))
+    }
+}
+
+/// 热力图图例：低 → 高
+struct HeatLegend: View {
+    var body: some View {
+        HStack(spacing: DS.Space.s1) {
+            Text("闲").dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+            ForEach([0.05, 0.3, 0.55, 0.8, 0.9], id: \.self) { value in
+                RoundedRectangle(cornerRadius: DS.Radius.sm / 2)
+                    .fill(CoreHeatmap.color(value))
+                    .frame(width: DS.Space.s2, height: DS.Space.s2)
+            }
+            Text("忙").dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
         }
     }
 }
 
-/// 内存压力仪表：半圆弧分正常、偏高、严重三段，指针指向当前档位
-struct PressureGauge: View {
-    let pressure: MemoryPressure?
-    var width: CGFloat = DS.Space.s16
+/// 压力走势条：每次采样一段，绿色正常、橙色偏高、红色严重
+struct PressureStrip: View {
+    let history: [MemoryPressure]
+    var capacity = MetricsStore.historyCapacity
 
     var body: some View {
-        VStack(spacing: DS.Space.s1) {
-            Canvas { context, size in
-                let lineWidth = DS.Space.s2 - DS.Space.s1 / 2
-                let radius = min(size.width / 2, size.height) - lineWidth / 2
-                let center = CGPoint(x: size.width / 2, y: size.height - DS.Space.s1)
-                // 角度从左（0°）经过顶部到右（180°）
-                func point(_ degrees: Double, _ r: CGFloat) -> CGPoint {
-                    let radians = degrees * .pi / 180
-                    return CGPoint(x: center.x - r * cos(radians), y: center.y - r * sin(radians))
+        Canvas { context, size in
+            let width = size.width / CGFloat(capacity)
+            let offset = capacity - min(capacity, history.count)
+            let recent = history.suffix(capacity)
+            context.clip(to: Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: size.height / 2))
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(DS.Palette.track))
+            for (index, pressure) in recent.enumerated() {
+                let color: Color = switch pressure {
+                case .normal: DS.Palette.success
+                case .warning: DS.Palette.warning
+                case .critical: DS.Palette.error
                 }
-                let bands: [(Double, Double, Color)] = [(0, 58, DS.Palette.success), (62, 118, DS.Palette.warning), (122, 180, DS.Palette.error)]
-                for (start, end, color) in bands {
-                    var arc = Path()
-                    arc.move(to: point(start, radius))
-                    for step in stride(from: start, through: end, by: 2) { arc.addLine(to: point(step, radius)) }
-                    context.stroke(arc, with: .color(color), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
-                }
-                let angle: Double = switch pressure {
-                case .warning: 90
-                case .critical: 150
-                default: 30
-                }
-                var needle = Path()
-                needle.move(to: center)
-                needle.addLine(to: point(angle, radius * 0.72))
-                context.stroke(needle, with: .color(DS.Palette.textPrimary),
-                               style: StrokeStyle(lineWidth: DS.Size.chartLine * 2, lineCap: .round))
-                let dot = DS.Space.s1 + DS.Space.s1 / 2
-                context.fill(Path(ellipseIn: CGRect(x: center.x - dot / 2, y: center.y - dot / 2, width: dot, height: dot)),
-                             with: .color(DS.Palette.textPrimary))
+                // 多画 1pt 盖住相邻段之间的缝
+                let rect = CGRect(x: CGFloat(offset + index) * width, y: 0, width: width + DS.Size.stroke, height: size.height)
+                context.fill(Path(rect), with: .color(color))
             }
-            .frame(width: width, height: width / 2 + DS.Space.s1)
-            Text(pressure.map { "压力\($0.title)" } ?? "—")
-                .dsFont(.xs, weight: .semibold)
-                .foregroundStyle(DS.Palette.textSecondary)
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("内存压力 \(pressure?.title ?? "未知")")
+        .frame(height: DS.Space.s2)
+        .accessibilityElement()
+        .accessibilityLabel("最近的内存压力走势")
+    }
+}
+
+/// 横向水位条：各段按大小依次排开，段与段之间留 1pt 缝
+struct WaterlineBar: View {
+    let segments: [(value: Double, color: Color)]
+    let total: Double
+    var height: CGFloat = DS.Space.s4 + DS.Space.s1
+
+    var body: some View {
+        Canvas { context, size in
+            context.clip(to: Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: DS.Radius.sm))
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(DS.Palette.track))
+            var x: CGFloat = 0
+            for segment in segments where segment.value > 0 {
+                let width = size.width * CGFloat(segment.value / max(total, 1))
+                context.fill(Path(CGRect(x: x, y: 0, width: max(0, width - DS.Size.stroke), height: size.height)),
+                             with: .color(segment.color))
+                x += width
+            }
+        }
+        .frame(height: height)
+        .accessibilityHidden(true)
+    }
+}
+
+extension Array {
+    subscript(safe index: Int) -> Element? {
+        indices.contains(index) ? self[index] : nil
     }
 }
 

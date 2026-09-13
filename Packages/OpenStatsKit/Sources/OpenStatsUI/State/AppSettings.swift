@@ -55,8 +55,8 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
     /// 点击该项弹出的详情里可以显示的内容，按显示顺序排列
     var popoverSections: [PopoverSection] {
         switch self {
-        case .cpu: [.cpuHistory, .cpuCores, .cpuDetails, .cpuLoadAverage, .cpuProcesses]
-        case .memory: [.memoryHistory, .memoryBreakdown, .memoryProcesses]
+        case .cpu: [.cpuHeatmap, .cpuClusters, .cpuLoadAverage, .cpuApps]
+        case .memory: [.memoryWaterline, .memoryCompression, .memoryApps]
         case .network: [.networkHistory, .networkProbe, .networkInterface, .networkAddresses, .networkDNS, .networkProcesses]
         case .gpu: [.gpuHistory, .gpuDetails]
         case .temperature: [.thermalSensors, .thermalFans]
@@ -81,8 +81,8 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
 
 /// 详情弹窗里可以单独隐藏的区块
 public enum PopoverSection: String, CaseIterable, Identifiable, Sendable {
-    case cpuHistory, cpuCores, cpuDetails, cpuLoadAverage, cpuProcesses
-    case memoryHistory, memoryBreakdown, memoryProcesses
+    case cpuHeatmap, cpuClusters, cpuLoadAverage, cpuApps
+    case memoryWaterline, memoryCompression, memoryApps
     case networkHistory, networkProbe, networkInterface, networkAddresses, networkDNS, networkProcesses
     case gpuHistory, gpuDetails
     case thermalSensors, thermalFans
@@ -91,13 +91,13 @@ public enum PopoverSection: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .cpuHistory: "负载历史"
-        case .cpuCores: "核心负载"
-        case .cpuDetails: "详细信息"
-        case .cpuLoadAverage: "平均负载"
-        case .cpuProcesses, .memoryProcesses, .networkProcesses: "高占用进程"
-        case .memoryHistory: "使用历史"
-        case .memoryBreakdown: "内存构成"
+        case .cpuHeatmap: "核心热力图"
+        case .cpuClusters: "核心分工"
+        case .cpuLoadAverage: "排队程度"
+        case .cpuApps, .memoryApps: "按应用汇总"
+        case .networkProcesses: "高占用进程"
+        case .memoryWaterline: "内存水位"
+        case .memoryCompression: "压缩与交换"
         case .networkHistory: "流量历史"
         case .networkProbe: "连接探测"
         case .networkInterface: "接口"
