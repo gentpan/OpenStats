@@ -193,6 +193,8 @@ public struct MetricsSnapshot: Sendable {
     public var systemCounts: SystemCounts?
     public var sensors: SensorReadings?
     public var power: PowerReading?
+    public var diskActivity: DiskActivity?
+    public var diskHealth: DiskHealth?
 
     public init() {}
 }

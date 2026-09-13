@@ -46,7 +46,7 @@ public enum AlertKind: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .cpuTemperature: .thermal
         case .memoryPressure: .memory
-        case .diskSpace: .cleaner
+        case .diskSpace: .disk
         case .networkDown: .network
         case .batteryHealth: .system
         }

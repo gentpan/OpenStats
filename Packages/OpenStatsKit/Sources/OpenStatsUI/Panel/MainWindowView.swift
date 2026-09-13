@@ -28,6 +28,7 @@ public struct MainWindowView: View {
                     case .cpu: DetailPage { CPUPopover() }
                     case .gpu: DetailPage { GPUPopover() }
                     case .memory: DetailPage { MemoryPopover() }
+                    case .disk: DiskPage()
                     case .network:
                         DetailPage {
                             NetworkPopover()

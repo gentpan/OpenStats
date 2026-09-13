@@ -31,6 +31,7 @@ enum SnapshotRenderer {
         demand.fans = true
         demand.power = true
         demand.cpuFrequency = true
+        demand.diskDetail = true
         await model.hub.update(demand)
         await model.hub.start { snapshot in model.handle(snapshot) }
         try? await Task.sleep(for: .seconds(12))

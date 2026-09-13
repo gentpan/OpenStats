@@ -220,12 +220,12 @@ public enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
 
 /// 主窗口侧边栏的页面
 public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
-    case overview, system, cpu, gpu, memory, network, thermal, processes, keepAwake, cleaner
+    case overview, system, cpu, gpu, memory, disk, network, thermal, processes, keepAwake, cleaner
     case settingsGeneral, settingsMenuBar, settingsNotifications, settingsHelper, settingsAbout
 
     public var id: String { rawValue }
 
-    static let monitors: [PanelTab] = [.overview, .system, .cpu, .gpu, .memory, .network, .thermal]
+    static let monitors: [PanelTab] = [.overview, .system, .cpu, .gpu, .memory, .disk, .network, .thermal]
     static let tools: [PanelTab] = [.processes, .keepAwake, .cleaner]
     static let settings: [PanelTab] = [.settingsGeneral, .settingsMenuBar, .settingsNotifications, .settingsHelper, .settingsAbout]
 
@@ -241,6 +241,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .cpu: "CPU"
         case .gpu: "GPU"
         case .memory: "内存"
+        case .disk: "磁盘"
         case .network: "网络"
         case .thermal: "温度与风扇"
         case .processes: "进程"
@@ -261,6 +262,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .cpu: "cpu"
         case .gpu: "square.3.layers.3d"
         case .memory: "memorychip"
+        case .disk: "internaldrive"
         case .network: "network"
         case .thermal: "fan"
         case .processes: "list.bullet.rectangle"

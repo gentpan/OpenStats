@@ -38,12 +38,22 @@ public final class MetricsStore {
     public private(set) var sensors: SensorReadings?
     public private(set) var power: PowerReading?
     public private(set) var powerHistory = History<Double>(capacity: historyCapacity)
+    public private(set) var diskActivity: DiskActivity?
+    public private(set) var diskReadHistory = History<Double>(capacity: historyCapacity)
+    public private(set) var diskWriteHistory = History<Double>(capacity: historyCapacity)
+    public private(set) var diskHealth: DiskHealth?
     public private(set) var lastUpdate: Date?
 
     public init() {}
 
     public func apply(_ snapshot: MetricsSnapshot) {
         lastUpdate = snapshot.date
+        if let activity = snapshot.diskActivity {
+            diskActivity = activity
+            diskReadHistory.append(activity.readRate)
+            diskWriteHistory.append(activity.writeRate)
+        }
+        if let health = snapshot.diskHealth { diskHealth = health }
         if let power = snapshot.power {
             self.power = power
             if let system = power.system { powerHistory.append(system) }

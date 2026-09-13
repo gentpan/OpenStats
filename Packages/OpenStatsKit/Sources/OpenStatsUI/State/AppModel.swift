@@ -65,9 +65,10 @@ public final class AppModel {
         demand.network = true
         let showing = { (page: PanelTab, item: MenuBarItem) in (window && tab == page) || popover == item }
         demand.gpu = (window && [.overview, .system].contains(tab)) || menu.contains(.gpu) || showing(.gpu, .gpu)
-        demand.disk = window && [.overview, .system, .cleaner].contains(tab)
+        demand.disk = window && [.overview, .system, .cleaner, .disk].contains(tab)
+        demand.diskDetail = window && tab == .disk
         demand.battery = (window && [.overview, .system, .keepAwake].contains(tab)) || keepAwake.lidClosedActive
-        demand.processes = (window && [.processes, .overview].contains(tab)) || showing(.cpu, .cpu) || showing(.memory, .memory)
+        demand.processes = (window && [.processes, .overview, .disk].contains(tab)) || showing(.cpu, .cpu) || showing(.memory, .memory)
         demand.systemProcesses = window && tab == .processes
 
         var groups = Set<TemperatureGroup>()

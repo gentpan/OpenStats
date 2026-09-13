@@ -18,6 +18,8 @@ public struct MetricsDemand: Sendable, Equatable {
     public var power = false
     /// 各类核心的频率
     public var cpuFrequency = false
+    /// 磁盘读写速率与 SMART 健康信息
+    public var diskDetail = false
 
     public init() {}
 }
@@ -29,6 +31,7 @@ public actor MetricsHub {
     private var processes = ProcessSampler()
     private let sensors = SensorSampler()
     private let power = PowerSampler()
+    private var diskActivity = DiskActivitySampler()
 
     private var demand = MetricsDemand()
     private var handler: (@MainActor @Sendable (MetricsSnapshot) -> Void)?
@@ -41,6 +44,7 @@ public actor MetricsHub {
     private var lastBattery = Date.distantPast
     private var lastInterface = Date.distantPast
     private var lastPower = Date.distantPast
+    private var lastDiskHealth = Date.distantPast
 
     public init() {}
 
@@ -54,6 +58,7 @@ public actor MetricsHub {
         let needsImmediateRefresh = newDemand.interval < demand.interval
             || (newDemand.processes && !demand.processes)
             || (newDemand.disk && !demand.disk)
+            || (newDemand.diskDetail && !demand.diskDetail)
         if (newDemand.power && !demand.power) || (newDemand.cpuFrequency && !demand.cpuFrequency) {
             lastPower = .distantPast
         }
@@ -62,6 +67,7 @@ public actor MetricsHub {
             lastDisk = .distantPast
             lastBattery = .distantPast
             lastInterface = .distantPast
+            lastDiskHealth = .distantPast
         }
 
         restart()
@@ -93,6 +99,7 @@ public actor MetricsHub {
         demand.fans = true
         demand.power = true
         demand.cpuFrequency = true
+        demand.diskDetail = true
         return demand
     }
 
@@ -144,6 +151,13 @@ public actor MetricsHub {
         }
         if !demand.temperatures.isEmpty || demand.fans {
             snapshot.sensors = sensors.sample(groups: demand.temperatures, includeFans: demand.fans)
+        }
+        if demand.diskDetail {
+            snapshot.diskActivity = diskActivity.sample(now: now)
+            if now.timeIntervalSince(lastDiskHealth) > 60 {
+                snapshot.diskHealth = DiskHealthReader.read()
+                lastDiskHealth = now
+            }
         }
         // IOReport 采样有一定开销，至少间隔 2 秒
         if demand.power || demand.cpuFrequency, now.timeIntervalSince(lastPower) >= 1.9 {

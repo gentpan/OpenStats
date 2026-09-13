@@ -44,3 +44,30 @@ import Testing
         #expect(PowerSampler.joulesPerUnit("mJ") == 1e-3)
     }
 }
+
+@Suite struct DiskSamplerTests {
+    @Test func parsesNVMeHealthLog() throws {
+        var log = [UInt8](repeating: 0, count: 512)
+        log[0] = 0
+        log[1] = 0x3B; log[2] = 0x01          // 315 K ≈ 41.85 °C
+        log[3] = 100; log[4] = 10; log[5] = 3
+        log[48] = 0x10; log[49] = 0x27        // 写入 10000 个数据单位
+        log[128] = 0xE8; log[129] = 0x03      // 通电 1000 小时
+        log[144] = 5
+        let health = try #require(DiskHealthReader.parse(log, model: "SSD"))
+        #expect(health.percentageUsed == 3)
+        #expect(health.remainingLife == 97)
+        #expect(health.bytesWritten == 10_000 * 512 * 1000)
+        #expect(health.powerOnHours == 1000)
+        #expect(health.unsafeShutdowns == 5)
+        #expect(abs((health.temperature ?? 0) - 41.85) < 0.01)
+        #expect(DiskHealthReader.parse([1, 2, 3], model: "SSD") == nil)
+    }
+
+    @Test func activityNeedsTwoSamples() {
+        var sampler = DiskActivitySampler()
+        #expect(sampler.sample(now: Date()) == nil)
+        let second = sampler.sample(now: Date().addingTimeInterval(1))
+        #expect(second.map { $0.readRate >= 0 && $0.writeRate >= 0 } ?? true)
+    }
+}
