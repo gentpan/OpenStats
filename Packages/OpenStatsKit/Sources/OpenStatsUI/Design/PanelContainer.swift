@@ -32,3 +32,47 @@ struct WindowDragArea: NSViewRepresentable {
     func makeNSView(context: Context) -> DragView { DragView() }
     func updateNSView(_ nsView: DragView, context: Context) {}
 }
+
+/// 滚动条只在滚动时出现：把所在的 NSScrollView 固定为浮层样式。
+/// 系统设置为“始终显示滚动条”或接了鼠标时，SwiftUI 默认会一直显示一条占位的滚动条
+struct OverlayScrollers: NSViewRepresentable {
+    final class Probe: NSView {
+        private var observer: NSObjectProtocol?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            guard window != nil else {
+                if let observer { NotificationCenter.default.removeObserver(observer) }
+                observer = nil
+                return
+            }
+            apply()
+            guard observer == nil else { return }
+            // 系统切换滚动条样式时会重置，收到通知后重新设置
+            observer = NotificationCenter.default.addObserver(forName: NSScroller.preferredScrollerStyleDidChangeNotification,
+                                                              object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.apply() }
+            }
+        }
+
+        func apply() {
+            DispatchQueue.main.async { [weak self] in
+                MainActor.assumeIsolated {
+                    guard let scrollView = self?.enclosingScrollView else { return }
+                    scrollView.scrollerStyle = .overlay
+                    scrollView.autohidesScrollers = true
+                }
+            }
+        }
+    }
+
+    func makeNSView(context: Context) -> Probe { Probe() }
+    func updateNSView(_ nsView: Probe, context: Context) { nsView.apply() }
+}
+
+extension View {
+    /// 放在 ScrollView 的内容里：滚动条改为浮层，只在滚动时显示
+    func overlayScrollers() -> some View {
+        background(OverlayScrollers().frame(width: 0, height: 0))
+    }
+}

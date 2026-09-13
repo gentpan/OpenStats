@@ -92,8 +92,11 @@ public final class AppController: NSObject, NSApplicationDelegate, NSWindowDeleg
     private func showSettings() {
         menuBar.dismissPopovers()
         if settingsWindow == nil {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: DS.Size.settingsWidth, height: DS.Size.settingsHeight),
-                                  styleMask: [.titled, .closable, .miniaturizable],
+            let visible = NSScreen.main?.visibleFrame.size ?? DS.Size.settingsDefaultSize
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0,
+                                                      width: min(DS.Size.settingsDefaultSize.width, visible.width - DS.Space.s12),
+                                                      height: min(DS.Size.settingsDefaultSize.height, visible.height - DS.Space.s12)),
+                                  styleMask: [.titled, .closable, .miniaturizable, .resizable],
                                   backing: .buffered,
                                   defer: false)
             window.title = "OpenStats 设置"
@@ -101,7 +104,9 @@ public final class AppController: NSObject, NSApplicationDelegate, NSWindowDeleg
             window.isReleasedWhenClosed = false
             window.delegate = self
             window.contentView = NSHostingView(rootView: SettingsView().environment(model))
-            window.center()
+            window.contentMinSize = NSSize(width: DS.Size.settingsWidth, height: DS.Size.settingsHeight)
+            window.setFrameAutosaveName("OpenStatsSettingsWindow")
+            if window.frame.width < DS.Size.settingsDefaultSize.width { window.center() }
             settingsWindow = window
         }
         NSApp.activate()

@@ -30,7 +30,8 @@ final class MainWindowController: NSObject, NSWindowDelegate {
 
     private func makeWindow() -> NSWindow {
         let width = DS.Size.settingsSidebar + DS.Size.panelWidth
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: width, height: DS.Size.panelMinHeight * 2),
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: DS.Size.settingsSidebar + DS.Size.windowDefaultContentWidth,
+                                                  height: DS.Size.panelMinHeight * 2),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                               backing: .buffered,
                               defer: false)
@@ -39,7 +40,8 @@ final class MainWindowController: NSObject, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.contentMinSize = NSSize(width: width, height: DS.Size.panelMinHeight * 1.5)
-        window.setFrameAutosaveName("OpenStatsMainWindow")
+        // 默认尺寸调大后换一个保存名，旧的小窗口尺寸不再沿用
+        window.setFrameAutosaveName("OpenStatsMainWindow.v2")
         window.contentView = NSHostingView(rootView: MainWindowView().environment(model))
         return window
     }
@@ -52,7 +54,9 @@ final class MainWindowController: NSObject, NSWindowDelegate {
         }
         let measuring = NSHostingView(rootView: MainWindowView().environment(model).environment(\.isSnapshot, true))
         let height = min(measuring.fittingSize.height, visible.height - DS.Space.s12)
-        let size = NSSize(width: window.frame.width, height: max(height, DS.Size.panelMinHeight * 1.5))
+        // 至少 720pt 高（屏幕放得下时），页面较短也不会开成一个小窗口
+        let size = NSSize(width: min(window.frame.width, visible.width - DS.Space.s12),
+                          height: min(max(height, DS.Size.settingsDefaultSize.height), visible.height - DS.Space.s12))
         return NSRect(x: visible.midX - size.width / 2, y: visible.midY - size.height / 2,
                       width: size.width, height: size.height)
     }

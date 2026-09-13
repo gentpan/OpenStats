@@ -46,10 +46,10 @@ Developed and tested on Apple Silicon. The interface is in Simplified Chinese.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Not released yet · **38** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Not released yet · **40** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-09-13</b> · Unreleased · 27 added · 5 style · 6 fixed</summary>
+<summary><b>2026-09-13</b> · Unreleased · 27 added · 7 style · 6 fixed</summary>
 
 **Added**
 
@@ -83,6 +83,8 @@ Not released yet · **38** changes in development · [full changelog](CHANGELOG.
 
 **Style**
 
+- 内存详情的“释放内存”移到标题栏，执行中与完成后在按钮上显示进度和结果；主窗口内存页顶栏同样提供。
+- 主窗口默认 1072×720、设置窗口默认 920×720，两者都可自由调整大小；滚动条改为浮层样式，只在滚动时出现。
 - 菜单栏字号缩小并统一：两行布局为 7pt 标签加 10pt 数值，单行布局 11pt，网速两行 9pt；每种风格内部只用一套字号，指标之间留出更宽的间距。
 - 柱状历史去掉满高的灰色底槽，只保留一条淡基线，负载起伏更清楚。
 - 面板加宽为三列布局，高度按内容自动计算，常见屏幕上不需要滚动。

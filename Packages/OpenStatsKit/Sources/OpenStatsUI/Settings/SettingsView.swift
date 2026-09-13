@@ -81,7 +81,9 @@ public struct SettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(width: DS.Size.settingsWidth, height: isSnapshot ? nil : DS.Size.settingsHeight)
+        .frame(width: isSnapshot ? DS.Size.settingsWidth : nil)
+        .frame(minWidth: DS.Size.settingsWidth, maxWidth: .infinity,
+               minHeight: isSnapshot ? nil : DS.Size.settingsHeight, maxHeight: isSnapshot ? nil : .infinity)
         .fixedSize(horizontal: false, vertical: isSnapshot)
         .background(DS.Palette.background)
         .ignoresSafeArea()
@@ -107,8 +109,8 @@ private struct SettingsPage<Content: View>: View {
         if isSnapshot {
             stack
         } else {
-            ScrollView { stack }
-                .scrollIndicators(.automatic)
+            ScrollView { stack.overlayScrollers() }
+                .scrollBounceBehavior(.basedOnSize)
         }
     }
 }

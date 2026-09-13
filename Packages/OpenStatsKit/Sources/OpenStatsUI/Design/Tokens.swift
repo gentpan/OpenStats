@@ -132,8 +132,12 @@ extension DS {
         static let windowHeader: CGFloat = 40
         /// 窄控件的固定宽度（分段控件等）
         static let tileWidth: CGFloat = (panelWidth - Space.s3 * 4) / 3
+        /// 设置窗口的最小尺寸；默认打开时更大，可自由调整
         static let settingsWidth: CGFloat = 720
         static let settingsHeight: CGFloat = 520
+        static let settingsDefaultSize = CGSize(width: 920, height: 720)
+        /// 主窗口默认内容区宽度（侧边栏另计）
+        static let windowDefaultContentWidth: CGFloat = 880
         static let settingsSidebar: CGFloat = 192
         static let valueColumn: CGFloat = 64
         static let labelColumn: CGFloat = 48

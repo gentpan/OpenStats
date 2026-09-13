@@ -496,8 +496,7 @@ struct PageScroll<Content: View>: View {
             stack
         } else {
             // 内容放得下时不回弹，避免点击时整页轻微抖动
-            ScrollView { stack }
-                .scrollIndicators(.never)
+            ScrollView { stack.overlayScrollers() }
                 .scrollBounceBehavior(.basedOnSize)
         }
     }

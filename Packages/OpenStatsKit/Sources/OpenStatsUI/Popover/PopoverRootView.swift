@@ -49,6 +49,7 @@ private struct PopoverHeader: View {
                 .dsFont(.base, weight: .semibold)
                 .foregroundStyle(DS.Palette.textPrimary)
             Spacer(minLength: DS.Space.s2)
+            if item == .memory { PurgeMemoryButton() }
             IconButton(systemName: "macwindow", help: "打开 OpenStats 主窗口") { model.openMainWindow(nil) }
             IconButton(systemName: "gearshape", help: "设置") { model.openSettings() }
         }

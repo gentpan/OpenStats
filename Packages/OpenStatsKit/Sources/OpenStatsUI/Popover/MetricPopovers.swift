@@ -193,7 +193,6 @@ struct MemoryPopover: View {
                             }
                         }
                     }
-                    PurgeMemoryRow()
                 }
             case .memoryCompression:
                 SectionCard(title: section.title) {
@@ -397,25 +396,35 @@ private struct ExplainableRow<Content: View>: View {
     }
 }
 
-private struct PurgeMemoryRow: View {
+/// 标题栏里的“释放内存”：执行中显示进度，完成后短暂显示结果再恢复
+struct PurgeMemoryButton: View {
     @Environment(AppModel.self) private var model
+    @State private var result: MaintenanceController.Outcome?
 
     var body: some View {
         let maintenance = model.maintenance
-        HStack(spacing: DS.Space.s2) {
-            Button(maintenance.running == .purgeMemory ? "正在释放…" : "释放内存") {
-                Task { await maintenance.run(.purgeMemory) }
+        let running = maintenance.running == .purgeMemory
+        Button {
+            Task {
+                await maintenance.run(.purgeMemory)
+                result = maintenance.outcomes[.purgeMemory]
+                try? await Task.sleep(for: .seconds(3))
+                result = nil
             }
-            .buttonStyle(DSButtonStyle(kind: .secondary))
-            .disabled(maintenance.running != nil)
-            if let outcome = maintenance.outcomes[.purgeMemory] {
-                Text(outcome.text)
-                    .dsFont(.xs)
-                    .foregroundStyle(outcome.isError ? DS.Palette.error : DS.Palette.textSecondary)
-                    .lineLimit(2)
+        } label: {
+            HStack(spacing: DS.Space.s1) {
+                if running {
+                    ProgressView().controlSize(.mini)
+                } else {
+                    Image(systemName: result == nil ? "wind" : result!.isError ? "exclamationmark.triangle" : "checkmark")
+                }
+                Text(running ? "正在释放…" : result?.text ?? "释放内存").lineLimit(1)
             }
-            Spacer(minLength: 0)
+            .foregroundStyle(result?.isError == true ? DS.Palette.error : result != nil ? DS.Palette.success : DS.Palette.textPrimary)
         }
+        .buttonStyle(DSButtonStyle(kind: .secondary))
+        .disabled(maintenance.running != nil)
+        .help("清理可回收的缓存内存（需要管理员授权或辅助工具）")
     }
 }
 

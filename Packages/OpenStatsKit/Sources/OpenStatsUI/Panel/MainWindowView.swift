@@ -112,6 +112,7 @@ private struct PageHeader: View {
             if model.keepAwake.isActive {
                 Chip(text: "防休眠已开启", icon: "cup.and.saucer.fill", tone: .primary)
             }
+            if tab == .memory { PurgeMemoryButton() }
             if let item = tab.menuBarItem {
                 Text("在菜单栏显示").dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
                 DSToggle(isOn: Binding(get: { settings.isEnabled(item) }, set: { settings.setEnabled(item, $0) }),
