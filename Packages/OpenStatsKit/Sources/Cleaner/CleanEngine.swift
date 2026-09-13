@@ -67,7 +67,7 @@ public enum CleanEngine {
     }
 
     /// 实际占用的磁盘空间；不跟随符号链接
-    static func allocatedSize(of url: URL) -> UInt64 {
+    public static func allocatedSize(of url: URL) -> UInt64 {
         let keys: [URLResourceKey] = [.isRegularFileKey, .isSymbolicLinkKey, .totalFileAllocatedSizeKey, .fileAllocatedSizeKey]
         guard let values = try? url.resourceValues(forKeys: Set(keys)), values.isSymbolicLink != true else { return 0 }
         if values.isRegularFile == true {

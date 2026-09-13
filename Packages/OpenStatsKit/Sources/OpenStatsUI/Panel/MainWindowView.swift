@@ -38,6 +38,7 @@ public struct MainWindowView: View {
                     case .processes: ProcessesPage()
                     case .keepAwake: KeepAwakePage()
                     case .cleaner: CleanerPage()
+                    case .uninstaller: UninstallerPage()
                     case .settingsGeneral: SettingsTabPage { GeneralSettings() }
                     case .settingsMenuBar: SettingsTabPage { MenuBarSettings() }
                     case .settingsNotifications: SettingsTabPage { NotificationSettings() }

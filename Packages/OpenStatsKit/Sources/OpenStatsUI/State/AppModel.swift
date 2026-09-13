@@ -21,6 +21,7 @@ public final class AppModel {
     public let updates: UpdateController
     let diagnostics = DiagnosticsExporter()
     public let alerts: AlertController
+    public let uninstaller = UninstallerController()
     @ObservationIgnored public let hub = MetricsHub()
 
     public var isMainWindowVisible = false
