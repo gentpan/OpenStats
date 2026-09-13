@@ -7,7 +7,7 @@ import UserNotifications
 
 /// 可以发系统通知的状况
 public enum AlertKind: String, CaseIterable, Identifiable, Sendable {
-    case cpuTemperature, memoryPressure, diskSpace, networkDown, batteryHealth
+    case cpuTemperature, memoryPressure, diskSpace, networkDown, batteryHealth, bluetoothBattery
 
     public var id: String { rawValue }
 
@@ -18,6 +18,7 @@ public enum AlertKind: String, CaseIterable, Identifiable, Sendable {
         case .diskSpace: "磁盘空间不足"
         case .networkDown: "网络断开"
         case .batteryHealth: "电池健康度下降"
+        case .bluetoothBattery: "蓝牙设备电量低"
         }
     }
 
@@ -28,6 +29,7 @@ public enum AlertKind: String, CaseIterable, Identifiable, Sendable {
         case .diskSpace: "启动磁盘可用空间低于 10% 或 10 GB，每 10 分钟检查一次"
         case .networkDown: "网络连接中断超过 20 秒，恢复后再提示一次"
         case .batteryHealth: "电池最大容量低于 80%，每 30 天最多提醒一次"
+        case .bluetoothBattery: "已连接的键盘、鼠标、耳机等电量低于 15%，每 10 分钟检查一次"
         }
     }
 
@@ -38,6 +40,7 @@ public enum AlertKind: String, CaseIterable, Identifiable, Sendable {
         case .diskSpace: "internaldrive"
         case .networkDown: "wifi.slash"
         case .batteryHealth: "battery.25percent"
+        case .bluetoothBattery: "dot.radiowaves.left.and.right"
         }
     }
 
@@ -48,7 +51,7 @@ public enum AlertKind: String, CaseIterable, Identifiable, Sendable {
         case .memoryPressure: .memory
         case .diskSpace: .disk
         case .networkDown: .network
-        case .batteryHealth: .system
+        case .batteryHealth, .bluetoothBattery: .system
         }
     }
 
@@ -58,7 +61,7 @@ public enum AlertKind: String, CaseIterable, Identifiable, Sendable {
         case .cpuTemperature: 60
         case .memoryPressure: 30
         case .networkDown: 20
-        case .diskSpace, .batteryHealth: 0
+        case .diskSpace, .batteryHealth, .bluetoothBattery: 0
         }
     }
 
@@ -66,7 +69,7 @@ public enum AlertKind: String, CaseIterable, Identifiable, Sendable {
     var cooldown: TimeInterval {
         switch self {
         case .cpuTemperature, .memoryPressure, .networkDown: 30 * 60
-        case .diskSpace: 6 * 60 * 60
+        case .diskSpace, .bluetoothBattery: 6 * 60 * 60
         case .batteryHealth: 30 * 24 * 60 * 60
         }
     }
@@ -113,6 +116,8 @@ public final class AlertController: NSObject {
     @ObservationIgnored private var networkNotified = false
     @ObservationIgnored private var networkDownTask: Task<Void, Never>?
     @ObservationIgnored private var periodicTask: Task<Void, Never>?
+    /// 每个蓝牙设备上次提醒的时间
+    @ObservationIgnored private var bluetoothNotified: [String: Date] = [:]
 
     /// 单元测试与截图进程没有应用包标识，不能使用通知中心
     private var center: UNUserNotificationCenter? {
@@ -145,11 +150,12 @@ public final class AlertController: NSObject {
             networkNotified = false
         }
 
-        if enabled.contains(.diskSpace) || enabled.contains(.batteryHealth) {
+        if enabled.contains(.diskSpace) || enabled.contains(.batteryHealth) || enabled.contains(.bluetoothBattery) {
             if periodicTask == nil {
                 periodicTask = Task { [weak self] in
                     while !Task.isCancelled {
                         self?.checkPeriodic()
+                        await self?.checkBluetooth()
                         try? await Task.sleep(for: .seconds(10 * 60), tolerance: .seconds(60))
                     }
                 }
@@ -192,6 +198,21 @@ public final class AlertController: NSObject {
                 defaults.set(now, forKey: Keys.batteryNotified)
                 send(.batteryHealth, body: "电池最大容量为 \(Format.percent(health))，续航会明显缩短。可以在“系统设置 › 电池”查看是否建议维修。")
             }
+        }
+    }
+
+    private func checkBluetooth(now: Date = Date()) async {
+        guard settings.enabledAlerts.contains(.bluetoothBattery) else { return }
+        let devices = await Task.detached { BluetoothBatteryReader.read() }.value
+        for device in devices {
+            guard let lowest = device.batteries.min(by: { $0.percent < $1.percent }), lowest.percent <= 15 else {
+                bluetoothNotified[device.id] = nil
+                continue
+            }
+            if let last = bluetoothNotified[device.id], now.timeIntervalSince(last) < AlertKind.bluetoothBattery.cooldown { continue }
+            bluetoothNotified[device.id] = now
+            let part = device.batteries.count > 1 ? "\(lowest.label)" : ""
+            send(.bluetoothBattery, title: "\(device.name)电量低", body: "\(device.name)\(part)只剩 \(lowest.percent)%，记得充电。")
         }
     }
 

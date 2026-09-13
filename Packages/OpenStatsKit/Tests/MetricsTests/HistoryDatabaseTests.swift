@@ -45,3 +45,25 @@ import Testing
         #expect(await database.count() == 0)
     }
 }
+
+@Suite struct BluetoothBatteryTests {
+    @Test func parsesConnectedDevices() {
+        let json = """
+        {"SPBluetoothDataType":[{"controller_properties":{},
+          "device_connected":[
+            {"AirPods Pro":{"device_address":"AA:BB","device_minorType":"Headphones","device_batteryLevelLeft":"80%","device_batteryLevelRight":"75 %","device_batteryLevelCase":"40%"}},
+            {"Magic Keyboard":{"device_address":"CC:DD","device_minorType":"Keyboard","device_batteryLevelMain":"55%"}}
+          ],
+          "device_not_connected":[{"Old Mouse":{"device_address":"EE:FF","device_minorType":"Mouse"}}]}]}
+        """
+        let devices = BluetoothBatteryReader.parseSystemProfiler(Data(json.utf8))
+        #expect(devices.count == 2)
+        let airpods = devices.first { $0.name == "AirPods Pro" }
+        #expect(airpods?.kind == .headphones)
+        #expect(airpods?.batteries.map(\.percent) == [80, 75, 40])
+        #expect(airpods?.batteries.map(\.label) == ["左耳", "右耳", "充电盒"])
+        #expect(devices.first { $0.name == "Magic Keyboard" }?.batteries.first?.percent == 55)
+        #expect(BluetoothBatteryReader.percentValue("120%") == nil)
+        #expect(BluetoothBatteryReader.parseSystemProfiler(Data("oops".utf8)).isEmpty)
+    }
+}
