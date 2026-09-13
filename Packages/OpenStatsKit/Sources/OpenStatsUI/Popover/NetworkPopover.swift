@@ -63,23 +63,26 @@ private struct TrafficHistorySection: View {
         let upload = store.uploadHistory.elements
         let download = store.downloadHistory.elements
 
-        SectionCard(title: PopoverSection.networkHistory.title, trailing: { Text("最近 60 秒") }) {
+        // 峰值放在标题行，图表上不压任何文字
+        SectionCard(title: PopoverSection.networkHistory.title, trailing: {
+            HStack(spacing: DS.Space.s1) {
+                Text("60 秒峰值")
+                peak("↑", upload, color: DS.NetworkPalette.upload)
+                peak("↓", download, color: DS.NetworkPalette.download)
+            }
+            .monospacedDigit()
+        }) {
             MirroredRateChart(upload: upload, download: download,
                               height: isDetailPage ? DS.Size.chartHeight * 3 : DS.Size.chartHeight + DS.Space.s6)
-                .overlay(alignment: .topLeading) {
-                    peakLabel("峰值 ↑", upload)
-                }
-                .overlay(alignment: .bottomLeading) {
-                    peakLabel("峰值 ↓", download)
-                }
         }
     }
 
-    private func peakLabel(_ prefix: String, _ values: [Double]) -> some View {
-        Text(verbatim: "\(prefix) \(Format.menuBarRate(max(values.max() ?? 0, MirroredRateChart.floor)))")
-            .dsFont(.xs)
-            .monospacedDigit()
-            .foregroundStyle(DS.Palette.textTertiary)
+    private func peak(_ arrow: String, _ values: [Double], color: NSColor) -> some View {
+        HStack(spacing: DS.Space.s1 / 2) {
+            Text(verbatim: arrow).foregroundStyle(Color(nsColor: color)).fontWeight(.semibold)
+            Text(verbatim: Format.menuBarRate(max(values.max() ?? 0, MirroredRateChart.floor)))
+                .foregroundStyle(DS.Palette.textSecondary)
+        }
     }
 }
 

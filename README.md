@@ -46,10 +46,10 @@ Developed and tested on Apple Silicon. The interface is in Simplified Chinese.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Not released yet · **47** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Not released yet · **48** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-09-13</b> · Unreleased · 30 added · 11 style · 6 fixed</summary>
+<summary><b>2026-09-13</b> · Unreleased · 30 added · 12 style · 6 fixed</summary>
 
 **Added**
 
@@ -86,6 +86,7 @@ Not released yet · **47** changes in development · [full changelog](CHANGELOG.
 
 **Style**
 
+- 网络详情的流量历史：上传 / 下载峰值移到标题行（“60 秒峰值 ↑ … ↓ …”，箭头按上传绿、下载蓝着色），图表上不再压文字。
 - 设置并入主窗口：侧边栏新增“设置”分组（通用、菜单栏、辅助工具、关于）；网络设置（连接探测、公网 IP、IP 归属地数据库）放到“网络”页底部，风扇安全温度放到“温度与风扇”页底部，合盖运行电量下限放到“防休眠”页底部；弹窗齿轮、菜单栏右键“设置…”与 ⌘, 都打开主窗口的通用设置；不再有单独的设置窗口，已有偏好全部保留；导航较多时侧边栏可滚动。
 - 主窗口侧边栏的选中样式：左侧一条两端渐隐的细线，选中项有发光的蓝色光条，切换时带回弹地滑过去，右侧拖出渐淡的蓝色高亮；不再整块填蓝。
 - 仪表盘“快捷开关”改为开关样式：防休眠、合盖运行、散热模式各一行，右侧开关，下面一行小字说明当前状态。
