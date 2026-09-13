@@ -86,11 +86,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
             }
         }
 
-        let model = self.model
+        let appModel = model
         Task { [weak self] in
-            await model.hub.update(model.demand)
-            await model.hub.start { [weak self] snapshot in
-                model.handle(snapshot)
+            await appModel.hub.update(appModel.demand)
+            await appModel.hub.start { [weak self] snapshot in
+                appModel.handle(snapshot)
                 self?.menuBar.refreshImages()
             }
         }
