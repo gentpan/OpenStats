@@ -53,6 +53,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
         updateNetworkVisibility()
         Task { await model.geo.updateIfNeeded() }
         startUpdateChecks()
+        model.alerts.openTab = { [weak self] tab in
+            self?.menuBar.dismissPopovers()
+            self?.mainWindow.show(tab: tab)
+        }
+        model.alerts.start()
 
         // 开发调试：--show-panel [cpu|memory|network|gpu|temperature|fan] 启动后展开并固定弹窗；--show-window 打开主窗口
         let arguments = CommandLine.arguments
@@ -150,9 +155,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
             _ = model.isNetworkDetailVisible
             _ = model.settings.probeEnabled
             _ = model.settings.probeInBackground
+            _ = model.settings.enabledAlerts
         } onChange: { [weak self] in
             Task { @MainActor in
                 guard let self else { return }
+                self.model.alerts.applySettings()
                 await self.model.hub.update(self.model.demand)
                 self.applyAppearance()
                 self.menuBar.update()

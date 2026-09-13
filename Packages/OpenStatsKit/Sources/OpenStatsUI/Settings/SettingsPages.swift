@@ -89,6 +89,59 @@ struct GeneralSettings: View {
     }
 }
 
+// MARK: - 通知
+
+struct NotificationSettings: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        @Bindable var settings = model.settings
+        let alerts = model.alerts
+
+        if alerts.authorization == .denied {
+            InfoBanner(icon: "bell.slash", text: "OpenStats 的通知被关闭了，打开的提醒不会显示。", tone: .warning) {
+                Button("打开通知设置") { alerts.openNotificationSettings() }
+                    .buttonStyle(DSButtonStyle(kind: .primary))
+            }
+        }
+
+        SettingsGroup(caption: "发生这些状况时发送系统通知，点通知打开对应页面") {
+            ForEach(Array(AlertKind.allCases.enumerated()), id: \.element) { index, kind in
+                GroupRow(showsDivider: index > 0) {
+                    SettingRow(title: kind.title, subtitle: kind.detail, icon: kind.symbol) {
+                        DSToggle(isOn: Binding(get: { settings.enabledAlerts.contains(kind) },
+                                               set: { on in
+                                                   if on { settings.enabledAlerts.insert(kind) } else { settings.enabledAlerts.remove(kind) }
+                                               }),
+                                 label: kind.title)
+                    }
+                }
+                if kind == .cpuTemperature, settings.enabledAlerts.contains(.cpuTemperature) {
+                    GroupRow {
+                        SettingRow(title: "过热温度") {
+                            SegmentedControl(selection: $settings.alertCPUTemperature,
+                                             options: AppSettings.alertTemperatureOptions.map {
+                                                 ($0, Format.temperature(Double($0), fahrenheit: settings.useFahrenheit))
+                                             })
+                                .frame(width: DS.Size.sidebarWidth + DS.Space.s12)
+                        }
+                    }
+                }
+            }
+        }
+
+        SettingsGroup {
+            GroupRow(showsDivider: false) {
+                SettingRow(title: "发送测试通知", subtitle: alerts.authorization == .allowed ? "确认通知能正常显示" : "首次发送时系统会询问是否允许通知") {
+                    Button("发送") { alerts.sendTest() }
+                    .buttonStyle(DSButtonStyle(kind: .secondary))
+                }
+            }
+        }
+        .onAppear { alerts.refreshAuthorization() }
+    }
+}
+
 // MARK: - 诊断
 
 struct DiagnosticsSettings: View {

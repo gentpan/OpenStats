@@ -39,6 +39,7 @@ public struct MainWindowView: View {
                     case .cleaner: CleanerPage()
                     case .settingsGeneral: SettingsTabPage { GeneralSettings() }
                     case .settingsMenuBar: SettingsTabPage { MenuBarSettings() }
+                    case .settingsNotifications: SettingsTabPage { NotificationSettings() }
                     case .settingsHelper: SettingsTabPage { HelperSettings() }
                     case .settingsAbout: SettingsTabPage { AboutSettings() }
                     }

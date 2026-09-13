@@ -20,6 +20,7 @@ public final class AppModel {
     public let explainer = ProcessExplainer()
     public let updates: UpdateController
     let diagnostics = DiagnosticsExporter()
+    public let alerts: AlertController
     @ObservationIgnored public let hub = MetricsHub()
 
     public var isMainWindowVisible = false
@@ -45,6 +46,7 @@ public final class AppModel {
         geo = GeoDatabaseController(settings: settings)
         network = NetworkController(settings: settings, geo: geo)
         updates = UpdateController(settings: settings)
+        alerts = AlertController(settings: settings)
     }
 
     /// 根据当前可见内容决定采集范围：主窗口看标签页，详情弹窗看是哪一项
@@ -73,6 +75,7 @@ public final class AppModel {
         if (window && tab == .thermal) || thermalPopover { groups.formUnion(TemperatureGroup.allCases) }
         if menu.contains(.temperature) || fans.mode != .automatic || showing(.cpu, .cpu) { groups.insert(.cpu) }
         if showing(.gpu, .gpu) { groups.insert(.gpu) }
+        if settings.enabledAlerts.contains(.cpuTemperature) { groups.insert(.cpu) }
         demand.temperatures = groups
         demand.fans = (window && (tab == .thermal || tab == .overview)) || menu.contains(.fan)
             || fans.mode != .automatic || thermalPopover
@@ -136,5 +139,6 @@ public final class AppModel {
         store.apply(snapshot)
         fans.evaluateSafety()
         keepAwake.evaluateBattery(store.battery)
+        alerts.evaluate(store)
     }
 }

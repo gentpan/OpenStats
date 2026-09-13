@@ -220,13 +220,13 @@ public enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
 /// 主窗口侧边栏的页面
 public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
     case overview, system, cpu, gpu, memory, network, thermal, processes, keepAwake, cleaner
-    case settingsGeneral, settingsMenuBar, settingsHelper, settingsAbout
+    case settingsGeneral, settingsMenuBar, settingsNotifications, settingsHelper, settingsAbout
 
     public var id: String { rawValue }
 
     static let monitors: [PanelTab] = [.overview, .system, .cpu, .gpu, .memory, .network, .thermal]
     static let tools: [PanelTab] = [.processes, .keepAwake, .cleaner]
-    static let settings: [PanelTab] = [.settingsGeneral, .settingsMenuBar, .settingsHelper, .settingsAbout]
+    static let settings: [PanelTab] = [.settingsGeneral, .settingsMenuBar, .settingsNotifications, .settingsHelper, .settingsAbout]
 
     var isSettings: Bool { Self.settings.contains(self) }
 
@@ -247,6 +247,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .cleaner: "清理"
         case .settingsGeneral: "通用"
         case .settingsMenuBar: "菜单栏"
+        case .settingsNotifications: "通知"
         case .settingsHelper: "辅助工具"
         case .settingsAbout: "关于"
         }
@@ -266,6 +267,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .cleaner: "sparkles"
         case .settingsGeneral: "gearshape"
         case .settingsMenuBar: "menubar.rectangle"
+        case .settingsNotifications: "bell.badge"
         case .settingsHelper: "lock.shield"
         case .settingsAbout: "info.circle"
         }
@@ -371,6 +373,14 @@ public final class AppSettings {
     public var geoAutoUpdate: Bool {
         didSet { defaults.set(geoAutoUpdate, forKey: Keys.geoAutoUpdate) }
     }
+    /// 打开了系统通知的状况
+    public var enabledAlerts: Set<AlertKind> {
+        didSet { defaults.set(enabledAlerts.map(\.rawValue).sorted(), forKey: Keys.enabledAlerts) }
+    }
+    /// CPU 过热提醒的温度（摄氏度）
+    public var alertCPUTemperature: Int {
+        didSet { defaults.set(alertCPUTemperature, forKey: Keys.alertCPUTemperature) }
+    }
     /// 启动时与每天检查一次新版本
     public var autoCheckUpdates: Bool {
         didSet { defaults.set(autoCheckUpdates, forKey: Keys.autoCheckUpdates) }
@@ -384,6 +394,7 @@ public final class AppSettings {
     public static let probeOptions = [1, 2, 5]
     public static let batteryFloorOptions = [10, 20, 30, 40]
     public static let fanSafetyOptions = [85, 90, 95, 100]
+    public static let alertTemperatureOptions = [85, 90, 95, 100]
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -418,6 +429,9 @@ public final class AppSettings {
         geoIncludeCity = defaults.bool(forKey: Keys.geoIncludeCity)
         geoAutoUpdate = defaults.object(forKey: Keys.geoAutoUpdate) as? Bool ?? true
         autoCheckUpdates = defaults.object(forKey: Keys.autoCheckUpdates) as? Bool ?? true
+        enabledAlerts = Set(defaults.stringArray(forKey: Keys.enabledAlerts)?.compactMap(AlertKind.init(rawValue:)) ?? [])
+        alertCPUTemperature = Self.alertTemperatureOptions.contains(defaults.integer(forKey: Keys.alertCPUTemperature))
+            ? defaults.integer(forKey: Keys.alertCPUTemperature) : 95
     }
 
     /// 按固定顺序返回已启用的菜单栏项目
@@ -469,5 +483,7 @@ public final class AppSettings {
         static let geoIncludeCity = "geoIncludeCity"
         static let geoAutoUpdate = "geoAutoUpdate"
         static let autoCheckUpdates = "autoCheckUpdates"
+        static let enabledAlerts = "enabledAlerts"
+        static let alertCPUTemperature = "alertCPUTemperature"
     }
 }

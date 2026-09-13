@@ -189,3 +189,39 @@ private func isolatedDefaults() -> UserDefaults {
         #expect(names.contains("openstats.log"))
     }
 }
+
+@Suite struct AlertTrackerTests {
+    @Test func firesOnceAfterSustainAndRespectsCooldown() {
+        var tracker = AlertTracker()
+        func step(_ active: Bool, _ seconds: TimeInterval) -> Bool {
+            tracker.update(isActive: active, now: Date(timeIntervalSince1970: seconds), sustain: 60, cooldown: 1800)
+        }
+        #expect(!step(true, 0))
+        #expect(!step(true, 59))
+        #expect(step(true, 60))
+        // 同一段持续期内不重复
+        #expect(!step(true, 600))
+        // 恢复后再次出现，但还在冷却期
+        #expect(!step(false, 700))
+        #expect(!step(true, 800))
+        #expect(!step(true, 900))
+        // 冷却结束后同一段持续期仍可触发
+        #expect(step(true, 1900))
+    }
+
+    @Test func briefSpikesDoNotFire() {
+        var tracker = AlertTracker()
+        var fired = false
+        for second in stride(from: 0.0, to: 600, by: 30) {
+            // 每 30 秒一升一降，从未持续满 60 秒
+            fired = fired || tracker.update(isActive: Int(second) % 60 == 0, now: Date(timeIntervalSince1970: second),
+                                            sustain: 60, cooldown: 1800)
+        }
+        #expect(!fired)
+    }
+
+    @Test func notificationTabsExist() {
+        #expect(PanelTab.settings.contains(.settingsNotifications))
+        #expect(Set(AlertKind.allCases.map(\.tab)).isSubset(of: Set(PanelTab.allCases)))
+    }
+}
