@@ -323,12 +323,12 @@ struct NetworkSettings: View {
 
         SettingsGroup(caption: "连接探测") {
             GroupRow(showsDivider: false) {
-                SettingRow(title: "定时探测网络", subtitle: "用 ping 测量延迟与丢包，在网络详情里以格子显示；只在菜单栏显示网络项或打开网络详情时运行") {
+                SettingRow(title: "定时探测网络", subtitle: "用 ping 测量延迟与丢包，在网络详情里以格子显示") {
                     DSToggle(isOn: $settings.probeEnabled, label: "定时探测网络")
                 }
             }
             GroupRow {
-                SettingRow(title: "探测间隔") {
+                SettingRow(title: "探测间隔", subtitle: "打开网络详情时使用") {
                     SegmentedControl(selection: $settings.probeSeconds,
                                      options: AppSettings.probeOptions.map { ($0, "\($0) 秒") })
                         .frame(width: DS.Size.sidebarWidth)
@@ -345,6 +345,13 @@ struct NetworkSettings: View {
                     .pickerStyle(.menu)
                     .labelsHidden()
                     .fixedSize()
+                }
+            }
+            .disabled(!settings.probeEnabled)
+            GroupRow {
+                SettingRow(title: "后台低频探测",
+                           subtitle: "详情关闭时，菜单栏显示网络项期间每 \(NetworkController.backgroundProbeSeconds) 秒探测一次，打开详情就能看到最近的连接情况；关闭后只在打开详情时探测，更省电") {
+                    DSToggle(isOn: $settings.probeInBackground, label: "后台低频探测")
                 }
             }
             .disabled(!settings.probeEnabled)
@@ -536,6 +543,13 @@ struct HelperSettings: View {
 
         if case .unavailable(let reason) = helper.status {
             InfoBanner(icon: "exclamationmark.triangle.fill", text: reason, tone: .error)
+        }
+        if helper.isReady && helper.isOutdated {
+            InfoBanner(icon: "arrow.triangle.2.circlepath", text: HelperClient.outdatedMessage, tone: .warning) {
+                Button("重新安装") { Task { await helper.reinstall() } }
+                    .buttonStyle(DSButtonStyle(kind: .primary))
+                    .disabled(helper.isWorking)
+            }
         }
         if let error = helper.lastError {
             InfoBanner(icon: "exclamationmark.triangle.fill", text: error, tone: .error)

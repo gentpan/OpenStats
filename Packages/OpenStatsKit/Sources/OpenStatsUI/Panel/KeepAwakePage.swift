@@ -117,7 +117,7 @@ private struct LidCard: View {
                     .disabled(!model.helper.isReady)
             }
 
-            if !model.helper.isReady {
+            if model.helper.needsAttention {
                 HelperRequiredBanner(text: "合盖运行需要修改系统睡眠设置，需安装辅助工具（管理员授权一次）。")
             }
 

@@ -55,7 +55,9 @@ public final class AppModel {
         let menu = settings.menuBarItems
         let thermalPopover = popover == .temperature || popover == .fan
 
-        demand.interval = window || popover != nil ? .seconds(1) : .seconds(settings.refreshSeconds)
+        // 进程页要读全系统进程（启动 ps），每 2 秒刷新一次足够，也更省电
+        demand.interval = window && tab == .processes && popover == nil ? .seconds(2)
+            : window || popover != nil ? .seconds(1) : .seconds(settings.refreshSeconds)
         demand.memory = true
         demand.network = true
         let showing = { (page: PanelTab, item: MenuBarItem) in (window && tab == page) || popover == item }
@@ -74,11 +76,6 @@ public final class AppModel {
         demand.fans = (window && (tab == .thermal || tab == .overview)) || menu.contains(.fan)
             || fans.mode != .automatic || thermalPopover
         return demand
-    }
-
-    /// 连接探测在菜单栏显示网络项或网络详情打开时运行
-    var networkShown: Bool {
-        settings.menuBarItems.contains(.network) || isNetworkDetailVisible
     }
 
     /// 网络详情（接口、公网 IP、进程流量）正在显示

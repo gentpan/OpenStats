@@ -35,6 +35,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         model.quit = { NSApp.terminate(nil) }
         model.helper.refreshStatus()
+        Task { await model.helper.verifyVersion() }
         model.helper.onReconnect = { [weak self] in
             Task { [weak self] in
                 await self?.model.fans.reapply()
@@ -46,7 +47,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         observeModel()
         observeProbeSettings()
         applyAppearance()
-        model.network.updateProbing(networkShown: model.networkShown)
+        updateNetworkVisibility()
         Task { await model.geo.updateIfNeeded() }
         startUpdateChecks()
 
@@ -143,9 +144,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
             _ = model.settings.hiddenPopoverSections
             _ = model.keepAwake.isActive
             _ = model.settings.appearance
-            _ = model.networkShown
             _ = model.isNetworkDetailVisible
             _ = model.settings.probeEnabled
+            _ = model.settings.probeInBackground
         } onChange: { [weak self] in
             Task { @MainActor in
                 guard let self else { return }
@@ -153,8 +154,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 self.applyAppearance()
                 self.menuBar.update()
                 self.menuBar.refreshPopoverHeight()
-                self.model.network.updateProbing(networkShown: self.model.networkShown)
-                self.model.network.setDetailVisible(self.model.isNetworkDetailVisible)
+                self.updateNetworkVisibility()
                 self.observeModel()
             }
         }
@@ -180,6 +180,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func updateNetworkVisibility() {
+        model.network.setVisibility(inMenuBar: model.settings.menuBarItems.contains(.network),
+                                    detailVisible: model.isNetworkDetailVisible)
+    }
+
     private func applyAppearance() {
         switch model.settings.appearance {
         case .system: NSApp.appearance = nil
@@ -202,7 +207,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 MainActor.assumeIsolated {
                     guard let self else { return }
                     self.menuBar.dismissPopovers()
-                    self.model.network.setPaused(true, networkShown: self.model.networkShown)
+                    self.model.network.setPaused(true)
                     Task { await self.model.hub.setPaused(true) }
                 }
             })
@@ -211,7 +216,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             workspaceObservers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated {
                     guard let self else { return }
-                    self.model.network.setPaused(false, networkShown: self.model.networkShown)
+                    self.model.network.setPaused(false)
                     Task {
                         await self.model.hub.setPaused(false)
                         await self.model.fans.reapply()

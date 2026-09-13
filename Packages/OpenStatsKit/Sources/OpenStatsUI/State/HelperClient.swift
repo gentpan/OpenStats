@@ -26,6 +26,8 @@ public final class HelperClient {
     public private(set) var status: Status = .notInstalled
     public private(set) var isWorking = false
     public private(set) var lastError: String?
+    /// 正在运行的辅助工具比应用旧：登记的是另一份应用包里的辅助工具，或替换应用后旧进程还没退出
+    public private(set) var isOutdated = false
 
     /// 连接中断后重新连上时回调，用于重新下发风扇 / 防休眠状态
     @ObservationIgnored var onReconnect: (() -> Void)?
@@ -36,6 +38,11 @@ public final class HelperClient {
     public init() {}
 
     public var isReady: Bool { status == .enabled }
+
+    static let outdatedMessage = "辅助工具版本比应用旧，部分功能可能无法使用，请重新安装一次（需要管理员授权）。"
+
+    /// 未安装、待批准或版本过旧，需要用户处理
+    var needsAttention: Bool { !isReady || isOutdated }
 
     public func refreshStatus() {
         switch service.status {
@@ -85,6 +92,29 @@ public final class HelperClient {
             lastError = "卸载失败：\(error.localizedDescription)"
         }
         refreshStatus()
+    }
+
+    /// 卸载后重新登记，让 launchd 运行当前应用包里的辅助工具
+    public func reinstall() async {
+        await uninstall()
+        install()
+        await verifyVersion(recheckDelay: .zero)
+    }
+
+    /// 核对辅助工具的协议版本。辅助工具空闲 30 秒后自动退出，下次调用时 launchd 会启动应用包里的新版本，
+    /// 所以第一次发现版本旧时等它退出后再确认一次，避免刚升级完就误报
+    func verifyVersion(recheckDelay: Duration = .seconds(45)) async {
+        guard let version = await remoteProtocolVersion(), version < HelperConstants.protocolVersion else {
+            isOutdated = false
+            return
+        }
+        if recheckDelay > .zero {
+            try? await Task.sleep(for: recheckDelay)
+            guard let again = await remoteProtocolVersion() else { return }
+            isOutdated = again < HelperConstants.protocolVersion
+        } else {
+            isOutdated = true
+        }
     }
 
     public func openLoginItemsSettings() {

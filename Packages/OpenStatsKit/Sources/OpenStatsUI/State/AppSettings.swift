@@ -349,6 +349,10 @@ public final class AppSettings {
     public var probeEnabled: Bool {
         didSet { defaults.set(probeEnabled, forKey: Keys.probeEnabled) }
     }
+    /// 网络详情关闭时，菜单栏显示网络项期间继续低频探测
+    public var probeInBackground: Bool {
+        didSet { defaults.set(probeInBackground, forKey: Keys.probeInBackground) }
+    }
     public var probeSeconds: Int {
         didSet { defaults.set(probeSeconds, forKey: Keys.probeSeconds) }
     }
@@ -406,6 +410,7 @@ public final class AppSettings {
         menuBarLayout = defaults.string(forKey: Keys.menuBarLayout).flatMap(MenuBarLayout.init(rawValue:)) ?? .separate
         hiddenPopoverSections = Set(defaults.stringArray(forKey: Keys.hiddenPopoverSections)?.compactMap(PopoverSection.init(rawValue:)) ?? [])
         probeEnabled = defaults.object(forKey: Keys.probeEnabled) as? Bool ?? true
+        probeInBackground = defaults.object(forKey: Keys.probeInBackground) as? Bool ?? true
         probeSeconds = Self.probeOptions.contains(defaults.integer(forKey: Keys.probeSeconds))
             ? defaults.integer(forKey: Keys.probeSeconds) : 2
         probeTarget = defaults.string(forKey: Keys.probeTarget).flatMap(ProbeTarget.init(rawValue:)) ?? .cloudflare
@@ -458,6 +463,7 @@ public final class AppSettings {
         static let hiddenPopoverSections = "hiddenPopoverSections"
         static let probeEnabled = "probeEnabled"
         static let probeSeconds = "probeSeconds"
+        static let probeInBackground = "probeInBackground"
         static let probeTarget = "probeTarget"
         static let publicIPLookup = "publicIPLookup"
         static let geoIncludeCity = "geoIncludeCity"

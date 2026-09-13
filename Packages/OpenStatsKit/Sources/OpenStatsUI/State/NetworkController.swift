@@ -28,6 +28,12 @@ public final class NetworkController {
     @ObservationIgnored private var lastPublicLookup: (date: Date, localIPv4: [String])?
     @ObservationIgnored private var isPaused = false
     @ObservationIgnored private var wantsDetail = false
+    @ObservationIgnored private var inMenuBar = false
+    /// 正在运行的探测是否为前台频率；前后台切换时重启循环，不必等完后台的长间隔
+    @ObservationIgnored private var probingForeground: Bool?
+
+    /// 详情关闭、只在菜单栏显示网速时的低频探测间隔
+    static let backgroundProbeSeconds = 10
 
     @ObservationIgnored private let geo: GeoDatabaseController
 
@@ -61,38 +67,45 @@ public final class NetworkController {
 
     // MARK: 生命周期
 
-    /// 菜单栏显示网络项或网络详情打开时持续探测
-    func updateProbing(networkShown: Bool) {
-        let shouldRun = settings.probeEnabled && networkShown && !isPaused
-        if shouldRun, probeTask == nil {
-            startProbing()
-        } else if !shouldRun {
+    /// 网络详情打开时按设置的间隔探测；只在菜单栏显示网络项时按 10 秒低频探测（可在设置里关闭），其余时间停止
+    func setVisibility(inMenuBar: Bool, detailVisible: Bool) {
+        self.inMenuBar = inMenuBar
+        wantsDetail = detailVisible
+        applyDetailState()
+        applyProbeState()
+    }
+
+    private func applyProbeState() {
+        let foreground = wantsDetail
+        let shouldRun = settings.probeEnabled && !isPaused
+            && (foreground || (inMenuBar && settings.probeInBackground))
+        guard shouldRun else {
             probeTask?.cancel()
             probeTask = nil
+            probingForeground = nil
+            return
         }
+        guard probeTask == nil || probingForeground != foreground else { return }
+        probeTask?.cancel()
+        probingForeground = foreground
+        startProbing()
     }
 
     /// 探测目标或间隔变化时重新开始，历史清空避免混入不同目标的数据
     func restartProbing() {
         guard probeTask != nil else { return }
         probeTask?.cancel()
-        probeTask = nil
         probes = History(capacity: Self.probeCapacity)
         startProbing()
     }
 
-    func setPaused(_ paused: Bool, networkShown: Bool) {
+    func setPaused(_ paused: Bool) {
         isPaused = paused
-        updateProbing(networkShown: networkShown)
+        applyProbeState()
         applyDetailState()
     }
 
     /// 网络详情打开时每 2 秒刷新接口信息与进程流量，关闭后停止
-    func setDetailVisible(_ visible: Bool) {
-        wantsDetail = visible
-        applyDetailState()
-    }
-
     private func applyDetailState() {
         let shouldRun = wantsDetail && !isPaused
         guard shouldRun != (detailTask != nil) else { return }
@@ -168,12 +181,13 @@ public final class NetworkController {
     // MARK: 探测
 
     private func startProbing() {
+        let foreground = probingForeground ?? true
         probeTask = Task { [weak self] in
             var sequence: UInt16 = 0
             let clock = ContinuousClock()
             while !Task.isCancelled {
                 guard let self else { return }
-                let interval = Double(self.settings.probeSeconds)
+                let interval = Double(foreground ? self.settings.probeSeconds : Self.backgroundProbeSeconds)
                 if self.details == nil { await self.refreshDetails() }
                 let started = clock.now
                 guard let address = self.probeAddress else {
@@ -187,7 +201,9 @@ public final class NetworkController {
                 }.value
                 guard !Task.isCancelled else { return }
                 self.probes.append(ProbeSample(latency: latency))
-                try? await Task.sleep(until: started + .seconds(interval), tolerance: .milliseconds(100), clock: clock)
+                // 后台探测允许系统合并唤醒，更省电
+                try? await Task.sleep(until: started + .seconds(interval),
+                                      tolerance: foreground ? .milliseconds(100) : .seconds(2), clock: clock)
             }
         }
     }

@@ -33,7 +33,14 @@ final class MenuBarController: NSObject {
 
     private func rebuild(_ signature: [MenuBarItem?]) {
         dismissPopovers()
+        // 移除图标时系统会清掉它记住的位置；先记下用户 ⌘ 拖动后的位置，重建后放回
+        let defaults = UserDefaults.standard
+        let positions = items.compactMap { entry -> (String, Any)? in
+            let key = Self.positionKey(entry.key)
+            return defaults.object(forKey: key).map { (key, $0) }
+        }
         for entry in items { NSStatusBar.system.removeStatusItem(entry.statusItem) }
+        for (key, value) in positions { defaults.set(value, forKey: key) }
         items = []
         panels = panels.filter { key, _ in signature.contains(key) }
         layoutSignature = signature
@@ -41,6 +48,8 @@ final class MenuBarController: NSObject {
         // 新建的状态栏图标出现在已有图标左侧，倒序创建才能保持从左到右的顺序
         for key in signature.reversed() {
             let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+            // 按项目命名后，系统会记住每个图标被 ⌘ 拖动后的位置，下次启动保持原顺序
+            statusItem.autosaveName = Self.autosaveName(key)
             if let button = statusItem.button {
                 button.target = self
                 button.action = #selector(statusItemClicked(_:))
@@ -49,6 +58,14 @@ final class MenuBarController: NSObject {
             }
             items.insert((key, statusItem), at: 0)
         }
+    }
+
+    private static func autosaveName(_ key: MenuBarItem?) -> String {
+        "OpenStats.\(key?.rawValue ?? "combined")"
+    }
+
+    private static func positionKey(_ key: MenuBarItem?) -> String {
+        "NSStatusItem Preferred Position \(autosaveName(key))"
     }
 
     func refreshImages() {

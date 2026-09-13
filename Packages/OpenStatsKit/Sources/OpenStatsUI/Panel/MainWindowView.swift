@@ -109,6 +109,14 @@ private struct MainSidebar: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    private func badge(for tab: PanelTab) -> Tone? {
+        switch tab {
+        case .settingsAbout: model.updates.release != nil ? .primary : nil
+        case .settingsHelper: model.helper.isReady && model.helper.isOutdated ? .warning : nil
+        default: nil
+        }
+    }
+
     @ViewBuilder
     private func group(_ title: String, _ tabs: [PanelTab]) -> some View {
         Text(title)
@@ -117,7 +125,7 @@ private struct MainSidebar: View {
             .padding(.horizontal, DS.Space.s2)
             .padding(.top, DS.Space.s2)
         ForEach(tabs) { tab in
-            SidebarButton(title: tab.title, symbol: tab.symbol, isSelected: model.settings.panelTab == tab) {
+            SidebarButton(title: tab.title, symbol: tab.symbol, isSelected: model.settings.panelTab == tab, badge: badge(for: tab)) {
                 model.settings.panelTab = tab
             }
         }

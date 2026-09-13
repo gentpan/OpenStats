@@ -106,7 +106,7 @@ private struct FanCard: View {
                     CustomLevelControl(fans: fans)
                 }
 
-                if !model.helper.isReady {
+                if model.helper.needsAttention {
                     HelperRequiredBanner(text: "调节风扇需要安装辅助工具，仅需管理员授权一次。")
                 }
 
@@ -202,6 +202,10 @@ struct HelperRequiredBanner: View {
             case .requiresApproval:
                 Button("去批准") { model.helper.openLoginItemsSettings() }
                     .buttonStyle(DSButtonStyle(kind: .primary))
+            case .enabled where model.helper.isOutdated:
+                Button("重新安装") { Task { await model.helper.reinstall() } }
+                    .buttonStyle(DSButtonStyle(kind: .primary))
+                    .disabled(model.helper.isWorking)
             case .enabled, .unavailable:
                 EmptyView()
             }
@@ -212,6 +216,7 @@ struct HelperRequiredBanner: View {
         switch model.helper.status {
         case .requiresApproval: "请在“系统设置 › 通用 › 登录项”中允许 OpenStats 的后台项目。"
         case .unavailable(let reason): reason
+        case .enabled where model.helper.isOutdated: HelperClient.outdatedMessage
         default: text
         }
     }

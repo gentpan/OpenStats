@@ -16,8 +16,7 @@ enum SnapshotRenderer {
         settings.probeSeconds = 1
         let model = AppModel(settings: settings)
         model.isMainWindowVisible = true
-        model.network.updateProbing(networkShown: true)
-        model.network.setDetailVisible(true)
+        model.network.setVisibility(inMenuBar: true, detailVisible: true)
 
         // 采集约 12 秒的真实数据，让历史曲线有内容
         var demand = MetricsDemand()
@@ -34,8 +33,7 @@ enum SnapshotRenderer {
         await model.hub.start { snapshot in model.handle(snapshot) }
         try? await Task.sleep(for: .seconds(12))
         await model.hub.stop()
-        model.network.setDetailVisible(false)
-        model.network.updateProbing(networkShown: false)
+        model.network.setVisibility(inMenuBar: false, detailVisible: false)
         model.network.maskForSnapshot()
         // 清理页展示真实扫描结果（只读，不删除任何文件）
         model.cleaner.scan()

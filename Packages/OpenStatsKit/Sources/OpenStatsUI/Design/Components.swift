@@ -216,6 +216,8 @@ struct SidebarButton: View {
     let title: String
     let symbol: String
     let isSelected: Bool
+    /// 需要注意时在右侧显示一个圆点（有新版本、辅助工具需要重新安装）
+    var badge: Tone?
     let action: () -> Void
     @State private var hovering = false
 
@@ -227,6 +229,10 @@ struct SidebarButton: View {
                     .frame(width: DS.Size.iconStandalone)
                 Text(title).dsFont(.sm, weight: isSelected ? .semibold : .regular)
                 Spacer()
+                if let badge {
+                    Circle().fill(badge.color).frame(width: DS.Space.s2, height: DS.Space.s2)
+                        .accessibilityLabel("需要注意")
+                }
             }
             .foregroundStyle(isSelected ? DS.Palette.primary : hovering ? DS.Palette.textPrimary : DS.Palette.textSecondary)
             .padding(.leading, DS.Space.s3)
