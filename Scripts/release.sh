@@ -97,7 +97,7 @@ cask "openstats" do
   desc "Menu bar system monitor with fan control, keep-awake and cleanup"
   homepage "https://getopenstats.com"
 
-  depends_on macos: ">= :sonoma"
+  depends_on macos: :sonoma
 
   app "OpenStats.app"
 
