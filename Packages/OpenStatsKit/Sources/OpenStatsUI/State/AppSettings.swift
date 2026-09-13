@@ -219,16 +219,17 @@ public enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
 
 /// 主窗口侧边栏的页面
 public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
-    case overview, cpu, gpu, memory, network, thermal, processes, keepAwake, cleaner
+    case overview, system, cpu, gpu, memory, network, thermal, processes, keepAwake, cleaner
 
     public var id: String { rawValue }
 
-    static let monitors: [PanelTab] = [.overview, .cpu, .gpu, .memory, .network, .thermal]
+    static let monitors: [PanelTab] = [.overview, .system, .cpu, .gpu, .memory, .network, .thermal]
     static let tools: [PanelTab] = [.processes, .keepAwake, .cleaner]
 
     var title: String {
         switch self {
         case .overview: "仪表盘"
+        case .system: "本机信息"
         case .cpu: "CPU"
         case .gpu: "GPU"
         case .memory: "内存"
@@ -243,6 +244,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
     var symbol: String {
         switch self {
         case .overview: "square.grid.2x2"
+        case .system: "laptopcomputer"
         case .cpu: "cpu"
         case .gpu: "square.3.layers.3d"
         case .memory: "memorychip"

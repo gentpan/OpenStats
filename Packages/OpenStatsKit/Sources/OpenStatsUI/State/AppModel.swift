@@ -55,9 +55,9 @@ public final class AppModel {
         demand.memory = true
         demand.network = true
         let showing = { (page: PanelTab, item: MenuBarItem) in (window && tab == page) || popover == item }
-        demand.gpu = (window && tab == .overview) || menu.contains(.gpu) || showing(.gpu, .gpu)
-        demand.disk = window && (tab == .overview || tab == .cleaner)
-        demand.battery = (window && (tab == .overview || tab == .keepAwake)) || keepAwake.lidClosedActive
+        demand.gpu = (window && [.overview, .system].contains(tab)) || menu.contains(.gpu) || showing(.gpu, .gpu)
+        demand.disk = window && [.overview, .system, .cleaner].contains(tab)
+        demand.battery = (window && [.overview, .system, .keepAwake].contains(tab)) || keepAwake.lidClosedActive
         demand.processes = (window && [.processes, .overview].contains(tab)) || showing(.cpu, .cpu) || showing(.memory, .memory)
         demand.systemProcesses = window && tab == .processes
 

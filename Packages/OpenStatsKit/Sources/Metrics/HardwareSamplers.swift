@@ -107,8 +107,17 @@ public enum SystemInfoReader {
         let boot = sysctlbyname("kern.boottime", &bootTime, &size, nil, 0) == 0
             ? Date(timeIntervalSince1970: TimeInterval(bootTime.tv_sec)) : nil
 
-        return SystemInfo(modelName: modelName,
-                          osVersion: "macOS \(version.majorVersion).\(version.minorVersion)\(patch)",
-                          bootDate: boot)
+        var info = SystemInfo(modelName: modelName,
+                              osVersion: "macOS \(version.majorVersion).\(version.minorVersion)\(patch)",
+                              bootDate: boot)
+        info.modelIdentifier = Sysctl.string("hw.model") ?? ""
+        info.osBuild = Sysctl.string("kern.osversion") ?? ""
+        let platform = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPlatformExpertDevice"))
+        if platform != 0 {
+            info.serialNumber = IORegistryEntryCreateCFProperty(platform, kIOPlatformSerialNumberKey as CFString, kCFAllocatorDefault, 0)?
+                .takeRetainedValue() as? String
+            IOObjectRelease(platform)
+        }
+        return info
     }
 }

@@ -24,6 +24,7 @@ public struct MainWindowView: View {
                 Group {
                     switch model.settings.panelTab {
                     case .overview: OverviewPage()
+                    case .system: SystemInfoPage()
                     case .cpu: DetailPage { CPUPopover() }
                     case .gpu: DetailPage { GPUPopover() }
                     case .memory: DetailPage { MemoryPopover() }

@@ -173,6 +173,11 @@ public struct SystemInfo: Sendable, Equatable {
     public var modelName: String
     public var osVersion: String
     public var bootDate: Date?
+    /// 例如 “Mac17,6”
+    public var modelIdentifier: String = ""
+    /// 系统版号，例如 “26A428”
+    public var osBuild: String = ""
+    public var serialNumber: String?
 }
 
 public struct MetricsSnapshot: Sendable {
