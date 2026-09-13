@@ -597,6 +597,8 @@ struct AboutSettings: View {
             }
         }
 
+        UpdateSettings()
+
         SettingsGroup(caption: "致谢") {
             GroupRow(showsDivider: false) {
                 SettingRow(title: "exelban/stats", subtitle: "SMC 通信与 Apple Silicon 风扇解锁流程移植自该项目 · MIT License") {

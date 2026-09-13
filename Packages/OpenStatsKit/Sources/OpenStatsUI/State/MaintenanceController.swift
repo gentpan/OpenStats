@@ -81,7 +81,7 @@ public final class MaintenanceController {
 
     /// 未安装辅助工具时的回退：通过 AppleScript 请求一次性管理员授权执行命令。
     /// 命令只由固定路径与已校验的参数拼成，这里再做 AppleScript 字符串转义
-    private static func runWithAdministratorPrompt(shell: String, prompt: String) async -> String? {
+    static func runWithAdministratorPrompt(shell: String, prompt: String) async -> String? {
         let escape = { (text: String) in text.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"") }
         let script = "do shell script \"\(escape(shell))\" with administrator privileges with prompt \"\(escape(prompt))\""
         return await Task.detached {

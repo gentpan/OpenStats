@@ -135,6 +135,9 @@ extension DS {
         /// 主窗口默认内容区宽度（侧边栏另计）
         static let windowDefaultContentWidth: CGFloat = 880
         static let sidebarWidth: CGFloat = 192
+        /// 升级提示窗口
+        static let updateWindowWidth: CGFloat = 480
+        static let updateNotesHeight: CGFloat = 192
         static let valueColumn: CGFloat = 64
         static let labelColumn: CGFloat = 48
     }

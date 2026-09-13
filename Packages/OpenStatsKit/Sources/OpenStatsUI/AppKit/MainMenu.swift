@@ -3,14 +3,14 @@ import AppKit
 /// 应用菜单。仅菜单栏运行时不显示，但仍负责 ⌘C / ⌘V / ⌘W 等快捷键
 @MainActor
 enum MainMenu {
-    static func make(settingsTarget: AnyObject, settingsAction: Selector) -> NSMenu {
+    static func make(target: AnyObject, settingsAction: Selector, updateAction: Selector) -> NSMenu {
         let main = NSMenu()
 
         let app = NSMenu(title: "OpenStats")
         app.addItem(withTitle: "关于 OpenStats", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        app.addItem(withTitle: "检查更新…", action: updateAction, keyEquivalent: "").target = target
         app.addItem(.separator())
-        let settings = app.addItem(withTitle: "设置…", action: settingsAction, keyEquivalent: ",")
-        settings.target = settingsTarget
+        app.addItem(withTitle: "设置…", action: settingsAction, keyEquivalent: ",").target = target
         app.addItem(.separator())
         app.addItem(withTitle: "隐藏 OpenStats", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         app.addItem(.separator())

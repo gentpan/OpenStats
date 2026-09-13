@@ -18,6 +18,7 @@ public final class AppModel {
     public let network: NetworkController
     public let geo: GeoDatabaseController
     public let explainer = ProcessExplainer()
+    public let updates: UpdateController
     @ObservationIgnored public let hub = MetricsHub()
 
     public var isMainWindowVisible = false
@@ -42,6 +43,7 @@ public final class AppModel {
         maintenance = MaintenanceController(helper: helper)
         geo = GeoDatabaseController(settings: settings)
         network = NetworkController(settings: settings, geo: geo)
+        updates = UpdateController(settings: settings)
     }
 
     /// 根据当前可见内容决定采集范围：主窗口看标签页，详情弹窗看是哪一项

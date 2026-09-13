@@ -7,6 +7,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private let model = AppModel()
     private var menuBar: MenuBarController!
     private var mainWindow: MainWindowController!
+    private var updateWindow: UpdateWindowController!
+    private var updateTimer: Timer?
     private var workspaceObservers: [NSObjectProtocol] = []
 
     public override init() {
@@ -14,10 +16,12 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.mainMenu = MainMenu.make(settingsTarget: self, settingsAction: #selector(openSettingsFromMenu))
+        NSApp.mainMenu = MainMenu.make(target: self, settingsAction: #selector(openSettingsFromMenu),
+                                       updateAction: #selector(checkForUpdatesFromMenu))
         menuBar = MenuBarController(model: model)
         mainWindow = MainWindowController(model: model)
         mainWindow.onVisibilityChange = { [weak self] _ in self?.updateActivationPolicy() }
+        updateWindow = UpdateWindowController(model: model)
         menuBar.update()
 
         // 设置已并入主窗口：所有“设置…”入口都打开主窗口的通用设置
@@ -44,6 +48,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         applyAppearance()
         model.network.updateProbing(networkShown: model.networkShown)
         Task { await model.geo.updateIfNeeded() }
+        startUpdateChecks()
 
         // 开发调试：--show-panel [cpu|memory|network|gpu|temperature|fan] 启动后展开并固定弹窗；--show-window 打开主窗口
         let arguments = CommandLine.arguments
@@ -92,6 +97,26 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     @objc private func openSettingsFromMenu() { model.openSettings() }
+
+    @objc private func checkForUpdatesFromMenu() {
+        model.updates.check(userInitiated: true)
+        mainWindow.show(tab: .settingsAbout)
+    }
+
+    /// 启动 10 秒后检查一次，之后每小时看一眼是否已满一天
+    private func startUpdateChecks() {
+        model.updates.onPrompt = { [weak self] in
+            self?.menuBar.dismissPopovers()
+            self?.updateWindow.show()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
+            self?.model.updates.checkIfNeeded()
+        }
+        updateTimer = Timer.scheduledTimer(withTimeInterval: 60 * 60, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.model.updates.checkIfNeeded() }
+        }
+        updateTimer?.tolerance = 5 * 60
+    }
 
     /// 有窗口打开时显示在程序坞与 ⌘Tab 里，全部关闭后回到仅菜单栏
     private func updateActivationPolicy() {

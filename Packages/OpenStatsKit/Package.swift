@@ -10,6 +10,7 @@ let package = Package(
         .library(name: "Metrics", targets: ["Metrics"]),
         .library(name: "HelperShared", targets: ["HelperShared"]),
         .library(name: "Cleaner", targets: ["Cleaner"]),
+        .library(name: "Updates", targets: ["Updates"]),
         .library(name: "OpenStatsUI", targets: ["OpenStatsUI"]),
     ],
     targets: [
@@ -17,11 +18,13 @@ let package = Package(
         .target(name: "Metrics", dependencies: ["SMC"]),
         .target(name: "HelperShared"),
         .target(name: "Cleaner"),
-        .target(name: "OpenStatsUI", dependencies: ["Metrics", "SMC", "HelperShared", "Cleaner"],
+        .target(name: "Updates"),
+        .target(name: "OpenStatsUI", dependencies: ["Metrics", "SMC", "HelperShared", "Cleaner", "Updates"],
                 resources: [.copy("Resources/Flags")]),
         .testTarget(name: "MetricsTests", dependencies: ["Metrics", "SMC"]),
         .testTarget(name: "CleanerTests", dependencies: ["Cleaner"]),
         .testTarget(name: "HelperSharedTests", dependencies: ["HelperShared"]),
+        .testTarget(name: "UpdatesTests", dependencies: ["Updates"]),
     ],
     swiftLanguageModes: [.v6]
 )

@@ -1,5 +1,5 @@
 #!/bin/bash
-# 发布一个可分发的版本：Developer ID 签名 → 公证 → 装订 → DMG（签名、公证、装订）→ SHA-256 与 Homebrew cask。
+# 发布一个可分发的版本：Developer ID 签名 → 公证 → 装订 → DMG（签名、公证、装订）→ 在线升级包与版本清单 → Homebrew cask。
 #
 #   ./Scripts/release.sh
 #
@@ -19,8 +19,10 @@ NOTARY_PROFILE="${NOTARY_PROFILE:-QuotaBar}"
 SIGN_ID="${SIGN_ID:-$(security find-identity -v -p codesigning 2>/dev/null \
   | grep 'Developer ID Application' | head -1 | sed -E 's/.*"(.*)".*/\1/' || true)}"
 VERSION="$(sed -nE 's/^ *MARKETING_VERSION: *"?([0-9.]+)"?.*/\1/p' project.yml | head -1)"
+BUILD="$(sed -nE 's/^ *CURRENT_PROJECT_VERSION: *"?([0-9]+)"?.*/\1/p' project.yml | head -1)"
 APP="build/DerivedData/Build/Products/Release/OpenStats.app"
 DMG_NAME="OpenStats-${VERSION}.dmg"
+ZIP_NAME="OpenStats-${VERSION}.zip"
 
 if [ -z "$SIGN_ID" ]; then
   echo "error: 钥匙串里没有 Developer ID Application 证书，无法发布。" >&2
@@ -85,6 +87,12 @@ fi
 
 SHA256="$(shasum -a 256 "$DIST/$DMG_NAME" | cut -d' ' -f1)"
 
+# ---- 在线升级 ------------------------------------------------------------------
+
+# 应用内升级下载已装订票据的 .app 压缩包，版本清单里带 sha256 与更新摘要
+ditto -c -k --keepParent "$APP" "$DIST/$ZIP_NAME"
+python3 Scripts/appcast.py "$VERSION" "$BUILD" "$DIST/$ZIP_NAME" "$DIST/$DMG_NAME" "$DOWNLOAD_BASE" > "$DIST/appcast.json"
+
 # ---- Homebrew cask ------------------------------------------------------------
 
 cat > "$DIST/openstats.rb" <<CASK
@@ -97,6 +105,8 @@ cask "openstats" do
   desc "Menu bar system monitor with fan control, keep-awake and cleanup"
   homepage "https://getopenstats.com"
 
+  # 应用内置在线升级，brew upgrade 默认不再重复升级
+  auto_updates true
   depends_on macos: :sonoma
 
   app "OpenStats.app"
@@ -111,6 +121,7 @@ CASK
 echo
 echo "✅ ${DIST}/${DMG_NAME}"
 echo "   SHA-256 ${SHA256}"
+echo "   在线升级：${DIST}/${ZIP_NAME} · ${DIST}/appcast.json"
 echo "   Homebrew cask：${DIST}/openstats.rb"
 if [ "${SKIP_NOTARIZE:-0}" = "1" ]; then
   echo "⚠️  未公证，仅供本机测试。"
