@@ -34,6 +34,17 @@ extension DS {
         static let border = Color.dynamic(light: 0x000000, lightAlpha: 0.07, dark: 0xFFFFFF, darkAlpha: 0.09)
         static let track = Color.dynamic(light: 0x000000, lightAlpha: 0.06, dark: 0xFFFFFF, darkAlpha: 0.10)
         static let neutral300 = Color.dynamic(light: 0xD1D5DB, dark: 0x3F434A)
+        /// 浅一档的品牌蓝，用来区分同一图表里的第二类数据（如性能核）
+        static let primarySoft = Color.dynamic(light: 0x93C5FD, dark: 0x60A5FA)
+
+        /// 核心类型配色：最高性能档为品牌蓝，其次浅蓝，能效核灰色
+        static func cluster(_ id: Int) -> Color {
+            switch id {
+            case 0: primary
+            case 1: primarySoft
+            default: neutral300
+            }
+        }
     }
 }
 

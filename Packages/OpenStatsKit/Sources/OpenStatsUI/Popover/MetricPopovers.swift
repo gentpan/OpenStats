@@ -28,26 +28,22 @@ struct CPUPopover: View {
         let store = model.store
         let cpu = store.cpu
         let temperature = store.sensors?.temperature(.cpu)
+        let load = cpu?.loadAverage.first
+        let cores = Double(max(1, store.topology.logicalCores))
 
+        // 三个圆环：温度、总占用、1 分钟负载（按逻辑核心数归一）
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
-            HStack(spacing: DS.Space.s3) {
-                RingGauge(fraction: cpu?.total ?? 0, color: loadTone(cpu?.total ?? 0).color, size: heroGauge) {
-                    Text(verbatim: cpu.map { Format.percent($0.total) } ?? "—")
-                        .dsFont(.sm, weight: .semibold)
-                        .monospacedDigit()
-                        .foregroundStyle(DS.Palette.textPrimary)
-                }
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    LegendItem(color: DS.Palette.primary, label: "用户", value: cpu.map { Format.percent($0.user) } ?? "—")
-                    LegendItem(color: DS.Palette.secondary, label: "系统", value: cpu.map { Format.percent($0.system) } ?? "—")
-                    LegendItem(color: DS.Palette.neutral300, label: "空闲",
-                               value: cpu.map { Format.percent(max(0, 1 - $0.total)) } ?? "—")
-                }
-                Spacer(minLength: 0)
-                if let temperature {
-                    Chip(text: Format.temperature(temperature.maximum, fahrenheit: settings.useFahrenheit),
-                         icon: "thermometer.medium", tone: Tone.forTemperature(temperature.maximum))
-                }
+            HStack(alignment: .center, spacing: DS.Space.s3) {
+                LabeledRing(title: "温度", fraction: (temperature?.maximum ?? 0) / DS.Thermal.scaleMax,
+                            color: temperature.map { Tone.forTemperature($0.maximum).color } ?? DS.Palette.primary,
+                            value: temperature.map { "\(Int($0.maximum.rounded()))°" } ?? "—")
+                    .frame(maxWidth: .infinity)
+                LabeledRing(title: "占用", fraction: cpu?.total ?? 0, color: loadTone(cpu?.total ?? 0).color,
+                            value: cpu.map { Format.percent($0.total) } ?? "—", large: true)
+                    .frame(maxWidth: .infinity)
+                LabeledRing(title: "负载", fraction: (load ?? 0) / cores, color: loadTone((load ?? 0) / cores).color,
+                            value: load.map { $0.formatted(.number.precision(.fractionLength(2))) } ?? "—")
+                    .frame(maxWidth: .infinity)
             }
         }
 
@@ -55,25 +51,42 @@ struct CPUPopover: View {
             switch section {
             case .cpuHistory:
                 SectionCard(title: section.title, trailing: { Text("最近 60 秒") }) {
-                    BarHistoryChart(values: store.cpuTotal.elements, capacity: isDetailPage ? 60 : 40, height: detailChartHeight(isDetailPage))
+                    LineHistoryChart(values: store.cpuTotal.elements, height: detailChartHeight(isDetailPage))
                 }
             case .cpuCores:
                 SectionCard(title: section.title) {
-                    CoreClusterBars(topology: store.topology, perCore: cpu?.perCore ?? [])
+                    CoreClusterBars(topology: store.topology, perCore: cpu?.perCore ?? [],
+                                    barHeight: isDetailPage ? DS.Space.s16 : DS.Space.s12, byCluster: true)
                 }
             case .cpuDetails:
                 SectionCard(title: section.title) {
-                    InfoRow(label: "处理器", text: store.topology.brand)
-                    InfoRow(label: "核心", text: coreSummary(store.topology))
-                    InfoRow(label: "负载平均", text: cpu.map { loadAverage($0.loadAverage) } ?? "—")
+                    LegendRow(color: DS.Palette.primary, label: "用户", value: cpu.map { Format.percent($0.user) } ?? "—")
+                    LegendRow(color: DS.Palette.secondary, label: "系统", value: cpu.map { Format.percent($0.system) } ?? "—")
+                    LegendRow(color: DS.Palette.track, label: "空闲", value: cpu.map { Format.percent(max(0, 1 - $0.total)) } ?? "—")
+                    ForEach(store.topology.clusters) { cluster in
+                        LegendRow(color: DS.Palette.cluster(cluster.id), label: "\(cluster.name)平均",
+                                  value: CoreClusterBars.average(of: cluster, perCore: cpu?.perCore ?? []).map { Format.percent($0) } ?? "—")
+                    }
+                    InfoRow(label: "处理器", text: "\(store.topology.brand) · \(store.topology.logicalCores) 核")
                     if let boot = store.system.bootDate {
                         InfoRow(label: "已运行", text: Format.uptime(since: boot))
+                    }
+                }
+            case .cpuLoadAverage:
+                SectionCard(title: section.title, trailing: { Text(verbatim: "\(store.topology.logicalCores) 核") }) {
+                    let averages = cpu?.loadAverage ?? []
+                    ForEach(Array(["1 分钟", "5 分钟", "15 分钟"].enumerated()), id: \.offset) { index, label in
+                        let value = index < averages.count ? averages[index] : nil
+                        VStack(spacing: DS.Space.s1) {
+                            InfoRow(label: label, text: value.map { $0.formatted(.number.precision(.fractionLength(2))) } ?? "—")
+                            ProgressTrack(fraction: (value ?? 0) / cores, color: loadTone((value ?? 0) / cores).color, height: DS.Space.s1)
+                        }
                     }
                 }
             case .cpuProcesses:
                 SectionCard(title: section.title, trailing: { Text("CPU") }) {
                     let processes = store.processes
-                    ProcessList(count: processes.count) { index in
+                    ProcessList(count: processes.count, rowCount: 8) { index in
                         let process = processes[index]
                         HStack(spacing: DS.Space.s2) {
                             ProcessNameLabel(icon: AppIconCache.shared.image(for: process), name: process.displayName)
@@ -82,6 +95,7 @@ struct CPUPopover: View {
                                 .monospacedDigit()
                                 .foregroundStyle(DS.Palette.textSecondary)
                         }
+                        .explainable(.init(process))
                     }
                 }
             default:
@@ -89,14 +103,30 @@ struct CPUPopover: View {
             }
         }
     }
+}
 
-    private func coreSummary(_ topology: CPUTopology) -> String {
-        let clusters = topology.clusters.map { "\($0.coreIndices.count) \($0.name)" }.joined(separator: " + ")
-        return clusters.isEmpty ? "\(topology.logicalCores) 核" : "\(topology.logicalCores) 核（\(clusters)）"
-    }
+/// 圆环 + 中间数值 + 下方标题
+private struct LabeledRing: View {
+    let title: String
+    let fraction: Double
+    let color: Color
+    let value: String
+    var large = false
 
-    private func loadAverage(_ values: [Double]) -> String {
-        values.prefix(3).map { $0.formatted(.number.precision(.fractionLength(2))) }.joined(separator: " · ")
+    var body: some View {
+        VStack(spacing: DS.Space.s1) {
+            RingGauge(fraction: fraction, color: color,
+                      lineWidth: large ? DS.Space.s2 : DS.Space.s1 + DS.Space.s1 / 2,
+                      size: large ? DS.Space.s16 + DS.Space.s2 : DS.Space.s12 + DS.Space.s1) {
+                Text(verbatim: value)
+                    .dsFont(large ? .base : .xs, weight: .semibold)
+                    .monospacedDigit()
+                    .foregroundStyle(DS.Palette.textPrimary)
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+            }
+            Text(title).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+        }
     }
 }
 
@@ -111,19 +141,23 @@ struct MemoryPopover: View {
         let store = model.store
         let memory = store.memory
 
+        // 左边内存压力仪表，右边按 App / 联动 / 压缩分段的占用圆环
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
-            HStack(spacing: DS.Space.s3) {
-                RingGauge(fraction: memory?.usedFraction ?? 0, color: pressureTone(memory?.pressure).color, size: heroGauge) {
-                    Text(verbatim: memory.map { Format.percent($0.usedFraction) } ?? "—")
-                        .dsFont(.sm, weight: .semibold)
-                        .monospacedDigit()
-                        .foregroundStyle(DS.Palette.textPrimary)
+            HStack(alignment: .center, spacing: DS.Space.s3) {
+                PressureGauge(pressure: memory?.pressure)
+                    .frame(maxWidth: .infinity)
+                SegmentedRing(segments: memory.map(segments) ?? [], size: DS.Space.s16 + DS.Space.s2) {
+                    VStack(spacing: 0) {
+                        Text(verbatim: memory.map { Format.percent($0.usedFraction) } ?? "—")
+                            .dsFont(.base, weight: .semibold)
+                            .monospacedDigit()
+                            .foregroundStyle(DS.Palette.textPrimary)
+                        Text(verbatim: memory.map { Format.bytes($0.total) } ?? "")
+                            .dsFont(.xs)
+                            .foregroundStyle(DS.Palette.textTertiary)
+                    }
                 }
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    HeroValue(value: memory.map { Format.bytes($0.used) } ?? "—", unit: memory.map { "/ \(Format.bytes($0.total))" }, size: .lg)
-                    StatusBadge(text: "内存压力 \(memory?.pressure.title ?? "—")", tone: pressureTone(memory?.pressure))
-                }
-                Spacer(minLength: 0)
+                .frame(maxWidth: .infinity)
             }
         }
 
@@ -136,19 +170,22 @@ struct MemoryPopover: View {
             case .memoryBreakdown:
                 SectionCard(title: section.title) {
                     if let memory {
+                        InfoRow(label: "已用", text: "\(Format.bytes(memory.used)) / \(Format.bytes(memory.total))")
                         MemoryBar(memory: memory)
                         LegendRow(color: DS.Palette.primary, label: "App 内存", value: Format.bytes(memory.app))
                         LegendRow(color: DS.Palette.secondary, label: "联动内存", value: Format.bytes(memory.wired))
                         LegendRow(color: DS.Palette.warning, label: "被压缩", value: Format.bytes(memory.compressed))
+                        LegendRow(color: DS.Palette.track, label: "可用",
+                                  value: Format.bytes(memory.total > memory.used ? memory.total - memory.used : 0))
                         LegendRow(color: DS.Palette.neutral300, label: "缓存文件", value: Format.bytes(memory.cached))
-                        LegendRow(color: DS.Palette.track, label: "交换空间", value: Format.bytes(memory.swapUsed))
+                        InfoRow(label: "交换区", text: Format.bytes(memory.swapUsed))
                     }
                     PurgeMemoryRow()
                 }
             case .memoryProcesses:
                 SectionCard(title: section.title, trailing: { Text("内存") }) {
                     let processes = store.processes.sorted { $0.memory > $1.memory }
-                    ProcessList(count: processes.count) { index in
+                    ProcessList(count: processes.count, rowCount: 8) { index in
                         let process = processes[index]
                         HStack(spacing: DS.Space.s2) {
                             ProcessNameLabel(icon: AppIconCache.shared.image(for: process), name: process.displayName)
@@ -157,6 +194,7 @@ struct MemoryPopover: View {
                                 .monospacedDigit()
                                 .foregroundStyle(DS.Palette.textSecondary)
                         }
+                        .explainable(.init(process))
                     }
                 }
             default:
@@ -165,13 +203,38 @@ struct MemoryPopover: View {
         }
     }
 
-    private func pressureTone(_ pressure: MemoryPressure?) -> Tone {
-        switch pressure {
-        case .normal: .success
-        case .warning: .warning
-        case .critical: .error
-        case nil: .neutral
+    private func segments(_ memory: MemoryUsage) -> [(fraction: Double, color: Color)] {
+        let total = max(1, Double(memory.total))
+        return [(Double(memory.app) / total, DS.Palette.primary),
+                (Double(memory.wired) / total, DS.Palette.secondary),
+                (Double(memory.compressed) / total, DS.Palette.warning)]
+    }
+}
+
+extension View {
+    /// 进程行右键菜单：用 Apple 智能解释
+    @ViewBuilder
+    func explainable(_ subject: ProcessExplainer.Subject) -> some View {
+        if ProcessExplainer.isSupported {
+            ExplainableRow(subject: subject) { self }
+        } else {
+            self
         }
+    }
+}
+
+private struct ExplainableRow<Content: View>: View {
+    let subject: ProcessExplainer.Subject
+    @ViewBuilder var content: Content
+    @Environment(AppModel.self) private var model
+    @Environment(\.isSnapshot) private var isSnapshot
+
+    var body: some View {
+        content
+            .contentShape(Rectangle())
+            .contextMenu(isSnapshot ? nil : ContextMenu {
+                Button("用 Apple 智能解释") { model.explainProcess(subject) }
+            })
     }
 }
 

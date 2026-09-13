@@ -55,7 +55,7 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
     /// 点击该项弹出的详情里可以显示的内容，按显示顺序排列
     var popoverSections: [PopoverSection] {
         switch self {
-        case .cpu: [.cpuHistory, .cpuCores, .cpuDetails, .cpuProcesses]
+        case .cpu: [.cpuHistory, .cpuCores, .cpuDetails, .cpuLoadAverage, .cpuProcesses]
         case .memory: [.memoryHistory, .memoryBreakdown, .memoryProcesses]
         case .network: [.networkHistory, .networkProbe, .networkInterface, .networkAddresses, .networkDNS, .networkProcesses]
         case .gpu: [.gpuHistory, .gpuDetails]
@@ -81,7 +81,7 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
 
 /// 详情弹窗里可以单独隐藏的区块
 public enum PopoverSection: String, CaseIterable, Identifiable, Sendable {
-    case cpuHistory, cpuCores, cpuDetails, cpuProcesses
+    case cpuHistory, cpuCores, cpuDetails, cpuLoadAverage, cpuProcesses
     case memoryHistory, memoryBreakdown, memoryProcesses
     case networkHistory, networkProbe, networkInterface, networkAddresses, networkDNS, networkProcesses
     case gpuHistory, gpuDetails
@@ -93,7 +93,8 @@ public enum PopoverSection: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .cpuHistory: "负载历史"
         case .cpuCores: "核心负载"
-        case .cpuDetails: "处理器信息"
+        case .cpuDetails: "详细信息"
+        case .cpuLoadAverage: "平均负载"
         case .cpuProcesses, .memoryProcesses, .networkProcesses: "高占用进程"
         case .memoryHistory: "使用历史"
         case .memoryBreakdown: "内存构成"

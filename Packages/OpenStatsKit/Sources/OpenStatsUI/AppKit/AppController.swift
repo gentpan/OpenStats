@@ -53,6 +53,16 @@ public final class AppController: NSObject, NSApplicationDelegate, NSWindowDeleg
         if arguments.contains("--show-window") {
             mainWindow.show(tab: nil)
         }
+        // 开发调试：--explain-process <进程名> 打开进程页并用 Apple 智能解释该进程
+        if let index = arguments.firstIndex(of: "--explain-process"), let name = arguments.dropFirst(index + 1).first {
+            mainWindow.show(tab: .processes)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in
+                guard let self else { return }
+                let processes = self.model.store.processes
+                guard let process = processes.first(where: { $0.name.localizedCaseInsensitiveContains(name) }) ?? processes.first else { return }
+                self.model.explainProcess(.init(process))
+            }
+        }
 
         let model = self.model
         Task { [weak self] in

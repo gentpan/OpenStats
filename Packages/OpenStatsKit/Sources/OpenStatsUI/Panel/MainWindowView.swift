@@ -35,6 +35,8 @@ public struct MainWindowView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
+                // 截图时页面取自身高度：侧边栏更高时，多出的高度不能分给页面里可伸展的卡片
+                .fixedSize(horizontal: false, vertical: isSnapshot)
             }
             .frame(minWidth: DS.Size.panelWidth, maxWidth: .infinity)
             .frame(maxHeight: isSnapshot ? nil : .infinity, alignment: .top)

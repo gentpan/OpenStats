@@ -341,10 +341,10 @@ private struct NetworkProcessesSection: View {
                 Text("上传").frame(width: DS.Size.valueColumn, alignment: .trailing)
             }
         }) {
-            ProcessList(count: processes.count, emptyText: "正在统计各进程流量…") { index in
+            ProcessList(count: processes.count, rowCount: 8, emptyText: "正在统计各进程流量…") { index in
                 let process = processes[index]
                 HStack(spacing: 0) {
-                    ProcessNameLabel(icon: AppIconCache.shared.image(bundlePath: process.appBundlePath), name: process.name)
+                    ProcessNameLabel(icon: AppIconCache.shared.image(bundlePath: process.appBundlePath), name: process.localizedName)
                     Text(verbatim: Format.menuBarRate(process.download))
                         .frame(width: DS.Size.valueColumn, alignment: .trailing)
                     Text(verbatim: Format.menuBarRate(process.upload))
@@ -353,6 +353,7 @@ private struct NetworkProcessesSection: View {
                 .dsFont(.xs)
                 .monospacedDigit()
                 .foregroundStyle(DS.Palette.textSecondary)
+                .explainable(.init(process))
             }
         }
     }

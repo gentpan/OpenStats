@@ -141,6 +141,13 @@ struct CoreClusterBars: View {
     let topology: CPUTopology
     let perCore: [Double]
     var barHeight: CGFloat = DS.Size.coreBarHeight
+    /// 按核心类型着色（各类核心的平均占用显示在详细信息里）
+    var byCluster = false
+
+    static func average(of cluster: CPUCluster, perCore: [Double]) -> Double? {
+        let values = cluster.coreIndices.compactMap { $0 < perCore.count ? perCore[$0] : nil }
+        return values.isEmpty ? nil : values.reduce(0, +) / Double(values.count)
+    }
 
     private static let barGap = DS.Space.s1 / 2
     private static let groupGap = DS.Space.s3
@@ -165,8 +172,8 @@ struct CoreClusterBars: View {
                         context.fill(Path(roundedRect: track, cornerRadius: DS.Radius.sm / 2), with: .color(DS.Palette.track))
                         let fillHeight = size.height * value
                         let fill = CGRect(x: x, y: size.height - fillHeight, width: barWidth, height: fillHeight)
-                        context.fill(Path(roundedRect: fill, cornerRadius: DS.Radius.sm / 2),
-                                     with: .color(value >= 0.8 ? DS.Palette.warning : DS.Palette.primary))
+                        let color = byCluster ? DS.Palette.cluster(cluster.id) : value >= 0.8 ? DS.Palette.warning : DS.Palette.primary
+                        context.fill(Path(roundedRect: fill, cornerRadius: DS.Radius.sm / 2), with: .color(color))
                         x += barWidth + Self.barGap
                     }
                     x += Self.groupGap - Self.barGap
@@ -180,10 +187,17 @@ struct CoreClusterBars: View {
                 HStack(spacing: Self.groupGap) {
                     ForEach(clusters) { cluster in
                         let count = CGFloat(cluster.coreIndices.count)
-                        Text(verbatim: "\(cluster.name) · \(cluster.coreIndices.count)")
-                            .dsFont(.xs)
-                            .foregroundStyle(DS.Palette.textTertiary)
-                            .lineLimit(1)
+                        HStack(spacing: DS.Space.s1) {
+                            if byCluster {
+                                RoundedRectangle(cornerRadius: DS.Radius.sm / 2).fill(DS.Palette.cluster(cluster.id))
+                                    .frame(width: DS.Size.barHeight, height: DS.Size.barHeight)
+                            }
+                            Text(verbatim: label(cluster))
+                                .dsFont(.xs)
+                                .foregroundStyle(DS.Palette.textTertiary)
+                                .monospacedDigit()
+                                .lineLimit(1)
+                        }
                             .frame(width: count * barWidth + (count - 1) * Self.barGap, alignment: .leading)
                     }
                 }
@@ -192,6 +206,89 @@ struct CoreClusterBars: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("各核心负载")
+    }
+
+    private func label(_ cluster: CPUCluster) -> String {
+        "\(cluster.name) · \(cluster.coreIndices.count)"
+    }
+}
+
+/// 分段圆环：各段首尾相接（内存的 App / 联动 / 压缩），剩余为底槽
+struct SegmentedRing<Center: View>: View {
+    let segments: [(fraction: Double, color: Color)]
+    var lineWidth: CGFloat = DS.Space.s2
+    var size: CGFloat = DS.Space.s16
+    @ViewBuilder var center: Center
+
+    var body: some View {
+        ZStack {
+            Circle().stroke(DS.Palette.track, lineWidth: lineWidth)
+            ForEach(Array(ranges.enumerated()), id: \.offset) { _, range in
+                Circle()
+                    .trim(from: range.start, to: range.end)
+                    .stroke(range.color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .butt))
+                    .rotationEffect(.degrees(-90))
+            }
+            center
+        }
+        .padding(lineWidth / 2)
+        .frame(width: size, height: size)
+    }
+
+    private var ranges: [(start: Double, end: Double, color: Color)] {
+        var start = 0.0
+        return segments.map { segment in
+            let end = min(1, start + max(0, segment.fraction))
+            defer { start = end }
+            return (start, end, segment.color)
+        }
+    }
+}
+
+/// 内存压力仪表：半圆弧分正常、偏高、严重三段，指针指向当前档位
+struct PressureGauge: View {
+    let pressure: MemoryPressure?
+    var width: CGFloat = DS.Space.s16
+
+    var body: some View {
+        VStack(spacing: DS.Space.s1) {
+            Canvas { context, size in
+                let lineWidth = DS.Space.s2 - DS.Space.s1 / 2
+                let radius = min(size.width / 2, size.height) - lineWidth / 2
+                let center = CGPoint(x: size.width / 2, y: size.height - DS.Space.s1)
+                // 角度从左（0°）经过顶部到右（180°）
+                func point(_ degrees: Double, _ r: CGFloat) -> CGPoint {
+                    let radians = degrees * .pi / 180
+                    return CGPoint(x: center.x - r * cos(radians), y: center.y - r * sin(radians))
+                }
+                let bands: [(Double, Double, Color)] = [(0, 58, DS.Palette.success), (62, 118, DS.Palette.warning), (122, 180, DS.Palette.error)]
+                for (start, end, color) in bands {
+                    var arc = Path()
+                    arc.move(to: point(start, radius))
+                    for step in stride(from: start, through: end, by: 2) { arc.addLine(to: point(step, radius)) }
+                    context.stroke(arc, with: .color(color), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                }
+                let angle: Double = switch pressure {
+                case .warning: 90
+                case .critical: 150
+                default: 30
+                }
+                var needle = Path()
+                needle.move(to: center)
+                needle.addLine(to: point(angle, radius * 0.72))
+                context.stroke(needle, with: .color(DS.Palette.textPrimary),
+                               style: StrokeStyle(lineWidth: DS.Size.chartLine * 2, lineCap: .round))
+                let dot = DS.Space.s1 + DS.Space.s1 / 2
+                context.fill(Path(ellipseIn: CGRect(x: center.x - dot / 2, y: center.y - dot / 2, width: dot, height: dot)),
+                             with: .color(DS.Palette.textPrimary))
+            }
+            .frame(width: width, height: width / 2 + DS.Space.s1)
+            Text(pressure.map { "压力\($0.title)" } ?? "—")
+                .dsFont(.xs, weight: .semibold)
+                .foregroundStyle(DS.Palette.textSecondary)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("内存压力 \(pressure?.title ?? "未知")")
     }
 }
 

@@ -16,6 +16,7 @@ public final class AppModel {
     public let cleaner: CleanerController
     public let maintenance: MaintenanceController
     public let network: NetworkController
+    public let explainer = ProcessExplainer()
     @ObservationIgnored public let hub = MetricsHub()
 
     public var isMainWindowVisible = false
@@ -119,6 +120,13 @@ public final class AppModel {
             await keepAwake.setLidClosed(enabled)
             if enabled, !keepAwake.isActive { await keepAwake.start() }
         }
+    }
+
+    /// 用 Apple 智能解释进程：结果显示在主窗口的进程页
+    func explainProcess(_ subject: ProcessExplainer.Subject) {
+        settings.panelTab = .processes
+        if !isMainWindowVisible { openMainWindow(.processes) }
+        explainer.explain(subject)
     }
 
     func handle(_ snapshot: MetricsSnapshot) {
