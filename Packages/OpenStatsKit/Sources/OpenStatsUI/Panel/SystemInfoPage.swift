@@ -77,6 +77,22 @@ struct SystemInfoPage: View {
                         InfoRow(label: "健康度", text: battery.health.map { Format.percent($0) } ?? "—")
                         InfoRow(label: "循环次数", text: battery.cycleCount.map(String.init) ?? "—")
                         InfoRow(label: "电源", text: battery.isPluggedIn ? "电源适配器\(battery.adapterWatts.map { " · \($0)W" } ?? "")" : "电池供电")
+                        // macOS 26 起系统自带充电上限；新款机型已不开放第三方写入 SMC 充电控制键，不另做一套
+                        if ProcessInfo.processInfo.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 26, minorVersion: 0, patchVersion: 0)) {
+                            HStack(spacing: DS.Space.s2) {
+                                Text("充电上限可在系统设置中设为 80%–100%，长期接电源时有助于延缓电池老化")
+                                    .dsFont(.xs)
+                                    .foregroundStyle(DS.Palette.textTertiary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Spacer(minLength: 0)
+                                Button("电池设置") {
+                                    if let url = URL(string: "x-apple.systempreferences:com.apple.Battery-Settings.extension") {
+                                        NSWorkspace.shared.open(url)
+                                    }
+                                }
+                                .buttonStyle(DSButtonStyle(kind: .secondary))
+                            }
+                        }
                     } else {
                         Text("这台 Mac 没有电池").dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
                     }
