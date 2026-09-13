@@ -132,10 +132,16 @@ private struct PageHeader: View {
         let tab = settings.panelTab
 
         HStack(spacing: DS.Space.s3) {
-            Text(tab.headerTitle)
-                .dsFont(.base, weight: .semibold)
-                .foregroundStyle(DS.Palette.textPrimary)
-            Spacer(minLength: DS.Space.s3)
+            // 拖动窗口的区域只覆盖标题和空白，按钮与开关不在拖动层上
+            HStack(spacing: 0) {
+                Text(tab.headerTitle)
+                    .dsFont(.base, weight: .semibold)
+                    .foregroundStyle(DS.Palette.textPrimary)
+                Spacer(minLength: DS.Space.s3)
+            }
+            .frame(maxHeight: .infinity)
+            .background(WindowDragArea())
+
             if model.keepAwake.isActive {
                 Chip(text: "防休眠已开启", icon: "cup.and.saucer.fill", tone: .primary)
             }
@@ -148,7 +154,6 @@ private struct PageHeader: View {
         }
         .padding(.horizontal, DS.Space.s3 + DS.Space.s1)
         .frame(height: DS.Size.windowHeader)
-        .background(WindowDragArea())
     }
 }
 
