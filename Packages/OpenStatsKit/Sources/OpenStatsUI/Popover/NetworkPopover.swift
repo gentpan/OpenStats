@@ -214,6 +214,9 @@ private struct AddressSection: View {
                 if let organization = publicAddresses?.organization {
                     InfoRow(label: "网络运营方") { Text(verbatim: organization).lineLimit(1).truncationMode(.middle) }
                 }
+                if let publicAddresses, publicAddresses.countryCode != nil || publicAddresses.asn != nil {
+                    InfoRow(label: "数据来源", text: publicAddresses.source == .localDatabase ? "本地 GeoLite2（MaxMind）" : "ipinfo.io 在线查询")
+                }
             } else {
                 InfoRow(label: "公网 IP", text: "查询已关闭")
             }

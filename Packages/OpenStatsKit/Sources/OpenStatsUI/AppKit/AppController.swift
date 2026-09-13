@@ -40,6 +40,7 @@ public final class AppController: NSObject, NSApplicationDelegate, NSWindowDeleg
         observeProbeSettings()
         applyAppearance()
         model.network.updateProbing(networkShown: model.networkShown)
+        Task { await model.geo.updateIfNeeded() }
 
         // 开发调试：--show-panel [cpu|memory|network|gpu|temperature|fan] 启动后展开并固定弹窗；--show-window 打开主窗口
         let arguments = CommandLine.arguments

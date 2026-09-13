@@ -344,6 +344,14 @@ public final class AppSettings {
     public var publicIPLookup: Bool {
         didSet { defaults.set(publicIPLookup, forKey: Keys.publicIPLookup) }
     }
+    /// 本地归属地库包含城市数据（GeoLite2-City，体积约为国家库的 7 倍）
+    public var geoIncludeCity: Bool {
+        didSet { defaults.set(geoIncludeCity, forKey: Keys.geoIncludeCity) }
+    }
+    /// 定期从官网检查归属地数据库更新
+    public var geoAutoUpdate: Bool {
+        didSet { defaults.set(geoAutoUpdate, forKey: Keys.geoAutoUpdate) }
+    }
     /// 可再生的缓存也先移到废纸篓（可恢复，但不会立即释放空间）
     public var cleanPrefersTrash: Bool {
         didSet { defaults.set(cleanPrefersTrash, forKey: Keys.cleanPrefersTrash) }
@@ -383,6 +391,8 @@ public final class AppSettings {
             ? defaults.integer(forKey: Keys.probeSeconds) : 2
         probeTarget = defaults.string(forKey: Keys.probeTarget).flatMap(ProbeTarget.init(rawValue:)) ?? .cloudflare
         publicIPLookup = defaults.object(forKey: Keys.publicIPLookup) as? Bool ?? true
+        geoIncludeCity = defaults.bool(forKey: Keys.geoIncludeCity)
+        geoAutoUpdate = defaults.object(forKey: Keys.geoAutoUpdate) as? Bool ?? true
     }
 
     /// 按固定顺序返回已启用的菜单栏项目
@@ -430,5 +440,7 @@ public final class AppSettings {
         static let probeSeconds = "probeSeconds"
         static let probeTarget = "probeTarget"
         static let publicIPLookup = "publicIPLookup"
+        static let geoIncludeCity = "geoIncludeCity"
+        static let geoAutoUpdate = "geoAutoUpdate"
     }
 }

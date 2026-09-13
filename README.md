@@ -46,10 +46,10 @@ Developed and tested on Apple Silicon. The interface is in Simplified Chinese.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Not released yet · **44** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Not released yet · **45** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-09-13</b> · Unreleased · 29 added · 9 style · 6 fixed</summary>
+<summary><b>2026-09-13</b> · Unreleased · 30 added · 9 style · 6 fixed</summary>
 
 **Added**
 
@@ -65,6 +65,7 @@ Not released yet · **44** changes in development · [full changelog](CHANGELOG.
 - CPU 详情：顶部是占用、状态（空闲 / 适中 / 繁忙 / 满载）、与 30 秒前相比的变化和温度余量，下面是走势线与用户 / 系统 / 空闲构成条；核心热力图（每行一个核心、每列一次采样）；核心分工（各类核心平均占用与最忙的核心）；排队程度（平均负载折算到每个核心，并提示负载在上升还是下降）；按应用汇总 CPU。
 - 内存详情：顶部是还可用多少、压力状态与最近 60 秒的压力走势条；内存水位条（App / 联动 / 压缩 / 缓存 / 空闲）；压缩与交换（压缩省下的内存、压缩比、交换区用量与实时换入换出速率，持续写盘时提示）；按应用汇总内存（合并辅助进程，显示占已用内存的比例）。
 - 用 Apple 智能解释进程：在进程上右键或点进程页的星形按钮，由系统自带的本机大模型说明它是什么、占用是否正常、能否退出；把路径、所属应用和签名方一起交给模型以减少猜测，全程不联网（需要 macOS 26 并开启 Apple 智能）。
+- IP 归属地改为本地 MaxMind GeoLite2 数据库查询：自己实现 .mmdb 读取器（不依赖第三方库），国家、城市与 ASN 完全离线查；数据库由官网服务器每周二、周五用 MaxMind 账号同步，应用每 3 天检查清单、下载并按 sha256 校验后替换，也可以从文件导入；设置中可选是否包含城市库（约 60 MB）；数据库就绪前暂用 ipinfo.io 在线查询，网络详情里标明数据来源。
 - 本机信息页：机型图与名称、系统版本与版号、芯片与各类核心、内存与图形、存储用量、电池健康与循环次数、每台显示器的尺寸 / 原生分辨率 / 显示分辨率 / 刷新率、机型标识符、序列号（默认遮住，点眼睛图标显示，截图时始终遮住）与启动时间。
 - 进程管理器（主窗口“进程”页）：包括 root 与其他用户的系统进程（通过系统自带的 ps 读取，不需要辅助工具）；列出 CPU、CPU 时间、内存、线程、唤醒次数、磁盘读写与用户，点列标题排序；可搜索名称、PID 或用户，筛选全部 / 我的 / 系统，切换按进程或按应用合并；选中后显示路径与详情，可在访达中显示、用 Apple 智能解释、退出或强制退出（二次确认，系统进程与 loginwindow 等禁止结束）；底部汇总用户 / 系统 / 空闲与全系统进程数、线程数。
 - 进程显示应用的本地化名称（如“微信”）；按应用汇总时，同一应用的主进程与辅助进程合并计算。
@@ -222,8 +223,10 @@ There is no analytics and no telemetry.
 OpenStats only touches the network for two optional features, both of which can be turned off in
 Settings → Network:
 
-- **Public IP**: when you open network details, one request to `ipinfo.io` for your public address,
-  region and ASN (IPv6 and fallback via Cloudflare `1.1.1.1` / ipify), cached for 10 minutes.
+- **Public IP**: when you open network details, one request to Cloudflare `1.1.1.1` (ipify as fallback)
+  for your public address, cached for 10 minutes. Region and ASN are looked up on the Mac in a MaxMind
+  GeoLite2 database downloaded from `getopenstats.com` and verified by sha256; until it is downloaded,
+  `ipinfo.io` answers instead.
 - **Connection probe**: an ICMP ping to the target you pick (Cloudflare, Google, Alibaba Cloud,
   Tencent or your router) every 1, 2 or 5 seconds, only while the network item is in the menu bar
   or network details are open.

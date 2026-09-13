@@ -10,6 +10,14 @@ public struct PublicAddresses: Sendable, Equatable {
     public var asn: String?
     /// 网络所属组织（英文），例如 “CHINANET-BACKBONE”
     public var organization: String?
+    public var source: Source = .online
+
+    public enum Source: Sendable, Equatable {
+        /// 本机的 MaxMind GeoLite2 数据库
+        case localDatabase
+        /// ipinfo.io 在线查询
+        case online
+    }
 
     public init(ipv4: String? = nil, ipv6: String? = nil, countryCode: String? = nil,
                 city: String? = nil, asn: String? = nil, organization: String? = nil) {
@@ -35,7 +43,14 @@ public enum PublicAddressLookup {
         return URLSession(configuration: configuration)
     }()
 
-    public static func fetch() async -> PublicAddresses {
+    /// `includeGeo` 为假时只查询公网 IP（Cloudflare trace / ipify），不请求任何归属地服务
+    public static func fetch(includeGeo: Bool = true) async -> PublicAddresses {
+        guard includeGeo else {
+            async let v4 = lookup(trace: "https://1.1.1.1/cdn-cgi/trace", fallback: "https://api.ipify.org")
+            async let v6 = lookup(trace: "https://[2606:4700:4700::1111]/cdn-cgi/trace", fallback: "https://api6.ipify.org")
+            let (ipv4, ipv6) = await (v4, v6)
+            return PublicAddresses(ipv4: ipv4.ip, ipv6: ipv6.ip, countryCode: ipv4.country ?? ipv6.country)
+        }
         async let geoResult = geo()
         async let v6Result = lookup(trace: "https://[2606:4700:4700::1111]/cdn-cgi/trace", fallback: "https://api6.ipify.org")
         var result = await geoResult ?? PublicAddresses()

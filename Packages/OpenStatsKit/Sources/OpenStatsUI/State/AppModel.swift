@@ -16,6 +16,7 @@ public final class AppModel {
     public let cleaner: CleanerController
     public let maintenance: MaintenanceController
     public let network: NetworkController
+    public let geo: GeoDatabaseController
     public let explainer = ProcessExplainer()
     @ObservationIgnored public let hub = MetricsHub()
 
@@ -39,7 +40,8 @@ public final class AppModel {
         keepAwake = KeepAwakeController(helper: helper, settings: settings)
         cleaner = CleanerController(settings: settings)
         maintenance = MaintenanceController(helper: helper)
-        network = NetworkController(settings: settings)
+        geo = GeoDatabaseController(settings: settings)
+        network = NetworkController(settings: settings, geo: geo)
     }
 
     /// 根据当前可见内容决定采集范围：主窗口看标签页，详情弹窗看是哪一项

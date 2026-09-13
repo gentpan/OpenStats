@@ -29,8 +29,11 @@ public final class NetworkController {
     @ObservationIgnored private var isPaused = false
     @ObservationIgnored private var wantsDetail = false
 
-    init(settings: AppSettings) {
+    @ObservationIgnored private let geo: GeoDatabaseController
+
+    init(settings: AppSettings, geo: GeoDatabaseController) {
         self.settings = settings
+        self.geo = geo
     }
 
     // MARK: 统计
@@ -133,7 +136,16 @@ public final class NetworkController {
         isLookingUpPublic = true
         let localIPv4 = details?.physical?.ipv4 ?? []
         Task {
-            let result = await PublicAddressLookup.fetch()
+            // 有本地 GeoLite2 时只向外查询公网 IP，归属地与 ASN 在本机查
+            let local = geo.isAvailable
+            var result = await PublicAddressLookup.fetch(includeGeo: !local)
+            if local, let address = result.ipv4 ?? result.ipv6, let location = geo.locate(address) {
+                result.countryCode = location.countryCode ?? result.countryCode
+                result.city = location.city
+                result.asn = location.asn
+                result.organization = location.organization
+                result.source = .localDatabase
+            }
             publicAddresses = result
             lastPublicLookup = (Date(), localIPv4)
             isLookingUpPublic = false

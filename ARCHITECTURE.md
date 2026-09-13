@@ -120,8 +120,13 @@ is open and back to accessory when all are closed.
   sequence number and a random payload token because the kernel rewrites the identifier.
 - **Interface and addresses** — `SCDynamicStore` / `SCPreferences` for the primary and physical
   service, `getifaddrs` for addresses, CoreWLAN for signal and rate.
-- **Public IP** — ipinfo.io for address, region and ASN; Cloudflare trace and ipify for IPv6 and
-  fallback. Country codes are validated before being used as flag file names.
+- **Public IP** — Cloudflare trace (ipify as fallback) for the address only. Region and ASN come from
+  MaxMind GeoLite2 databases read by `MaxMindDatabase`, a memory-mapped reader of the MaxMind DB
+  format (search tree + data section decoder, no dependencies). `server/geoip/` holds the systemd
+  timer that syncs GeoLite2 onto getopenstats.com with the MaxMind key kept in `/etc/openstats` on the
+  server; the app fetches `geoip/manifest.json`, downloads changed files, verifies sha256 and the
+  database type, then swaps them in. Without a local database it falls back to ipinfo.io. Country
+  codes are validated before being used as flag file names.
 - **Per-process traffic** — cumulative bytes from `/usr/bin/nettop`, diffed between samples.
 - **DNS** — `networksetup -setdnsservers` through the helper (protocol 3), which re-validates the
   service name and every address; without the helper, a one-off administrator prompt runs the

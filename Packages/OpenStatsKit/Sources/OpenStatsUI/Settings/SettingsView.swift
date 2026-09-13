@@ -1,5 +1,6 @@
 import AppKit
 import HelperShared
+import Metrics
 import SwiftUI
 
 enum SettingsSection: String, CaseIterable, Identifiable {
@@ -450,13 +451,97 @@ private struct NetworkSettings: View {
 
         SettingsGroup(caption: "公网 IP") {
             GroupRow(showsDivider: false) {
-                SettingRow(title: "查询公网 IP", subtitle: "打开网络详情时向 ipinfo.io 查询公网地址、归属地与 ASN，IPv6 与回退使用 Cloudflare / ipify；10 分钟内不重复请求") {
+                SettingRow(title: "查询公网 IP",
+                           subtitle: model.geo.isAvailable
+                               ? "打开网络详情时向 Cloudflare（1.1.1.1）或 ipify 查询一次公网地址；归属地与 ASN 在本机数据库里查，10 分钟内不重复请求"
+                               : "打开网络详情时查询公网地址；本地数据库还没准备好时，归属地与 ASN 暂由 ipinfo.io 在线查询") {
                     DSToggle(isOn: $settings.publicIPLookup, label: "查询公网 IP")
                 }
             }
         }
 
+        GeoDatabaseSettings()
+
         InfoBanner(icon: "lock.shield", text: "修改 DNS 需要管理员权限：已安装辅助工具时直接修改，否则每次弹出系统授权框。", tone: .neutral)
+    }
+}
+
+/// IP 归属地数据库（MaxMind GeoLite2）
+private struct GeoDatabaseSettings: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        @Bindable var settings = model.settings
+        let geo = model.geo
+
+        SettingsGroup(caption: "IP 归属地数据库") {
+            GroupRow(showsDivider: false) {
+                SettingRow(title: geo.isAvailable ? "本地 MaxMind GeoLite2" : "尚未下载",
+                           subtitle: geo.isAvailable
+                               ? "国家、城市与 ASN 在本机查询，不经过任何在线服务"
+                               : "下载后归属地查询完全离线；数据库由 OpenStats 官网每周同步 MaxMind 的最新版本") {
+                    StatusBadge(text: geo.isAvailable ? "离线查询" : "在线查询", tone: geo.isAvailable ? .success : .neutral)
+                }
+            }
+            ForEach(geo.installed.values.sorted { $0.edition < $1.edition }, id: \GeoDatabaseController.Installed.edition) { database in
+                GroupRow {
+                    SettingRow(title: title(database.edition), subtitle: "版本 \(database.build) · \(Format.bytes(UInt64(database.size), base: .decimal))") {
+                        Text(database.edition).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+                    }
+                }
+            }
+            GroupRow {
+                SettingRow(title: "包含城市数据", subtitle: "显示城市名称，数据库约 60 MB；关闭时只下载国家库（约 9 MB）") {
+                    DSToggle(isOn: $settings.geoIncludeCity, label: "包含城市数据")
+                }
+            }
+            GroupRow {
+                SettingRow(title: "自动更新", subtitle: geo.lastChecked.map { "每 3 天检查一次 · 上次检查 \($0.formatted(date: .abbreviated, time: .shortened))" } ?? "每 3 天检查一次") {
+                    DSToggle(isOn: $settings.geoAutoUpdate, label: "自动更新")
+                }
+            }
+            GroupRow {
+                HStack(spacing: DS.Space.s2) {
+                    Button(geo.isUpdating ? "正在更新…" : geo.isAvailable ? "立即检查更新" : "下载数据库") {
+                        Task { await geo.update() }
+                    }
+                    .buttonStyle(DSButtonStyle(kind: .primary))
+                    .disabled(geo.isUpdating)
+                    Button("从文件导入…") { importFile() }
+                        .buttonStyle(DSButtonStyle(kind: .secondary))
+                    if geo.isAvailable {
+                        Button("在访达中显示") { NSWorkspace.shared.activateFileViewerSelecting([geo.directory]) }
+                            .buttonStyle(DSButtonStyle(kind: .ghost))
+                    }
+                    Spacer()
+                }
+            }
+            if let message = geo.message {
+                GroupRow {
+                    Text(message.text).dsFont(.xs).foregroundStyle(message.isError ? DS.Palette.error : DS.Palette.success)
+                }
+            }
+        }
+
+        Text(GeoDatabaseController.attribution)
+            .dsFont(.xs)
+            .foregroundStyle(DS.Palette.textTertiary)
+    }
+
+    private func title(_ edition: String) -> String {
+        if edition.hasSuffix("-City") { return "城市库" }
+        if edition.hasSuffix("-Country") { return "国家库" }
+        if edition.hasSuffix("-ASN") { return "ASN 库" }
+        return edition
+    }
+
+    private func importFile() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.init(filenameExtension: "mmdb") ?? .data]
+        panel.allowsMultipleSelection = true
+        panel.message = "选择 GeoLite2 City / Country / ASN 的 .mmdb 文件"
+        guard panel.runModal() == .OK else { return }
+        for url in panel.urls { model.geo.importDatabase(from: url) }
     }
 }
 
