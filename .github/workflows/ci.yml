@@ -12,9 +12,9 @@ jobs:
       - uses: actions/checkout@v7
 
       # CommandLineTools alone cannot expand SwiftUI's @Observable / @Entry
-      # macros — the plugins ship only with full Xcode. Liquid Glass needs the
-      # macOS 26 SDK, so pick the newest Xcode on the image rather than the
-      # default one or a pinned version that a future image may not carry.
+      # macros — the plugins ship only with full Xcode. Pick the newest Xcode
+      # on the image rather than the default one or a pinned version that a
+      # future image may not carry.
       - name: Select Xcode
         run: |
           ls -d /Applications/Xcode*.app
@@ -41,9 +41,9 @@ jobs:
           test -f "$APP/Contents/Resources/AppIcon.icns"
           codesign --verify --verbose "$APP"
 
-      # Smoke test: the panel is a menu-bar popover with no window to drive in
-      # CI, so render it off-screen instead. A view that traps on layout fails
-      # here rather than the first time a user clicks the menu-bar item.
+      # Smoke test: there is no menu bar or window to drive in CI, so render
+      # every main-window page, popover and settings section off-screen. A view
+      # that traps on layout fails here rather than the first time a user opens it.
       - name: Render UI snapshots
         run: |
           build/DerivedData/Build/Products/Release/OpenStats.app/Contents/MacOS/OpenStats --snapshot "$PWD/snapshots"

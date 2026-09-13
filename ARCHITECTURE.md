@@ -19,8 +19,7 @@ hosting SwiftUI, no third-party dependencies. The Xcode project is generated fro
 
 ## Build
 
-**Xcode 26 or later is required** — the macOS 26 SDK provides Liquid Glass, and
-CommandLineTools does not ship the SwiftUI macro plugins.
+**Xcode 26 or later is required** — CommandLineTools does not ship the SwiftUI macro plugins.
 
 ```bash
 brew install xcodegen
@@ -95,15 +94,39 @@ right before deletion, because apps start in between.
 Regenerable caches are deleted outright; user files go to the Trash. Each action is appended
 to `~/Library/Logs/OpenStats/cleanup.log` as a JSON line.
 
-## Panel
+## Menu bar, popovers and main window
 
-A borderless, non-activating `NSPanel` under the status item, hosting SwiftUI inside
-`NSGlassEffectView` on macOS 26+ (`NSVisualEffectView` before). The SwiftUI tree is created on
-open and destroyed on close, so a hidden panel costs nothing. Height comes from measuring a
-flat, scroll-free copy of the same view; placeholders keep that height stable until data
-arrives, and the window is resized without animation because animating it makes SwiftUI
-re-lay out every frame. Charts are drawn with `Canvas`, not Swift Charts.
+`MenuBarController` owns the status items. In the *separate* layout every enabled metric gets
+its own `NSStatusItem` (created in reverse so they read left to right) and opens a 320 pt
+popover for that metric; in the *combined* layout a single item opens the main window.
 
-`--snapshot <dir>` renders every panel tab, settings section and the menu bar in light and
+Popovers are borderless, non-activating `NSPanel`s. The SwiftUI tree is created on open and
+destroyed on close, so a hidden popover costs nothing. Height comes from measuring a flat,
+scroll-free copy of the same view; placeholders keep that height stable until data arrives, and
+the window is resized without animation because animating it makes SwiftUI re-lay out every
+frame. Charts are drawn with `Canvas`, not Swift Charts.
+
+The main window reuses the popover content with `isDetailPage` set (all sections, taller charts)
+next to the dashboard and tool pages. Windows use a transparent, full-size-content title bar with
+an empty compact toolbar, so the traffic lights sit on the same ground colour as the sidebar and
+line up with the 40 pt page header; the app switches to a regular activation policy while a window
+is open and back to accessory when all are closed.
+
+## Network details
+
+`NetworkController` runs only while it is needed:
+
+- **Connection probe** — an unprivileged `SOCK_DGRAM` ICMP echo (`ConnectivityProbe`), matched on
+  sequence number and a random payload token because the kernel rewrites the identifier.
+- **Interface and addresses** — `SCDynamicStore` / `SCPreferences` for the primary and physical
+  service, `getifaddrs` for addresses, CoreWLAN for signal and rate.
+- **Public IP** — ipinfo.io for address, region and ASN; Cloudflare trace and ipify for IPv6 and
+  fallback. Country codes are validated before being used as flag file names.
+- **Per-process traffic** — cumulative bytes from `/usr/bin/nettop`, diffed between samples.
+- **DNS** — `networksetup -setdnsservers` through the helper (protocol 3), which re-validates the
+  service name and every address; without the helper, a one-off administrator prompt runs the
+  same fixed command.
+
+`--snapshot <dir>` renders every main-window page, popover, settings section and the menu bar in light and
 dark, through real `NSHostingView`s in off-screen windows — `ImageRenderer` washes out pages
 that contain bitmaps.

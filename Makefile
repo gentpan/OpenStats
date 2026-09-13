@@ -10,7 +10,7 @@ SIGN_ID  ?= $(shell security find-identity -v -p codesigning 2>/dev/null | grep 
 TEAM_ID  := $(shell echo '$(SIGN_ID)' | sed -nE 's/.*\(([A-Z0-9]+)\)$$/\1/p')
 ifneq ($(strip $(TEAM_ID)),)
 # Release 加安全时间戳，公证要求如此，证书过期后签名依然有效
-SIGN_FLAGS := CODE_SIGN_IDENTITY="$(SIGN_ID)" DEVELOPMENT_TEAM=$(TEAM_ID) \
+SIGN_FLAGS := CODE_SIGN_IDENTITY="$(SIGN_ID)" CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=$(TEAM_ID) \
 	$(if $(filter Release,$(CONFIG)),OTHER_CODE_SIGN_FLAGS=--timestamp CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO)
 endif
 

@@ -139,10 +139,14 @@ final class AppIconCache {
     private var cache: [String: CGImage] = [:]
 
     func image(for process: ProcessUsage) -> Image {
-        let key = process.appBundlePath ?? "unix-executable"
+        image(bundlePath: process.appBundlePath)
+    }
+
+    func image(bundlePath: String?) -> Image {
+        let key = bundlePath ?? "unix-executable"
         if let cached = cache[key] { return Image(decorative: cached, scale: 2) }
 
-        let icon = process.appBundlePath.map { NSWorkspace.shared.icon(forFile: $0) }
+        let icon = bundlePath.map { NSWorkspace.shared.icon(forFile: $0) }
             ?? NSWorkspace.shared.icon(for: .unixExecutable)
         var rect = NSRect(x: 0, y: 0, width: Self.pixelSize, height: Self.pixelSize)
         guard let cgImage = icon.cgImage(forProposedRect: &rect, context: nil, hints: nil) else {

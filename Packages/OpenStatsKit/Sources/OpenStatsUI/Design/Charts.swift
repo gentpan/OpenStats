@@ -194,3 +194,82 @@ struct CoreClusterBars: View {
         .accessibilityLabel("各核心负载")
     }
 }
+
+/// 上下镜像的流量图：上半部分上传、下半部分下载，各自按自己的峰值缩放
+struct MirroredRateChart: View {
+    let upload: [Double]
+    let download: [Double]
+    var capacity: Int = MetricsStore.historyCapacity
+    var height: CGFloat = DS.Size.chartHeight
+
+    /// 峰值太小时按 64 KB/s 缩放，避免空闲时的噪声被放大成满格
+    static let floor = 64.0 * 1024
+
+    var body: some View {
+        Canvas { context, size in
+            let middle = size.height / 2
+            let half = CGSize(width: size.width, height: middle)
+            let series: [([Double], Color, Bool)] = [
+                (upload, Color(nsColor: DS.NetworkPalette.upload), true),
+                (download, Color(nsColor: DS.NetworkPalette.download), false),
+            ]
+            for (values, color, above) in series {
+                let peak = max(values.max() ?? 0, Self.floor)
+                guard var line = LineHistoryChart.path(values: values, capacity: capacity, maxValue: peak, in: half) else { continue }
+                if !above {
+                    // 下半部分：向下翻转
+                    line = line.applying(CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: 0, ty: middle * 2))
+                }
+                var area = line
+                area.addLine(to: CGPoint(x: size.width, y: middle))
+                area.addLine(to: CGPoint(x: line.boundingRect.minX, y: middle))
+                area.closeSubpath()
+                context.fill(area, with: .color(color.opacity(0.14)))
+                context.stroke(line, with: .color(color), style: StrokeStyle(lineWidth: DS.Size.chartLine, lineJoin: .round))
+            }
+            context.fill(Path(CGRect(x: 0, y: middle - DS.Size.stroke / 2, width: size.width, height: DS.Size.stroke)),
+                         with: .color(DS.Palette.border))
+        }
+        .frame(height: height)
+        .accessibilityHidden(true)
+    }
+}
+
+/// 连接探测格子：按时间从左到右、从上到下排列，最新的一格在末尾。
+/// 绿色正常，橙色延迟偏高，红色超时，灰色尚无数据
+struct ProbeGrid: View {
+    let samples: [ProbeSample]
+    var columns = 20
+    var rows = 3
+    var slowThreshold: Double = 200
+
+    var body: some View {
+        let capacity = columns * rows
+        let recent = Array(samples.suffix(capacity))
+        Canvas { context, size in
+            let gap = DS.Space.s1 / 2
+            let cellWidth = (size.width - gap * CGFloat(columns - 1)) / CGFloat(columns)
+            let cellHeight = (size.height - gap * CGFloat(rows - 1)) / CGFloat(rows)
+            let offset = capacity - recent.count
+            for index in 0..<capacity {
+                let rect = CGRect(x: CGFloat(index % columns) * (cellWidth + gap),
+                                  y: CGFloat(index / columns) * (cellHeight + gap),
+                                  width: cellWidth, height: cellHeight)
+                let color: Color
+                if index < offset {
+                    color = DS.Palette.track
+                } else if let latency = recent[index - offset].latency {
+                    color = latency >= slowThreshold ? DS.Palette.warning : DS.Palette.success
+                } else {
+                    color = DS.Palette.error
+                }
+                context.fill(Path(roundedRect: rect, cornerRadius: DS.Radius.sm / 2), with: .color(color))
+            }
+        }
+        // 格子保持接近正方形，宽度随容器变化
+        .aspectRatio(CGFloat(columns) / CGFloat(rows), contentMode: .fit)
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityElement()
+        .accessibilityLabel("连接探测历史")
+    }
+}

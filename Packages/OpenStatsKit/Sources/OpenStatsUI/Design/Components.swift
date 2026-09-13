@@ -4,6 +4,8 @@ import SwiftUI
 /// ImageRenderer 无法渲染 ScrollView 等 AppKit 承载的控件，截图模式下改用平铺布局。
 extension EnvironmentValues {
     @Entry var isSnapshot = false
+    /// 在主窗口里显示指标详情：显示全部区块，图表更高
+    @Entry var isDetailPage = false
 }
 
 // MARK: - 卡片
@@ -20,8 +22,7 @@ struct Card<Content: View>: View {
         .padding(padding)
         // 在等高行里撑满高度，背景随之延伸
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(DS.Palette.surface, in: RoundedRectangle(cornerRadius: DS.Radius.md))
-        .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).strokeBorder(DS.Palette.border, lineWidth: DS.Size.stroke))
+        .background(DS.Palette.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
     }
 }
 
@@ -180,7 +181,7 @@ private struct DSButtonBody: View {
     private var background: Color {
         switch kind {
         case .primary: active ? DS.Palette.primaryHover : DS.Palette.primary
-        case .secondary: active ? DS.Palette.surfaceHover : DS.Palette.surface
+        case .secondary: active ? DS.Palette.surfaceHover : DS.Palette.elevated
         case .ghost: active ? DS.Palette.surfaceHover : .clear
         }
     }
@@ -196,15 +197,50 @@ struct IconButton: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: DS.TextSize.sm.rawValue, weight: .medium))
-                .foregroundStyle(hovering ? DS.Palette.textPrimary : DS.Palette.textSecondary)
+                .foregroundStyle(hovering ? DS.Palette.primary : DS.Palette.textSecondary)
                 .frame(width: DS.Size.controlHeight, height: DS.Size.controlHeight)
-                .dsGlass(in: Circle(), interactive: true)
-                .contentShape(Circle())
+                .background(hovering ? DS.Palette.surfaceHover : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
         .help(help)
         .accessibilityLabel(help)
+    }
+}
+
+// MARK: - 侧边栏
+
+struct SidebarButton: View {
+    let title: String
+    let symbol: String
+    let isSelected: Bool
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: DS.Space.s2) {
+                Image(systemName: symbol)
+                    .font(.system(size: DS.TextSize.sm.rawValue, weight: .medium))
+                    .frame(width: DS.Size.iconStandalone)
+                Text(title).dsFont(.sm, weight: isSelected ? .semibold : .regular)
+                Spacer()
+            }
+            .foregroundStyle(isSelected ? DS.Palette.onPrimary : DS.Palette.textPrimary)
+            .padding(.horizontal, DS.Space.s2)
+            .frame(height: DS.Size.controlHeight)
+            .background(background, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var background: Color {
+        if isSelected { return DS.Palette.primary }
+        return hovering ? DS.Palette.surfaceHover : .clear
     }
 }
 
@@ -230,7 +266,7 @@ struct SegmentedControl<Value: Hashable>: View {
                         .background {
                             if selected {
                                 RoundedRectangle(cornerRadius: DS.Radius.md - DS.Space.s1)
-                                    .fill(DS.Palette.surface)
+                                    .fill(DS.Palette.elevated)
                                     .dsShadow(DS.Shadow.level1)
                             }
                         }
@@ -417,7 +453,7 @@ struct DSSlider: View {
                 RoundedRectangle(cornerRadius: DS.Radius.sm).fill(DS.Palette.primary)
                     .frame(width: x + knob / 2, height: DS.Space.s1 + DS.Space.s1 / 2)
                 Circle()
-                    .fill(DS.Palette.surface)
+                    .fill(DS.Palette.elevated)
                     .overlay(Circle().strokeBorder(DS.Palette.primary, lineWidth: DS.Size.chartLine))
                     .frame(width: knob, height: knob)
                     .dsShadow(DS.Shadow.level1)

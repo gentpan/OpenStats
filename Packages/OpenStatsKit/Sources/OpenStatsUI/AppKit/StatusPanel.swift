@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// 菜单栏下方的玻璃浮动面板。点击面板外部、按 Esc 或切换应用时关闭。
+/// 菜单栏下方的浮动详情弹窗。点击外部、按 Esc 或切换应用时关闭。
 /// 高度按内容自动计算，屏幕放得下就不出现滚动。
 @MainActor
 final class StatusPanel: NSPanel {
@@ -19,14 +19,13 @@ final class StatusPanel: NSPanel {
     private let makeContent: () -> NSView
     /// 平铺布局（不含滚动容器）的视图，只用来测量内容的自然高度
     private let makeMeasuringContent: () -> NSView
-    private let usesGlass: () -> Bool
+    private let width: CGFloat
 
-    init<Content: View, Measuring: View>(content: @escaping () -> Content, measuring: @escaping () -> Measuring,
-                                         usesGlass: @escaping () -> Bool) {
-        self.usesGlass = usesGlass
+    init<Content: View, Measuring: View>(width: CGFloat, content: @escaping () -> Content, measuring: @escaping () -> Measuring) {
+        self.width = width
         makeContent = { NSHostingView(rootView: content()) }
         makeMeasuringContent = { NSHostingView(rootView: measuring()) }
-        super.init(contentRect: NSRect(x: 0, y: 0, width: DS.Size.panelWidth, height: DS.Size.panelMinHeight),
+        super.init(contentRect: NSRect(x: 0, y: 0, width: width, height: DS.Size.panelMinHeight),
                    styleMask: [.borderless, .nonactivatingPanel],
                    backing: .buffered,
                    defer: true)
@@ -60,7 +59,7 @@ final class StatusPanel: NSPanel {
         let content = makeContent()
         setFrame(targetFrame(), display: false)
         content.frame = NSRect(origin: .zero, size: frame.size)
-        contentView = GlassBackdrop.make(containing: content, cornerRadius: DS.Radius.xl, glass: usesGlass())
+        contentView = PanelContainer.make(containing: content, cornerRadius: DS.Radius.xl)
 
         alphaValue = 0
         makeKeyAndOrderFront(nil)
@@ -72,7 +71,7 @@ final class StatusPanel: NSPanel {
         onVisibilityChange?(true)
     }
 
-    /// 切换标签页后重新计算高度，保持顶部对齐。
+    /// 内容区块变化后重新计算高度，保持顶部对齐。
     /// 直接设置而不做窗口动画：动画期间 SwiftUI 会逐帧重排，看起来像抖动
     func refreshHeight() {
         guard isVisible else { return }
@@ -122,9 +121,9 @@ final class StatusPanel: NSPanel {
         let natural = makeMeasuringContent().fittingSize.height
         let height = min(max(natural, DS.Size.panelMinHeight), available)
 
-        var x = anchor.midX - DS.Size.panelWidth / 2
-        x = min(max(x, visible.minX + margin), visible.maxX - DS.Size.panelWidth - margin)
-        return NSRect(x: x, y: top - height, width: DS.Size.panelWidth, height: height)
+        var x = anchor.midX - width / 2
+        x = min(max(x, visible.minX + margin), visible.maxX - width - margin)
+        return NSRect(x: x, y: top - height, width: width, height: height)
     }
 
     // MARK: 事件

@@ -7,7 +7,7 @@ public struct ProcessSampler {
         let startTime: UInt64
     }
 
-    private struct Meta {
+    struct Meta {
         let name: String
         let path: String?
         let bundle: String?
@@ -68,7 +68,7 @@ public struct ProcessSampler {
         return Array(results.prefix(limit))
     }
 
-    private static func meta(for pid: pid_t) -> Meta {
+    static func meta(for pid: pid_t) -> Meta {
         var pathBuffer = [CChar](repeating: 0, count: 4 * Int(MAXPATHLEN))
         let pathLength = proc_pidpath(pid, &pathBuffer, UInt32(pathBuffer.count))
         let path = pathLength > 0 ? String(nullTerminated: pathBuffer) : nil

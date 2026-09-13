@@ -9,37 +9,62 @@ struct OverviewPage: View {
     var body: some View {
         PageScroll {
             HealthHeader()
-            EqualHeightRow {
-                CPUTile().frame(maxWidth: .infinity)
-                GPUTile().frame(maxWidth: .infinity)
-                MemoryTile().frame(maxWidth: .infinity)
+            WeightedRow {
+                CPUTile()
+                GPUTile()
+                MemoryTile()
             }
-            EqualHeightRow {
-                DiskTile().frame(maxWidth: .infinity)
-                NetworkTile().frame(maxWidth: .infinity)
-                FanTile().frame(maxWidth: .infinity)
+            WeightedRow {
+                DiskTile()
+                NetworkTile()
+                FanTile()
             }
-            EqualHeightRow {
-                CoreLoadCard().frame(maxWidth: .infinity)
-                if model.store.battery != nil {
-                    BatteryCard().frame(width: DS.Size.tileWidth)
-                }
+            // 窄卡片与上方单列同宽：宽卡占两列
+            WeightedRow(weights: model.store.battery != nil ? [2, 1] : [1]) {
+                CoreLoadCard()
+                if model.store.battery != nil { BatteryCard() }
             }
-            EqualHeightRow {
-                TopProcessesCard().frame(maxWidth: .infinity)
-                QuickActionsCard().frame(width: DS.Size.tileWidth)
+            WeightedRow(weights: [2, 1]) {
+                TopProcessesCard()
+                QuickActionsCard()
             }
         }
     }
 }
 
-/// 一行等高卡片
-struct EqualHeightRow<Content: View>: View {
-    @ViewBuilder var content: Content
+/// 一行卡片：按权重分配宽度（窗口变宽时同比放大），高度取最高的一张，其余撑满
+struct WeightedRow: Layout {
+    var weights: [CGFloat]
+    var spacing: CGFloat
 
-    var body: some View {
-        HStack(alignment: .top, spacing: DS.Space.s3) { content }
-            .fixedSize(horizontal: false, vertical: true)
+    init(weights: [CGFloat] = [], spacing: CGFloat = DS.Space.s3) {
+        self.weights = weights
+        self.spacing = spacing
+    }
+
+    private func widths(total: CGFloat, count: Int) -> [CGFloat] {
+        guard count > 0 else { return [] }
+        let resolved = (0..<count).map { $0 < weights.count ? weights[$0] : 1 }
+        let sum = resolved.reduce(0, +)
+        // 以权重之和为列数，[2, 1] 的窄卡与三列布局的单列同宽
+        let columns = sum
+        let unit = (total - spacing * (columns - 1)) / columns
+        return resolved.map { unit * $0 + spacing * ($0 - 1) }
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? DS.Size.panelWidth
+        let columnWidths = widths(total: width, count: subviews.count)
+        let height = zip(subviews, columnWidths).map { $0.sizeThatFits(ProposedViewSize(width: $1, height: nil)).height }.max() ?? 0
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX
+        for (subview, width) in zip(subviews, widths(total: bounds.width, count: subviews.count)) {
+            subview.place(at: CGPoint(x: x, y: bounds.minY), proposal: ProposedViewSize(width: width, height: bounds.height))
+            x += width + spacing
+        }
     }
 }
 
@@ -258,7 +283,6 @@ private struct FanTile: View {
     var body: some View {
         let fans = model.store.sensors?.fans ?? []
         let fastest = model.store.fastestFan
-        let isManual = fans.contains(where: \.isManual)
         // 以最高转速为 100%，比“最低到最高”的区间比例更直观
         let average = fans.isEmpty ? 0 : fans.map { $0.maximum > 0 ? $0.current / $0.maximum : 0 }.reduce(0, +) / Double(fans.count)
 
@@ -279,7 +303,7 @@ private struct FanTile: View {
                 Text(verbatim: "RPM").dsFont(.xs, weight: .medium).foregroundStyle(DS.Palette.textSecondary)
             }
 
-            Text(fanStatus(fans: fans, isManual: isManual))
+            Text(fanStatusText(fans: fans, mode: model.fans.mode))
                 .dsFont(.xs)
                 .foregroundStyle(DS.Palette.textSecondary)
                 .frame(height: DS.Size.tileChart / 2, alignment: .center)
@@ -293,15 +317,6 @@ private struct FanTile: View {
             }
             .disabled(fans.isEmpty)
         }
-    }
-}
-
-extension FanTile {
-    /// 固件只记录“手动 / 自动”，无法区分是谁设置的：OpenStats 未下发时即为其他程序（如 Stats、Mole）
-    fileprivate func fanStatus(fans: [FanState], isManual: Bool) -> String {
-        if fans.isEmpty { return "未检测到风扇" }
-        guard isManual else { return "由 macOS 调节" }
-        return model.fans.mode == .automatic ? "其他程序手动控制" : "OpenStats 控制中"
     }
 }
 

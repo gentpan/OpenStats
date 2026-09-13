@@ -126,3 +126,70 @@ struct LiveSamplerTests {
         #expect(disk.available <= disk.total)
     }
 }
+
+@Suite struct NetworkParsingTests {
+    @Test func parsesNettopOutput() {
+        let output = """
+        ,bytes_in,bytes_out,
+        launchd.1,0,0,
+        Google Chrome H.4521,120127,95191,
+        broken line
+        """
+        let parsed = NetworkProcessSampler.parse(output)
+        #expect(parsed.count == 2)
+        #expect(parsed[4521]?.name == "Google Chrome H")
+        #expect(parsed[4521]?.download == 120_127)
+        #expect(parsed[4521]?.upload == 95_191)
+    }
+
+    @Test func parsesCloudflareTrace() {
+        let fields = PublicAddressLookup.parseTrace("fl=123\nip=203.0.113.24\nloc=CN\n")
+        #expect(fields["ip"] == "203.0.113.24")
+        #expect(fields["loc"] == "CN")
+        #expect(PublicAddressLookup.parseTrace("ip=<html>")["ip"] == nil)
+    }
+
+    @Test func matchesEchoReplyBySequenceAndToken() {
+        // 20 字节 IPv4 头 + ICMP 回显应答（标识符被内核改写为 0x8e84）
+        var reply = [UInt8](repeating: 0, count: 20)
+        reply[0] = 0x45
+        reply += [0, 0, 0, 0, 0x8E, 0x84, 0x00, 0x07, 0xDE, 0xAD, 0xBE, 0xEF]
+        #expect(ConnectivityProbe.matches(reply, count: reply.count, family: AF_INET, sequence: 7, token: 0xDEADBEEF))
+        #expect(!ConnectivityProbe.matches(reply, count: reply.count, family: AF_INET, sequence: 8, token: 0xDEADBEEF))
+        #expect(!ConnectivityProbe.matches(reply, count: reply.count, family: AF_INET, sequence: 7, token: 1))
+    }
+
+    @Test func computesInternetChecksum() {
+        let packet: [UInt8] = [8, 0, 0, 0, 0x12, 0x34, 0, 1]
+        let sum = ConnectivityProbe.checksum(packet)
+        var filled = packet
+        filled[2] = UInt8(sum >> 8)
+        filled[3] = UInt8(sum & 0xFF)
+        #expect(ConnectivityProbe.checksum(filled) == 0)
+    }
+}
+
+@Suite struct GeoParsingTests {
+    @Test func parsesIpinfoResponse() throws {
+        let json = #"{"ip":"82.139.234.155","city":"Frankfurt am Main","country":"DE","org":"AS151338 POLONETWORK LIMITED"}"#
+        let result = try #require(PublicAddressLookup.parseGeo(Data(json.utf8)))
+        #expect(result.ipv4 == "82.139.234.155")
+        #expect(result.ipv6 == nil)
+        #expect(result.countryCode == "DE")
+        #expect(result.city == "Frankfurt am Main")
+        #expect(result.asn == "AS151338")
+        #expect(result.organization == "POLONETWORK LIMITED")
+    }
+
+    @Test func rejectsUnsafeCountryCode() {
+        #expect(PublicAddressLookup.validCountryCode("cn") == "CN")
+        #expect(PublicAddressLookup.validCountryCode("../x") == nil)
+        #expect(PublicAddressLookup.validCountryCode("USA") == nil)
+        let json = #"{"ip":"2606:4700:4700::1111","country":"../../etc","org":"Cloudflare"}"#
+        let result = PublicAddressLookup.parseGeo(Data(json.utf8))
+        #expect(result?.ipv6 == "2606:4700:4700::1111")
+        #expect(result?.countryCode == nil)
+        #expect(result?.asn == nil)
+        #expect(result?.organization == "Cloudflare")
+    }
+}

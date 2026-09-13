@@ -3,7 +3,7 @@ import HelperShared
 import SwiftUI
 
 enum SettingsSection: String, CaseIterable, Identifiable {
-    case general, menuBar, thermal, helper, about
+    case general, menuBar, network, thermal, helper, about
 
     var id: String { rawValue }
 
@@ -11,6 +11,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         switch self {
         case .general: "通用"
         case .menuBar: "菜单栏"
+        case .network: "网络"
         case .thermal: "散热与防休眠"
         case .helper: "辅助工具"
         case .about: "关于"
@@ -21,6 +22,7 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         switch self {
         case .general: "gearshape"
         case .menuBar: "menubar.rectangle"
+        case .network: "network"
         case .thermal: "fan"
         case .helper: "lock.shield"
         case .about: "info.circle"
@@ -45,33 +47,44 @@ public struct SettingsView: View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 ForEach(SettingsSection.allCases) { item in
-                    SidebarItem(section: item, isSelected: item == section) { section = item }
+                    SidebarButton(title: item.title, symbol: item.symbol, isSelected: item == section) { section = item }
                 }
                 Spacer()
             }
-            .padding(DS.Space.s3)
+            .padding(.horizontal, DS.Space.s3)
+            .padding(.top, DS.Size.windowHeader + DS.Space.s2)
+            .padding(.bottom, DS.Space.s3)
             .frame(width: DS.Size.settingsSidebar)
             .frame(maxHeight: .infinity)
-            .background {
-                if isSnapshot { DS.Palette.background } else { SidebarMaterial() }
+            .background(alignment: .top) {
+                WindowDragArea().frame(height: DS.Size.windowHeader)
             }
 
-            Rectangle().fill(DS.Palette.border).frame(width: DS.Size.stroke)
-
-            SettingsPage(title: section.title) {
-                switch section {
-                case .general: GeneralSettings()
-                case .menuBar: MenuBarSettings()
-                case .thermal: ThermalSettings()
-                case .helper: HelperSettings()
-                case .about: AboutSettings()
+            VStack(alignment: .leading, spacing: 0) {
+                Text(section.title)
+                    .dsFont(.base, weight: .semibold)
+                    .foregroundStyle(DS.Palette.textPrimary)
+                    .padding(.horizontal, DS.Space.s3 + DS.Space.s1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(height: DS.Size.windowHeader)
+                    .background(WindowDragArea())
+                SettingsPage {
+                    switch section {
+                    case .general: GeneralSettings()
+                    case .menuBar: MenuBarSettings()
+                    case .network: NetworkSettings()
+                    case .thermal: ThermalSettings()
+                    case .helper: HelperSettings()
+                    case .about: AboutSettings()
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(Color(nsColor: .windowBackgroundColor))
         }
         .frame(width: DS.Size.settingsWidth, height: isSnapshot ? nil : DS.Size.settingsHeight)
         .fixedSize(horizontal: false, vertical: isSnapshot)
+        .background(DS.Palette.background)
+        .ignoresSafeArea()
         .onAppear {
             model.refreshLaunchAtLogin()
             model.helper.refreshStatus()
@@ -79,54 +92,23 @@ public struct SettingsView: View {
     }
 }
 
-private struct SidebarItem: View {
-    let section: SettingsSection
-    let isSelected: Bool
-    let action: () -> Void
-    @State private var hovering = false
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: DS.Space.s2) {
-                Image(systemName: section.symbol)
-                    .font(.system(size: DS.TextSize.sm.rawValue, weight: .medium))
-                    .frame(width: DS.Size.iconStandalone)
-                Text(section.title).dsFont(.sm, weight: isSelected ? .semibold : .regular)
-                Spacer()
-            }
-            .foregroundStyle(isSelected ? DS.Palette.primary : DS.Palette.textPrimary)
-            .padding(.horizontal, DS.Space.s2)
-            .frame(height: DS.Size.controlHeight)
-            .background(background, in: RoundedRectangle(cornerRadius: DS.Radius.md))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering = $0 }
-    }
-
-    private var background: Color {
-        if isSelected { return DS.Palette.primary.opacity(0.1) }
-        return hovering ? DS.Palette.surfaceHover : .clear
-    }
-}
-
 private struct SettingsPage<Content: View>: View {
-    let title: String
     @ViewBuilder var content: Content
     @Environment(\.isSnapshot) private var isSnapshot
 
     var body: some View {
         let stack = VStack(alignment: .leading, spacing: DS.Space.s4) {
-            Text(title).dsFont(.xl, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
             content
         }
-        .padding(DS.Space.s6)
+        .padding(.horizontal, DS.Space.s3 + DS.Space.s1)
+        .padding(.bottom, DS.Space.s6)
         .frame(maxWidth: .infinity, alignment: .leading)
 
         if isSnapshot {
             stack
         } else {
             ScrollView { stack }
+                .scrollIndicators(.automatic)
         }
     }
 }
@@ -143,8 +125,7 @@ private struct SettingsGroup<Content: View>: View {
             VStack(alignment: .leading, spacing: 0) {
                 content
             }
-            .background(DS.Palette.surface, in: RoundedRectangle(cornerRadius: DS.Radius.md))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).strokeBorder(DS.Palette.border, lineWidth: DS.Size.stroke))
+            .background(DS.Palette.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
         }
     }
 }
@@ -181,11 +162,6 @@ private struct GeneralSettings: View {
                 }
             }
             GroupRow {
-                SettingRow(title: "液态玻璃背景", subtitle: "面板背景半透明，透出桌面；关闭时为浅色或深色实色背景") {
-                    DSToggle(isOn: $settings.panelGlass, label: "液态玻璃背景")
-                }
-            }
-            GroupRow {
                 SettingRow(title: "登录时启动", subtitle: model.launchAtLoginError ?? "开机后自动在菜单栏显示 OpenStats") {
                     DSToggle(isOn: Binding(get: { model.launchAtLoginEnabled },
                                            set: { model.setLaunchAtLogin($0) }),
@@ -193,7 +169,7 @@ private struct GeneralSettings: View {
                 }
             }
             GroupRow {
-                SettingRow(title: "刷新频率", subtitle: "面板收起时菜单栏的采样间隔；展开面板时固定为 1 秒") {
+                SettingRow(title: "刷新频率", subtitle: "只显示菜单栏时的采样间隔；打开弹窗或主窗口时固定为 1 秒") {
                     SegmentedControl(selection: $settings.refreshSeconds,
                                      options: AppSettings.refreshOptions.map { ($0, "\($0) 秒") })
                         .frame(width: DS.Size.settingsSidebar + DS.Space.s12)
@@ -219,6 +195,19 @@ private struct MenuBarSettings: View {
 
         MenuBarPreview()
 
+        SettingsGroup(caption: "布局") {
+            GroupRow(showsDivider: false) {
+                SettingRow(title: "菜单栏图标",
+                           subtitle: settings.menuBarLayout == .separate
+                               ? "每个指标一个图标，点击弹出该项详情"
+                               : "所有指标合成一个图标，点击打开主窗口") {
+                    SegmentedControl(selection: $settings.menuBarLayout,
+                                     options: MenuBarLayout.allCases.map { ($0, $0.title) })
+                        .frame(width: DS.Size.settingsSidebar + DS.Space.s6)
+                }
+            }
+        }
+
         SettingsGroup(caption: "风格") {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)],
                       spacing: DS.Space.s3) {
@@ -234,14 +223,19 @@ private struct MenuBarSettings: View {
         SettingsGroup(caption: "显示项目") {
             ForEach(Array(MenuBarItem.allCases.enumerated()), id: \.element) { index, item in
                 GroupRow(showsDivider: index > 0) {
-                    SettingRow(title: item.title, subtitle: item.subtitle, icon: item.symbol) {
-                        HStack(spacing: DS.Space.s3) {
-                            if settings.isEnabled(item) {
-                                itemStylePicker(item)
+                    VStack(alignment: .leading, spacing: DS.Space.s3) {
+                        SettingRow(title: item.title, subtitle: item.subtitle, icon: item.symbol) {
+                            HStack(spacing: DS.Space.s3) {
+                                if settings.isEnabled(item) {
+                                    itemStylePicker(item)
+                                }
+                                DSToggle(isOn: Binding(get: { settings.isEnabled(item) },
+                                                       set: { settings.setEnabled(item, $0) }),
+                                         label: item.title)
                             }
-                            DSToggle(isOn: Binding(get: { settings.isEnabled(item) },
-                                                   set: { settings.setEnabled(item, $0) }),
-                                     label: item.title)
+                        }
+                        if settings.isEnabled(item), settings.menuBarLayout == .separate {
+                            PopoverSectionPicker(item: item)
                         }
                     }
                 }
@@ -278,6 +272,59 @@ private struct MenuBarSettings: View {
             .labelsHidden()
             .fixedSize()
         }
+    }
+}
+
+/// 选择该项详情弹窗里显示哪些区块
+private struct PopoverSectionPicker: View {
+    @Environment(AppModel.self) private var model
+    let item: MenuBarItem
+
+    var body: some View {
+        let settings = model.settings
+        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s3) {
+            Text("弹窗显示")
+                .dsFont(.xs)
+                .foregroundStyle(DS.Palette.textSecondary)
+                .fixedSize()
+            FlowLayout(spacing: DS.Space.s1) {
+                ForEach(item.popoverSections) { section in
+                    let visible = settings.isVisible(section)
+                    SectionToggleChip(title: section.title, isOn: visible) {
+                        settings.setVisible(section, !visible)
+                    }
+                }
+            }
+        }
+        .padding(.leading, DS.Size.iconStandalone + DS.Space.s3)
+    }
+}
+
+private struct SectionToggleChip: View {
+    let title: String
+    let isOn: Bool
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: DS.Space.s1) {
+                Image(systemName: isOn ? "checkmark" : "plus")
+                    .font(.system(size: DS.TextSize.xs.rawValue - DS.Space.s1 / 2, weight: .bold))
+                Text(title).dsFont(.xs, weight: .medium)
+            }
+            .foregroundStyle(isOn ? DS.Palette.primary : DS.Palette.textSecondary)
+            .padding(.horizontal, DS.Space.s2)
+            .frame(height: DS.Size.segmentHeight)
+            .background(isOn ? DS.Palette.primary.opacity(0.12) : hovering ? DS.Palette.surfaceHover : .clear,
+                        in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+            .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm)
+                .strokeBorder(isOn ? DS.Palette.primary.opacity(0.4) : DS.Palette.border, lineWidth: DS.Size.stroke))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }
 
@@ -362,6 +409,55 @@ private struct MenuBarPreview: View {
     }
 }
 
+// MARK: - 网络
+
+private struct NetworkSettings: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        @Bindable var settings = model.settings
+
+        SettingsGroup(caption: "连接探测") {
+            GroupRow(showsDivider: false) {
+                SettingRow(title: "定时探测网络", subtitle: "用 ping 测量延迟与丢包，在网络详情里以格子显示；只在菜单栏显示网络项或打开网络详情时运行") {
+                    DSToggle(isOn: $settings.probeEnabled, label: "定时探测网络")
+                }
+            }
+            GroupRow {
+                SettingRow(title: "探测间隔") {
+                    SegmentedControl(selection: $settings.probeSeconds,
+                                     options: AppSettings.probeOptions.map { ($0, "\($0) 秒") })
+                        .frame(width: DS.Size.settingsSidebar)
+                }
+            }
+            .disabled(!settings.probeEnabled)
+            GroupRow {
+                SettingRow(title: "探测目标", subtitle: "国内网络建议选阿里云或腾讯；选路由器只检测本地连接") {
+                    Picker("探测目标", selection: $settings.probeTarget) {
+                        ForEach(ProbeTarget.allCases) { target in
+                            Text(target.title).tag(target)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .fixedSize()
+                }
+            }
+            .disabled(!settings.probeEnabled)
+        }
+
+        SettingsGroup(caption: "公网 IP") {
+            GroupRow(showsDivider: false) {
+                SettingRow(title: "查询公网 IP", subtitle: "打开网络详情时向 ipinfo.io 查询公网地址、归属地与 ASN，IPv6 与回退使用 Cloudflare / ipify；10 分钟内不重复请求") {
+                    DSToggle(isOn: $settings.publicIPLookup, label: "查询公网 IP")
+                }
+            }
+        }
+
+        InfoBanner(icon: "lock.shield", text: "修改 DNS 需要管理员权限：已安装辅助工具时直接修改，否则每次弹出系统授权框。", tone: .neutral)
+    }
+}
+
 // MARK: - 散热与防休眠
 
 private struct ThermalSettings: View {
@@ -408,10 +504,11 @@ private struct HelperSettings: View {
             }
             GroupRow {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    Text("它只做三件事").dsFont(.sm, weight: .medium).foregroundStyle(DS.Palette.textPrimary)
+                    Text("它只做这几件事").dsFont(.sm, weight: .medium).foregroundStyle(DS.Palette.textPrimary)
                     CapabilityLine(text: "设置风扇目标转速，或恢复系统自动控制")
                     CapabilityLine(text: "开启 / 关闭“合盖不睡眠”（等同 pmset disablesleep）")
-                    CapabilityLine(text: "应用退出或断开连接时，自动恢复以上两项设置")
+                    CapabilityLine(text: "刷新 DNS 缓存、释放内存、为网络服务设置 DNS 服务器")
+                    CapabilityLine(text: "应用退出或断开连接时，自动恢复风扇与睡眠设置")
                 }
             }
             GroupRow {
@@ -496,7 +593,7 @@ private struct AboutSettings: View {
                 }
             }
             GroupRow {
-                Text("轻量的 macOS 菜单栏系统监控：CPU、GPU、内存、网络、温度、风扇与防休眠。")
+                Text("轻量的 macOS 菜单栏系统监控：CPU、GPU、内存、网络、温度、风扇、防休眠与清理。")
                     .dsFont(.sm)
                     .foregroundStyle(DS.Palette.textSecondary)
             }

@@ -2,7 +2,7 @@
 //  OpenStatsHelper
 //
 //  以 root 运行的辅助工具，由 SMAppService.daemon 注册。
-//  只做固定的几件事：设置风扇转速、切换“合盖不睡眠”、刷新 DNS、释放内存，
+//  只做固定的几件事：设置风扇转速、切换“合盖不睡眠”、刷新 DNS、释放内存、设置 DNS 服务器，
 //  并在客户端断开时恢复风扇与睡眠设置。
 //
 
@@ -109,6 +109,24 @@ final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProto
 
     func purgeMemory(reply: @escaping @Sendable (String?) -> Void) {
         queue.async { [self] in reply(run(.purgeMemory)) }
+    }
+
+    func setDNSServers(service: String, servers: [String], reply: @escaping @Sendable (String?) -> Void) {
+        queue.async { [self] in
+            guard DNSConfiguration.isValidServiceName(service), servers.count <= DNSConfiguration.maxServers,
+                  servers.allSatisfy(DNSConfiguration.isValidAddress) else { return reply("无效的 DNS 参数") }
+            // 服务名必须是系统里已有的网络服务
+            let list = runTool("/usr/sbin/networksetup", ["-listallnetworkservices"])
+            let names = list.output.split(whereSeparator: \.isNewline).dropFirst()
+                .map { $0.hasPrefix("*") ? String($0.dropFirst()) : String($0) }
+            guard list.status == 0, names.contains(service) else { return reply("找不到网络服务“\(service)”") }
+
+            let result = runTool("/usr/sbin/networksetup", DNSConfiguration.networksetupArguments(service: service, servers: servers))
+            guard result.status == 0 else {
+                return reply("networksetup 执行失败：\(result.output.trimmingCharacters(in: .whitespacesAndNewlines))")
+            }
+            reply(run(.flushDNS))
+        }
     }
 
     // MARK: 状态恢复

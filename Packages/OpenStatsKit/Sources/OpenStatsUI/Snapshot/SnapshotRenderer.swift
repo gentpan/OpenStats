@@ -12,8 +12,11 @@ enum SnapshotRenderer {
         let defaults = UserDefaults(suiteName: "OpenStats.snapshot") ?? .standard
         let settings = AppSettings(defaults: defaults)
         settings.menuBarItems = [.cpu, .gpu, .memory, .network, .temperature]
+        settings.probeSeconds = 1
         let model = AppModel(settings: settings)
-        model.isPanelVisible = true
+        model.isMainWindowVisible = true
+        model.network.updateProbing(networkShown: true)
+        model.network.setDetailVisible(true)
 
         // 采集约 12 秒的真实数据，让历史曲线有内容
         var demand = MetricsDemand()
@@ -30,6 +33,9 @@ enum SnapshotRenderer {
         await model.hub.start { snapshot in model.handle(snapshot) }
         try? await Task.sleep(for: .seconds(12))
         await model.hub.stop()
+        model.network.setDetailVisible(false)
+        model.network.updateProbing(networkShown: false)
+        model.network.maskForSnapshot()
         // 清理页展示真实扫描结果（只读，不删除任何文件）
         model.cleaner.scan()
         while model.cleaner.isBusy { try? await Task.sleep(for: .milliseconds(200)) }
@@ -39,8 +45,12 @@ enum SnapshotRenderer {
             NSApp.appearance = appearance
             for tab in PanelTab.allCases {
                 settings.panelTab = tab
-                write(PanelRootView(), model: model, appearance: appearance,
-                      to: outputDirectory.appendingPathComponent("panel-\(tab.rawValue)-\(suffix).png"))
+                write(MainWindowView(), model: model, appearance: appearance,
+                      to: outputDirectory.appendingPathComponent("window-\(tab.rawValue)-\(suffix).png"))
+            }
+            for item in MenuBarItem.allCases where item != .fan {
+                write(PopoverRootView(item: item), model: model, appearance: appearance,
+                      to: outputDirectory.appendingPathComponent("popover-\(item.rawValue)-\(suffix).png"))
             }
             for section in SettingsSection.allCases {
                 write(SettingsView(section: section), model: model, appearance: appearance,
@@ -75,6 +85,7 @@ enum SnapshotRenderer {
         let window = NSWindow(contentRect: CGRect(origin: CGPoint(x: -10_000, y: -10_000), size: size),
                               styleMask: .borderless, backing: .buffered, defer: false)
         window.appearance = appearance
+        window.backgroundColor = .dsBackground
         window.isReleasedWhenClosed = false
         window.contentView = hosting
         window.orderFrontRegardless()

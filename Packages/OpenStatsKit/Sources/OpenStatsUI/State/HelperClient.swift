@@ -116,6 +116,23 @@ public final class HelperClient {
         }
     }
 
+    func setDNSServers(service: String, servers: [String]) async -> String? {
+        await call { proxy, reply in proxy.setDNSServers(service: service, servers: servers, reply: reply) }
+    }
+
+    /// 已安装的辅助工具的协议版本；旧版本不认识新增的方法，调用前先确认
+    func remoteProtocolVersion() async -> Int? {
+        refreshStatus()
+        guard isReady else { return nil }
+        let connection = ensureConnection()
+        return await withCheckedContinuation { (continuation: CheckedContinuation<Int?, Never>) in
+            let once = ResumeOnceValue<Int?>(continuation)
+            let proxy = connection.remoteObjectProxyWithErrorHandler { _ in once.resume(nil) } as? OpenStatsHelperProtocol
+            guard let proxy else { return once.resume(nil) }
+            proxy.protocolVersion { once.resume($0) }
+        }
+    }
+
     /// 退出应用时使用：同步恢复风扇与睡眠设置，每步最多等待 1 秒
     func restoreDefaultsSynchronously() {
         guard isReady else { return }
@@ -166,16 +183,18 @@ public final class HelperClient {
     }
 }
 
-/// XPC 的错误回调和正常回调可能都会触发，保证 continuation 只恢复一次
-private final class ResumeOnce: @unchecked Sendable {
-    private let lock = NSLock()
-    private var continuation: CheckedContinuation<String?, Never>?
+private typealias ResumeOnce = ResumeOnceValue<String?>
 
-    init(_ continuation: CheckedContinuation<String?, Never>) {
+/// XPC 的错误回调和正常回调可能都会触发，保证 continuation 只恢复一次
+private final class ResumeOnceValue<Value: Sendable>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Value, Never>?
+
+    init(_ continuation: CheckedContinuation<Value, Never>) {
         self.continuation = continuation
     }
 
-    func resume(_ value: String?) {
+    func resume(_ value: Value) {
         lock.lock()
         let pending = continuation
         continuation = nil

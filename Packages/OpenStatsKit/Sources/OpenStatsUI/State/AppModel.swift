@@ -15,13 +15,17 @@ public final class AppModel {
     public let keepAwake: KeepAwakeController
     public let cleaner: CleanerController
     public let maintenance: MaintenanceController
+    public let network: NetworkController
     @ObservationIgnored public let hub = MetricsHub()
 
-    public var isPanelVisible = false
+    public var isMainWindowVisible = false
+    /// 当前打开的菜单栏详情弹窗
+    public var openPopover: MenuBarItem?
     public private(set) var launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
     public private(set) var launchAtLoginError: String?
 
     @ObservationIgnored var openSettings: () -> Void = {}
+    @ObservationIgnored var openMainWindow: (PanelTab?) -> Void = { _ in }
     @ObservationIgnored var quit: () -> Void = {}
 
     public init(settings: AppSettings = AppSettings()) {
@@ -34,30 +38,46 @@ public final class AppModel {
         keepAwake = KeepAwakeController(helper: helper, settings: settings)
         cleaner = CleanerController(settings: settings)
         maintenance = MaintenanceController(helper: helper)
+        network = NetworkController(settings: settings)
     }
 
-    /// 根据当前可见内容决定采集范围
+    /// 根据当前可见内容决定采集范围：主窗口看标签页，详情弹窗看是哪一项
     var demand: MetricsDemand {
         var demand = MetricsDemand()
         let tab = settings.panelTab
-        let panel = isPanelVisible
+        let window = isMainWindowVisible
+        let popover = openPopover
         let menu = settings.menuBarItems
+        let thermalPopover = popover == .temperature || popover == .fan
 
-        demand.interval = panel ? .seconds(1) : .seconds(settings.refreshSeconds)
+        demand.interval = window || popover != nil ? .seconds(1) : .seconds(settings.refreshSeconds)
         demand.memory = true
         demand.network = true
-        demand.gpu = (panel && tab == .overview) || menu.contains(.gpu)
-        demand.disk = panel && (tab == .overview || tab == .cleaner)
-        demand.battery = (panel && (tab == .overview || tab == .keepAwake)) || keepAwake.lidClosedActive
-        demand.processes = panel && (tab == .processes || tab == .overview)
+        let showing = { (page: PanelTab, item: MenuBarItem) in (window && tab == page) || popover == item }
+        demand.gpu = (window && tab == .overview) || menu.contains(.gpu) || showing(.gpu, .gpu)
+        demand.disk = window && (tab == .overview || tab == .cleaner)
+        demand.battery = (window && (tab == .overview || tab == .keepAwake)) || keepAwake.lidClosedActive
+        demand.processes = (window && [.processes, .overview].contains(tab)) || showing(.cpu, .cpu) || showing(.memory, .memory)
 
         var groups = Set<TemperatureGroup>()
-        if panel && tab == .overview { groups.formUnion([.cpu, .gpu]) }
-        if panel && tab == .thermal { groups.formUnion(TemperatureGroup.allCases) }
-        if menu.contains(.temperature) || fans.mode != .automatic { groups.insert(.cpu) }
+        if window && tab == .overview { groups.formUnion([.cpu, .gpu]) }
+        if (window && tab == .thermal) || thermalPopover { groups.formUnion(TemperatureGroup.allCases) }
+        if menu.contains(.temperature) || fans.mode != .automatic || showing(.cpu, .cpu) { groups.insert(.cpu) }
+        if showing(.gpu, .gpu) { groups.insert(.gpu) }
         demand.temperatures = groups
-        demand.fans = (panel && (tab == .thermal || tab == .overview)) || menu.contains(.fan) || fans.mode != .automatic
+        demand.fans = (window && (tab == .thermal || tab == .overview)) || menu.contains(.fan)
+            || fans.mode != .automatic || thermalPopover
         return demand
+    }
+
+    /// 连接探测在菜单栏显示网络项或网络详情打开时运行
+    var networkShown: Bool {
+        settings.menuBarItems.contains(.network) || isNetworkDetailVisible
+    }
+
+    /// 网络详情（接口、公网 IP、进程流量）正在显示
+    var isNetworkDetailVisible: Bool {
+        openPopover == .network || (isMainWindowVisible && settings.panelTab == .network)
     }
 
     func refreshLaunchAtLogin() {
@@ -78,10 +98,11 @@ public final class AppModel {
         refreshLaunchAtLogin()
     }
 
-    /// 概览页快捷切换风扇：未安装辅助工具时跳到散热页引导安装
+    /// 快捷切换风扇：未安装辅助工具时打开散热页引导安装
     func requestFanMode(_ mode: FanController.Mode) {
         guard helper.isReady else {
             settings.panelTab = .thermal
+            if !isMainWindowVisible { openMainWindow(.thermal) }
             return
         }
         Task { await fans.select(mode) }
@@ -91,6 +112,7 @@ public final class AppModel {
     func requestLidMode(_ enabled: Bool) {
         guard helper.isReady else {
             settings.panelTab = .keepAwake
+            if !isMainWindowVisible { openMainWindow(.keepAwake) }
             return
         }
         Task {

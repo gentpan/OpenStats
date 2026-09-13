@@ -1,5 +1,12 @@
 # 第三方声明
 
+## flag-icons
+
+`Packages/OpenStatsKit/Sources/OpenStatsUI/Resources/Flags/` 中的国旗 SVG 来自
+[lipis/flag-icons](https://github.com/lipis/flag-icons)，MIT License，Copyright (c) 2013 Panayiotis Lipiridis。
+
+## exelban/stats
+
 OpenStats 的以下部分移植自 [exelban/stats](https://github.com/exelban/stats)：
 
 - `Packages/OpenStatsKit/Sources/SMC/SMCConnection.swift`：SMC 参数结构体布局与读写流程

@@ -6,7 +6,7 @@ public enum HelperConstants {
     public static let launchdPlistName = "com.openstats.helper.plist"
     public static let appBundleIdentifier = "com.openstats.app"
     /// 与 App 版本同步；App 发现辅助工具版本不一致时提示重新安装
-    public static let protocolVersion = 2
+    public static let protocolVersion = 3
 
     /// 辅助工具对调用方的签名要求：与辅助工具自身同一团队签名的 OpenStats。
     /// ad-hoc 签名的开发构建没有团队，只能校验 bundle identifier。
@@ -41,6 +41,8 @@ public enum CodeSigningInfo {
     func setSleepDisabled(_ disabled: Bool, reply: @escaping @Sendable (String?) -> Void)
     func flushDNSCache(reply: @escaping @Sendable (String?) -> Void)
     func purgeMemory(reply: @escaping @Sendable (String?) -> Void)
+    /// 为指定网络服务设置 DNS；`servers` 为空表示恢复自动获取。辅助工具会校验服务名与每个地址
+    func setDNSServers(service: String, servers: [String], reply: @escaping @Sendable (String?) -> Void)
 }
 
 /// 需要管理员权限的系统维护命令。辅助工具与未安装辅助工具时的授权回退共用同一份固定命令

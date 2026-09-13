@@ -17,9 +17,11 @@ let package = Package(
         .target(name: "Metrics", dependencies: ["SMC"]),
         .target(name: "HelperShared"),
         .target(name: "Cleaner"),
-        .target(name: "OpenStatsUI", dependencies: ["Metrics", "SMC", "HelperShared", "Cleaner"]),
+        .target(name: "OpenStatsUI", dependencies: ["Metrics", "SMC", "HelperShared", "Cleaner"],
+                resources: [.copy("Resources/Flags")]),
         .testTarget(name: "MetricsTests", dependencies: ["Metrics", "SMC"]),
         .testTarget(name: "CleanerTests", dependencies: ["Cleaner"]),
+        .testTarget(name: "HelperSharedTests", dependencies: ["HelperShared"]),
     ],
     swiftLanguageModes: [.v6]
 )

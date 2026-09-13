@@ -8,9 +8,9 @@ struct CleanerPage: View {
 
     var body: some View {
         PageScroll {
-            EqualHeightRow {
-                SummaryCard().frame(maxWidth: .infinity)
-                MaintenanceCard().frame(width: DS.Size.tileWidth)
+            WeightedRow(weights: [2, 1]) {
+                SummaryCard()
+                MaintenanceCard()
             }
             if model.cleaner.needsFullDiskAccess {
                 InfoBanner(icon: "lock.shield", text: "部分项目需要“完全磁盘访问权限”才能扫描（Safari 缓存、废纸篓）。", tone: .warning) {

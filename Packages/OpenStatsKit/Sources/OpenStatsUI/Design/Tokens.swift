@@ -24,10 +24,12 @@ extension DS {
         static let textTertiary = Color.dynamic(light: 0x9CA3AF, dark: 0x6B7280)
         static let onPrimary = Color.dynamic(light: 0xFFFFFF, dark: 0xFFFFFF)
 
-        // 中性色（背景为实色，截图与不支持玻璃效果时使用）
-        static let background = Color.dynamic(light: 0xF8F9FA, dark: 0x111315)
-        // 卡片与控件使用半透明色，叠在液态玻璃上仍能透出背景
-        static let surface = Color.dynamic(light: 0xFFFFFF, lightAlpha: 0.72, dark: 0x2A2D33, darkAlpha: 0.55)
+        // OpenStats 的统一配色：浅色为白底蓝色，深色为黑底蓝色。
+        // 窗口、侧边栏、标题栏与弹窗共用同一底色，卡片用浅灰 / 深灰实色区分层级，不加边框
+        static let background = Color(nsColor: NSColor.dsBackground)
+        static let surface = Color.dynamic(light: 0xF3F4F6, dark: 0x17181B)
+        /// 卡片上的控件底色（分段选中块、次要按钮、输入框）
+        static let elevated = Color.dynamic(light: 0xFFFFFF, dark: 0x26282D)
         static let surfaceHover = Color.dynamic(light: 0x000000, lightAlpha: 0.05, dark: 0xFFFFFF, darkAlpha: 0.07)
         static let border = Color.dynamic(light: 0x000000, lightAlpha: 0.07, dark: 0xFFFFFF, darkAlpha: 0.09)
         static let track = Color.dynamic(light: 0x000000, lightAlpha: 0.06, dark: 0xFFFFFF, darkAlpha: 0.10)
@@ -50,6 +52,9 @@ extension Color {
 }
 
 extension NSColor {
+    /// 窗口底色，AppKit 窗口背景与 SwiftUI 页面共用
+    static let dsBackground = NSColor.dynamic(light: 0xFFFFFF, dark: 0x0B0B0D)
+
     static func dynamic(light: UInt32, lightAlpha: CGFloat = 1, dark: UInt32, darkAlpha: CGFloat = 1) -> NSColor {
         NSColor(name: nil) { appearance in
             let isDark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
@@ -90,7 +95,7 @@ extension DS {
         static let sm: CGFloat = 4
         static let md: CGFloat = 8
         static let lg: CGFloat = 12
-        static let xl: CGFloat = 16   // 玻璃面板
+        static let xl: CGFloat = 16   // 弹窗
     }
 
     enum Size {
@@ -108,10 +113,13 @@ extension DS {
         static let stroke: CGFloat = 1
         static let chartLine: CGFloat = 1.5
         static let panelWidth: CGFloat = 640
+        /// 菜单栏单项详情弹窗的宽度
+        static let popoverWidth: CGFloat = 320
         static let panelMinHeight: CGFloat = 320
         static let panelGap: CGFloat = 4
-        static let tabsWidth: CGFloat = 300
-        /// 三列卡片的单列宽度：(面板宽 - 两侧内边距 - 两个列间距) / 3
+        /// 窗口顶栏高度，与紧凑工具栏的标题栏同高，红绿灯按钮与页面标题在同一水平线上
+        static let windowHeader: CGFloat = 40
+        /// 窄控件的固定宽度（分段控件等）
         static let tileWidth: CGFloat = (panelWidth - Space.s3 * 4) / 3
         static let settingsWidth: CGFloat = 720
         static let settingsHeight: CGFloat = 520

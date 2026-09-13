@@ -10,7 +10,7 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .cpu: "CPU"
         case .memory: "内存"
-        case .network: "网速"
+        case .network: "网络"
         case .gpu: "GPU"
         case .temperature: "CPU 温度"
         case .fan: "风扇转速"
@@ -21,7 +21,7 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .cpu: "总占用"
         case .memory: "已用内存占比"
-        case .network: "上传与下载速度"
+        case .network: "上传与下载速度、IP 地址、DNS"
         case .gpu: "GPU 占用"
         case .temperature: "CPU 核心最高温度"
         case .fan: "转速最高的风扇"
@@ -40,6 +40,30 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    /// 详情弹窗标题
+    var popoverTitle: String {
+        switch self {
+        case .cpu: "CPU"
+        case .memory: "内存"
+        case .network: "网络"
+        case .gpu: "GPU"
+        case .temperature: "温度"
+        case .fan: "风扇"
+        }
+    }
+
+    /// 点击该项弹出的详情里可以显示的内容，按显示顺序排列
+    var popoverSections: [PopoverSection] {
+        switch self {
+        case .cpu: [.cpuHistory, .cpuCores, .cpuDetails, .cpuProcesses]
+        case .memory: [.memoryHistory, .memoryBreakdown, .memoryProcesses]
+        case .network: [.networkHistory, .networkProbe, .networkInterface, .networkAddresses, .networkDNS, .networkProcesses]
+        case .gpu: [.gpuHistory, .gpuDetails]
+        case .temperature: [.thermalSensors, .thermalFans]
+        case .fan: [.thermalFans, .thermalSensors]
+        }
+    }
+
     /// 可以单独指定风格的指标（网速有自己的样式）
     var supportsStyleOverride: Bool { self != .network }
 
@@ -51,6 +75,82 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
         case .gpu: "square.3.layers.3d"
         case .temperature: "thermometer.medium"
         case .fan: "fan"
+        }
+    }
+}
+
+/// 详情弹窗里可以单独隐藏的区块
+public enum PopoverSection: String, CaseIterable, Identifiable, Sendable {
+    case cpuHistory, cpuCores, cpuDetails, cpuProcesses
+    case memoryHistory, memoryBreakdown, memoryProcesses
+    case networkHistory, networkProbe, networkInterface, networkAddresses, networkDNS, networkProcesses
+    case gpuHistory, gpuDetails
+    case thermalSensors, thermalFans
+
+    public var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .cpuHistory: "负载历史"
+        case .cpuCores: "核心负载"
+        case .cpuDetails: "处理器信息"
+        case .cpuProcesses, .memoryProcesses, .networkProcesses: "高占用进程"
+        case .memoryHistory: "使用历史"
+        case .memoryBreakdown: "内存构成"
+        case .networkHistory: "流量历史"
+        case .networkProbe: "连接探测"
+        case .networkInterface: "接口"
+        case .networkAddresses: "IP 地址"
+        case .networkDNS: "DNS"
+        case .gpuHistory: "使用历史"
+        case .gpuDetails: "显卡信息"
+        case .thermalSensors: "温度"
+        case .thermalFans: "风扇"
+        }
+    }
+}
+
+/// 菜单栏布局
+public enum MenuBarLayout: String, CaseIterable, Identifiable, Sendable {
+    /// 每个指标一个图标，点击弹出该项详情
+    case separate
+    /// 所有指标合成一个图标，点击打开主窗口
+    case combined
+
+    public var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .separate: "每项独立"
+        case .combined: "合并为一个"
+        }
+    }
+}
+
+/// 连接探测的目标
+public enum ProbeTarget: String, CaseIterable, Identifiable, Sendable {
+    case cloudflare, google, aliyun, tencent, gateway
+
+    public var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .cloudflare: "Cloudflare（1.1.1.1）"
+        case .google: "Google（8.8.8.8）"
+        case .aliyun: "阿里云（223.5.5.5）"
+        case .tencent: "腾讯（119.29.29.29）"
+        case .gateway: "路由器（网关）"
+        }
+    }
+
+    /// 网关地址随网络变化，由调用方传入
+    func address(router: String?) -> String? {
+        switch self {
+        case .cloudflare: "1.1.1.1"
+        case .google: "8.8.8.8"
+        case .aliyun: "223.5.5.5"
+        case .tencent: "119.29.29.29"
+        case .gateway: router
         }
     }
 }
@@ -116,18 +216,62 @@ public enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+/// 主窗口侧边栏的页面
 public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
-    case overview, processes, thermal, keepAwake, cleaner
+    case overview, cpu, gpu, memory, network, thermal, processes, keepAwake, cleaner
 
     public var id: String { rawValue }
 
+    static let monitors: [PanelTab] = [.overview, .cpu, .gpu, .memory, .network, .thermal]
+    static let tools: [PanelTab] = [.processes, .keepAwake, .cleaner]
+
     var title: String {
         switch self {
-        case .overview: "概览"
+        case .overview: "仪表盘"
+        case .cpu: "CPU"
+        case .gpu: "GPU"
+        case .memory: "内存"
+        case .network: "网络"
+        case .thermal: "温度与风扇"
         case .processes: "进程"
-        case .thermal: "散热"
         case .keepAwake: "防休眠"
         case .cleaner: "清理"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .overview: "square.grid.2x2"
+        case .cpu: "cpu"
+        case .gpu: "square.3.layers.3d"
+        case .memory: "memorychip"
+        case .network: "network"
+        case .thermal: "fan"
+        case .processes: "list.bullet.rectangle"
+        case .keepAwake: "cup.and.saucer"
+        case .cleaner: "sparkles"
+        }
+    }
+
+    /// 页面对应的菜单栏项目，页面右上角可直接开关
+    var menuBarItem: MenuBarItem? {
+        switch self {
+        case .cpu: .cpu
+        case .gpu: .gpu
+        case .memory: .memory
+        case .network: .network
+        case .thermal: .temperature
+        default: nil
+        }
+    }
+
+    init(item: MenuBarItem) {
+        switch item {
+        case .cpu: self = .cpu
+        case .gpu: self = .gpu
+        case .memory: self = .memory
+        case .network: self = .network
+        case .temperature, .fan: self = .thermal
         }
     }
 }
@@ -177,9 +321,25 @@ public final class AppSettings {
     public var appearance: AppearanceMode {
         didSet { defaults.set(appearance.rawValue, forKey: Keys.appearance) }
     }
-    /// 面板使用液态玻璃（半透明）背景；关闭时为浅色 / 深色实色背景
-    public var panelGlass: Bool {
-        didSet { defaults.set(panelGlass, forKey: Keys.panelGlass) }
+    public var menuBarLayout: MenuBarLayout {
+        didSet { defaults.set(menuBarLayout.rawValue, forKey: Keys.menuBarLayout) }
+    }
+    /// 用户在详情弹窗里隐藏的区块
+    public var hiddenPopoverSections: Set<PopoverSection> {
+        didSet { defaults.set(hiddenPopoverSections.map(\.rawValue).sorted(), forKey: Keys.hiddenPopoverSections) }
+    }
+    public var probeEnabled: Bool {
+        didSet { defaults.set(probeEnabled, forKey: Keys.probeEnabled) }
+    }
+    public var probeSeconds: Int {
+        didSet { defaults.set(probeSeconds, forKey: Keys.probeSeconds) }
+    }
+    public var probeTarget: ProbeTarget {
+        didSet { defaults.set(probeTarget.rawValue, forKey: Keys.probeTarget) }
+    }
+    /// 打开网络详情时查询公网 IP（会访问 Cloudflare / ipify）
+    public var publicIPLookup: Bool {
+        didSet { defaults.set(publicIPLookup, forKey: Keys.publicIPLookup) }
     }
     /// 可再生的缓存也先移到废纸篓（可恢复，但不会立即释放空间）
     public var cleanPrefersTrash: Bool {
@@ -187,6 +347,7 @@ public final class AppSettings {
     }
 
     public static let refreshOptions = [1, 2, 3, 5]
+    public static let probeOptions = [1, 2, 5]
     public static let batteryFloorOptions = [10, 20, 30, 40]
     public static let fanSafetyOptions = [85, 90, 95, 100]
 
@@ -212,7 +373,13 @@ public final class AppSettings {
         panelTab = defaults.string(forKey: Keys.panelTab).flatMap(PanelTab.init(rawValue:)) ?? .overview
         appearance = defaults.string(forKey: Keys.appearance).flatMap(AppearanceMode.init(rawValue:)) ?? .system
         cleanPrefersTrash = defaults.bool(forKey: Keys.cleanPrefersTrash)
-        panelGlass = defaults.bool(forKey: Keys.panelGlass)
+        menuBarLayout = defaults.string(forKey: Keys.menuBarLayout).flatMap(MenuBarLayout.init(rawValue:)) ?? .separate
+        hiddenPopoverSections = Set(defaults.stringArray(forKey: Keys.hiddenPopoverSections)?.compactMap(PopoverSection.init(rawValue:)) ?? [])
+        probeEnabled = defaults.object(forKey: Keys.probeEnabled) as? Bool ?? true
+        probeSeconds = Self.probeOptions.contains(defaults.integer(forKey: Keys.probeSeconds))
+            ? defaults.integer(forKey: Keys.probeSeconds) : 2
+        probeTarget = defaults.string(forKey: Keys.probeTarget).flatMap(ProbeTarget.init(rawValue:)) ?? .cloudflare
+        publicIPLookup = defaults.object(forKey: Keys.publicIPLookup) as? Bool ?? true
     }
 
     /// 按固定顺序返回已启用的菜单栏项目
@@ -229,6 +396,12 @@ public final class AppSettings {
     /// nil 表示跟随整体风格
     func setStyleOverride(_ style: MenuBarStyle?, for item: MenuBarItem) {
         styleOverrides[item] = style
+    }
+
+    func isVisible(_ section: PopoverSection) -> Bool { !hiddenPopoverSections.contains(section) }
+
+    func setVisible(_ section: PopoverSection, _ visible: Bool) {
+        if visible { hiddenPopoverSections.remove(section) } else { hiddenPopoverSections.insert(section) }
     }
 
     func setEnabled(_ item: MenuBarItem, _ enabled: Bool) {
@@ -248,6 +421,11 @@ public final class AppSettings {
         static let panelTab = "panelTab"
         static let appearance = "appearance"
         static let cleanPrefersTrash = "cleanPrefersTrash"
-        static let panelGlass = "panelGlass"
+        static let menuBarLayout = "menuBarLayout"
+        static let hiddenPopoverSections = "hiddenPopoverSections"
+        static let probeEnabled = "probeEnabled"
+        static let probeSeconds = "probeSeconds"
+        static let probeTarget = "probeTarget"
+        static let publicIPLookup = "publicIPLookup"
     }
 }
