@@ -118,14 +118,14 @@ struct ProcessesPage: View {
             }
             .padding(.horizontal, DS.Space.s2)
             .frame(height: DS.Size.controlHeight)
-            .frame(maxWidth: DS.Size.settingsSidebar + DS.Space.s16)
+            .frame(maxWidth: DS.Size.sidebarWidth + DS.Space.s16)
             .background(DS.Palette.elevated, in: RoundedRectangle(cornerRadius: DS.Radius.md))
             .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).strokeBorder(DS.Palette.neutral300, lineWidth: DS.Size.stroke))
 
             SegmentedControl(selection: $scope, options: Scope.allCases.map { ($0, $0.title) })
-                .frame(width: DS.Size.settingsSidebar)
+                .frame(width: DS.Size.sidebarWidth)
             SegmentedControl(selection: $grouping, options: Grouping.allCases.map { ($0, $0.title) })
-                .frame(width: DS.Size.settingsSidebar - DS.Space.s8)
+                .frame(width: DS.Size.sidebarWidth - DS.Space.s8)
             Spacer(minLength: 0)
         }
     }

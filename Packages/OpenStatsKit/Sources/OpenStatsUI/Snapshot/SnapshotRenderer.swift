@@ -52,10 +52,6 @@ enum SnapshotRenderer {
                 write(PopoverRootView(item: item), model: model, appearance: appearance,
                       to: outputDirectory.appendingPathComponent("popover-\(item.rawValue)-\(suffix).png"))
             }
-            for section in SettingsSection.allCases {
-                write(SettingsView(section: section), model: model, appearance: appearance,
-                      to: outputDirectory.appendingPathComponent("settings-\(section.rawValue)-\(suffix).png"))
-            }
         }
 
         let menuBar = MenuBarRenderer.image(for: model)

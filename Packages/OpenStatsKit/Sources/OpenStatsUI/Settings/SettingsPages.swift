@@ -3,121 +3,21 @@ import HelperShared
 import Metrics
 import SwiftUI
 
-enum SettingsSection: String, CaseIterable, Identifiable {
-    case general, menuBar, network, thermal, helper, about
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .general: "通用"
-        case .menuBar: "菜单栏"
-        case .network: "网络"
-        case .thermal: "散热与防休眠"
-        case .helper: "辅助工具"
-        case .about: "关于"
-        }
-    }
-
-    var symbol: String {
-        switch self {
-        case .general: "gearshape"
-        case .menuBar: "menubar.rectangle"
-        case .network: "network"
-        case .thermal: "fan"
-        case .helper: "lock.shield"
-        case .about: "info.circle"
-        }
-    }
-}
-
-public struct SettingsView: View {
+/// 主窗口里的设置页：与其他页面同样的滚动容器，打开时刷新登录项与辅助工具状态
+struct SettingsTabPage<Content: View>: View {
     @Environment(AppModel.self) private var model
-    @Environment(\.isSnapshot) private var isSnapshot
-    @State private var section: SettingsSection
-
-    public init() {
-        _section = State(initialValue: .general)
-    }
-
-    init(section: SettingsSection) {
-        _section = State(initialValue: section)
-    }
-
-    public var body: some View {
-        HStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                ForEach(SettingsSection.allCases) { item in
-                    SidebarButton(title: item.title, symbol: item.symbol, isSelected: item == section) { section = item }
-                }
-                Spacer()
-            }
-            .sidebarGlider()
-            .padding(.horizontal, DS.Space.s3)
-            .padding(.top, DS.Size.windowHeader + DS.Space.s2)
-            .padding(.bottom, DS.Space.s3)
-            .frame(width: DS.Size.settingsSidebar)
-            .frame(maxHeight: .infinity)
-            .background(alignment: .top) {
-                WindowDragArea().frame(height: DS.Size.windowHeader)
-            }
-
-            VStack(alignment: .leading, spacing: 0) {
-                Text(section.title)
-                    .dsFont(.base, weight: .semibold)
-                    .foregroundStyle(DS.Palette.textPrimary)
-                    .padding(.horizontal, DS.Space.s3 + DS.Space.s1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .frame(height: DS.Size.windowHeader)
-                    .background(WindowDragArea())
-                SettingsPage {
-                    switch section {
-                    case .general: GeneralSettings()
-                    case .menuBar: MenuBarSettings()
-                    case .network: NetworkSettings()
-                    case .thermal: ThermalSettings()
-                    case .helper: HelperSettings()
-                    case .about: AboutSettings()
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        }
-        .frame(width: isSnapshot ? DS.Size.settingsWidth : nil)
-        .frame(minWidth: DS.Size.settingsWidth, maxWidth: .infinity,
-               minHeight: isSnapshot ? nil : DS.Size.settingsHeight, maxHeight: isSnapshot ? nil : .infinity)
-        .fixedSize(horizontal: false, vertical: isSnapshot)
-        .background(DS.Palette.background)
-        .ignoresSafeArea()
-        .onAppear {
-            model.refreshLaunchAtLogin()
-            model.helper.refreshStatus()
-        }
-    }
-}
-
-private struct SettingsPage<Content: View>: View {
     @ViewBuilder var content: Content
-    @Environment(\.isSnapshot) private var isSnapshot
 
     var body: some View {
-        let stack = VStack(alignment: .leading, spacing: DS.Space.s4) {
-            content
-        }
-        .padding(.horizontal, DS.Space.s3 + DS.Space.s1)
-        .padding(.bottom, DS.Space.s6)
-        .frame(maxWidth: .infinity, alignment: .leading)
-
-        if isSnapshot {
-            stack
-        } else {
-            ScrollView { stack.overlayScrollers() }
-                .scrollBounceBehavior(.basedOnSize)
-        }
+        PageScroll { content }
+            .onAppear {
+                model.refreshLaunchAtLogin()
+                model.helper.refreshStatus()
+            }
     }
 }
 
-private struct SettingsGroup<Content: View>: View {
+struct SettingsGroup<Content: View>: View {
     var caption: String?
     @ViewBuilder var content: Content
 
@@ -135,7 +35,7 @@ private struct SettingsGroup<Content: View>: View {
 }
 
 /// 分组内的一行，自带内边距与分隔线
-private struct GroupRow<Content: View>: View {
+struct GroupRow<Content: View>: View {
     var showsDivider = true
     @ViewBuilder var content: Content
 
@@ -151,7 +51,7 @@ private struct GroupRow<Content: View>: View {
 
 // MARK: - 通用
 
-private struct GeneralSettings: View {
+struct GeneralSettings: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -159,10 +59,10 @@ private struct GeneralSettings: View {
 
         SettingsGroup {
             GroupRow(showsDivider: false) {
-                SettingRow(title: "外观", subtitle: "面板与设置窗口的配色；菜单栏始终跟随系统") {
+                SettingRow(title: "外观", subtitle: "主窗口与弹窗的配色；菜单栏始终跟随系统") {
                     SegmentedControl(selection: $settings.appearance,
                                      options: AppearanceMode.allCases.map { ($0, $0.title) })
-                        .frame(width: DS.Size.settingsSidebar + DS.Space.s12)
+                        .frame(width: DS.Size.sidebarWidth + DS.Space.s12)
                 }
             }
             GroupRow {
@@ -176,13 +76,13 @@ private struct GeneralSettings: View {
                 SettingRow(title: "刷新频率", subtitle: "只显示菜单栏时的采样间隔；打开弹窗或主窗口时固定为 1 秒") {
                     SegmentedControl(selection: $settings.refreshSeconds,
                                      options: AppSettings.refreshOptions.map { ($0, "\($0) 秒") })
-                        .frame(width: DS.Size.settingsSidebar + DS.Space.s12)
+                        .frame(width: DS.Size.sidebarWidth + DS.Space.s12)
                 }
             }
             GroupRow {
                 SettingRow(title: "温度单位") {
                     SegmentedControl(selection: $settings.useFahrenheit, options: [(false, "°C"), (true, "°F")])
-                        .frame(width: DS.Size.settingsSidebar / 2 + DS.Space.s6)
+                        .frame(width: DS.Size.sidebarWidth / 2 + DS.Space.s6)
                 }
             }
         }
@@ -191,7 +91,7 @@ private struct GeneralSettings: View {
 
 // MARK: - 菜单栏
 
-private struct MenuBarSettings: View {
+struct MenuBarSettings: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -207,7 +107,7 @@ private struct MenuBarSettings: View {
                                : "所有指标合成一个图标，点击打开主窗口") {
                     SegmentedControl(selection: $settings.menuBarLayout,
                                      options: MenuBarLayout.allCases.map { ($0, $0.title) })
-                        .frame(width: DS.Size.settingsSidebar + DS.Space.s6)
+                        .frame(width: DS.Size.sidebarWidth + DS.Space.s6)
                 }
             }
         }
@@ -262,7 +162,7 @@ private struct MenuBarSettings: View {
         if item == .network {
             SegmentedControl(selection: $settings.networkStyle,
                              options: NetworkMenuStyle.allCases.map { ($0, $0.title) })
-                .frame(width: DS.Size.settingsSidebar + DS.Space.s6)
+                .frame(width: DS.Size.sidebarWidth + DS.Space.s6)
         } else {
             Picker("风格", selection: Binding(get: { settings.styleOverrides[item] },
                                              set: { settings.setStyleOverride($0, for: item) })) {
@@ -415,7 +315,7 @@ private struct MenuBarPreview: View {
 
 // MARK: - 网络
 
-private struct NetworkSettings: View {
+struct NetworkSettings: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -431,7 +331,7 @@ private struct NetworkSettings: View {
                 SettingRow(title: "探测间隔") {
                     SegmentedControl(selection: $settings.probeSeconds,
                                      options: AppSettings.probeOptions.map { ($0, "\($0) 秒") })
-                        .frame(width: DS.Size.settingsSidebar)
+                        .frame(width: DS.Size.sidebarWidth)
                 }
             }
             .disabled(!settings.probeEnabled)
@@ -548,28 +448,38 @@ private struct GeoDatabaseSettings: View {
 
 // MARK: - 散热与防休眠
 
-private struct ThermalSettings: View {
+/// 放在“温度与风扇”页底部
+struct FanSafetySettings: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
         @Bindable var settings = model.settings
 
-        SettingsGroup(caption: "风扇") {
+        SettingsGroup(caption: "风扇设置") {
             GroupRow(showsDivider: false) {
                 SettingRow(title: "安全温度", subtitle: "自定义转速时，CPU 达到该温度自动恢复系统控制") {
                     SegmentedControl(selection: $settings.fanSafetyTemperature,
                                      options: AppSettings.fanSafetyOptions.map { ($0, "\($0)°C") })
-                        .frame(width: DS.Size.settingsSidebar + DS.Space.s12)
+                        .frame(width: DS.Size.sidebarWidth + DS.Space.s12)
                 }
             }
         }
+    }
+}
 
-        SettingsGroup(caption: "合盖运行") {
+/// 放在“防休眠”页底部
+struct LidBatterySettings: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        @Bindable var settings = model.settings
+
+        SettingsGroup(caption: "合盖运行设置") {
             GroupRow(showsDivider: false) {
                 SettingRow(title: "电量下限", subtitle: "使用电池且电量低于该值时，自动关闭合盖运行") {
                     SegmentedControl(selection: $settings.lidModeBatteryFloor,
                                      options: AppSettings.batteryFloorOptions.map { ($0, "\($0)%") })
-                        .frame(width: DS.Size.settingsSidebar + DS.Space.s12)
+                        .frame(width: DS.Size.sidebarWidth + DS.Space.s12)
                 }
             }
         }
@@ -578,7 +488,7 @@ private struct ThermalSettings: View {
 
 // MARK: - 辅助工具
 
-private struct HelperSettings: View {
+struct HelperSettings: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -662,7 +572,7 @@ private struct CapabilityLine: View {
 
 // MARK: - 关于
 
-private struct AboutSettings: View {
+struct AboutSettings: View {
     var body: some View {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "开发版"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String

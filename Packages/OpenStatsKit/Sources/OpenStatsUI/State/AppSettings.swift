@@ -220,11 +220,18 @@ public enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
 /// 主窗口侧边栏的页面
 public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
     case overview, system, cpu, gpu, memory, network, thermal, processes, keepAwake, cleaner
+    case settingsGeneral, settingsMenuBar, settingsHelper, settingsAbout
 
     public var id: String { rawValue }
 
     static let monitors: [PanelTab] = [.overview, .system, .cpu, .gpu, .memory, .network, .thermal]
     static let tools: [PanelTab] = [.processes, .keepAwake, .cleaner]
+    static let settings: [PanelTab] = [.settingsGeneral, .settingsMenuBar, .settingsHelper, .settingsAbout]
+
+    var isSettings: Bool { Self.settings.contains(self) }
+
+    /// 页面顶栏的标题：设置页带上分组名
+    var headerTitle: String { isSettings ? "设置 · \(title)" : title }
 
     var title: String {
         switch self {
@@ -238,6 +245,10 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .processes: "进程"
         case .keepAwake: "防休眠"
         case .cleaner: "清理"
+        case .settingsGeneral: "通用"
+        case .settingsMenuBar: "菜单栏"
+        case .settingsHelper: "辅助工具"
+        case .settingsAbout: "关于"
         }
     }
 
@@ -253,6 +264,10 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .processes: "list.bullet.rectangle"
         case .keepAwake: "cup.and.saucer"
         case .cleaner: "sparkles"
+        case .settingsGeneral: "gearshape"
+        case .settingsMenuBar: "menubar.rectangle"
+        case .settingsHelper: "lock.shield"
+        case .settingsAbout: "info.circle"
         }
     }
 

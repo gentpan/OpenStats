@@ -11,9 +11,9 @@ public struct MainWindowView: View {
     public init() {}
 
     public var body: some View {
-        HStack(spacing: 0) {
+        HStack(alignment: .top, spacing: 0) {
             MainSidebar()
-                .frame(width: DS.Size.settingsSidebar)
+                .frame(width: DS.Size.sidebarWidth)
                 .frame(maxHeight: .infinity)
                 .background(alignment: .top) {
                     WindowDragArea().frame(height: DS.Size.windowHeader)
@@ -28,11 +28,19 @@ public struct MainWindowView: View {
                     case .cpu: DetailPage { CPUPopover() }
                     case .gpu: DetailPage { GPUPopover() }
                     case .memory: DetailPage { MemoryPopover() }
-                    case .network: DetailPage { NetworkPopover() }
+                    case .network:
+                        DetailPage {
+                            NetworkPopover()
+                            NetworkSettings()
+                        }
                     case .thermal: ThermalPage()
                     case .processes: ProcessesPage()
                     case .keepAwake: KeepAwakePage()
                     case .cleaner: CleanerPage()
+                    case .settingsGeneral: SettingsTabPage { GeneralSettings() }
+                    case .settingsMenuBar: SettingsTabPage { MenuBarSettings() }
+                    case .settingsHelper: SettingsTabPage { HelperSettings() }
+                    case .settingsAbout: SettingsTabPage { AboutSettings() }
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
@@ -42,7 +50,7 @@ public struct MainWindowView: View {
             .frame(minWidth: DS.Size.panelWidth, maxWidth: .infinity)
             .frame(maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
         }
-        .frame(width: isSnapshot ? DS.Size.settingsSidebar + DS.Size.panelWidth : nil)
+        .frame(width: isSnapshot ? DS.Size.sidebarWidth + DS.Size.panelWidth : nil)
         .fixedSize(horizontal: false, vertical: isSnapshot)
         .background(DS.Palette.background)
         // 内容延伸到透明标题栏下方，由顶栏高度留出红绿灯按钮的位置
@@ -63,25 +71,42 @@ private struct DetailPage<Content: View>: View {
 private struct MainSidebar: View {
     @Environment(AppModel.self) private var model
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s1) {
-            group("监控", PanelTab.monitors)
-            group("工具", PanelTab.tools)
+    @Environment(\.isSnapshot) private var isSnapshot
 
-            Spacer(minLength: DS.Space.s3)
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            // 三组导航加起来较高，窗口矮时侧边栏自己滚动，底部按钮始终可见
+            if isSnapshot {
+                navigation
+            } else {
+                ScrollView { navigation.overlayScrollers() }
+                    .scrollBounceBehavior(.basedOnSize)
+            }
 
             HStack(spacing: DS.Space.s1) {
                 ThemeToggle()
-                IconButton(systemName: "gearshape", help: "设置") { model.openSettings() }
                 Spacer(minLength: 0)
                 IconButton(systemName: "power", help: "退出 OpenStats") { model.quit() }
             }
+            .padding(.leading, DS.Space.s2)
         }
-        .sidebarGlider()
-        .padding(.horizontal, DS.Space.s3)
+        .padding(.leading, DS.Space.s1)
+        .padding(.trailing, DS.Space.s3)
         // 顶部留出窗口红绿灯按钮的位置
         .padding(.top, DS.Size.windowHeader + DS.Space.s2)
         .padding(.bottom, DS.Space.s3)
+    }
+
+    private var navigation: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s1) {
+            group("监控", PanelTab.monitors)
+            group("工具", PanelTab.tools)
+            group("设置", PanelTab.settings)
+        }
+        .sidebarGlider()
+        // 光条的发光向左溢出几个点，留出空间避免被滚动区域裁掉
+        .padding(.leading, DS.Space.s2)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
@@ -107,7 +132,7 @@ private struct PageHeader: View {
         let tab = settings.panelTab
 
         HStack(spacing: DS.Space.s3) {
-            Text(tab.title)
+            Text(tab.headerTitle)
                 .dsFont(.base, weight: .semibold)
                 .foregroundStyle(DS.Palette.textPrimary)
             Spacer(minLength: DS.Space.s3)

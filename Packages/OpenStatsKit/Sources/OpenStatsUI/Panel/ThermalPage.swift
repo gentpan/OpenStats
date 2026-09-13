@@ -12,6 +12,7 @@ struct ThermalPage: View {
                 FanCard().frame(maxWidth: .infinity)
             }
             .fixedSize(horizontal: false, vertical: true)
+            FanSafetySettings()
         }
     }
 }

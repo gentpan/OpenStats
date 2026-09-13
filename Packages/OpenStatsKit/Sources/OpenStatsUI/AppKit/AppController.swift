@@ -3,11 +3,10 @@ import Metrics
 import SwiftUI
 
 @MainActor
-public final class AppController: NSObject, NSApplicationDelegate, NSWindowDelegate {
+public final class AppController: NSObject, NSApplicationDelegate {
     private let model = AppModel()
     private var menuBar: MenuBarController!
     private var mainWindow: MainWindowController!
-    private var settingsWindow: NSWindow?
     private var workspaceObservers: [NSObjectProtocol] = []
 
     public override init() {
@@ -15,13 +14,17 @@ public final class AppController: NSObject, NSApplicationDelegate, NSWindowDeleg
     }
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.mainMenu = MainMenu.make()
+        NSApp.mainMenu = MainMenu.make(settingsTarget: self, settingsAction: #selector(openSettingsFromMenu))
         menuBar = MenuBarController(model: model)
         mainWindow = MainWindowController(model: model)
         mainWindow.onVisibilityChange = { [weak self] _ in self?.updateActivationPolicy() }
         menuBar.update()
 
-        model.openSettings = { [weak self] in self?.showSettings() }
+        // 设置已并入主窗口：所有“设置…”入口都打开主窗口的通用设置
+        model.openSettings = { [weak self] in
+            self?.menuBar.dismissPopovers()
+            self?.mainWindow.show(tab: .settingsGeneral)
+        }
         model.openMainWindow = { [weak self] tab in
             self?.menuBar.dismissPopovers()
             self?.mainWindow.show(tab: tab)
@@ -88,40 +91,11 @@ public final class AppController: NSObject, NSApplicationDelegate, NSWindowDeleg
         return true
     }
 
-    // MARK: 设置窗口
-
-    private func showSettings() {
-        menuBar.dismissPopovers()
-        if settingsWindow == nil {
-            let visible = NSScreen.main?.visibleFrame.size ?? DS.Size.settingsDefaultSize
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0,
-                                                      width: min(DS.Size.settingsDefaultSize.width, visible.width - DS.Space.s12),
-                                                      height: min(DS.Size.settingsDefaultSize.height, visible.height - DS.Space.s12)),
-                                  styleMask: [.titled, .closable, .miniaturizable, .resizable],
-                                  backing: .buffered,
-                                  defer: false)
-            window.title = "OpenStats 设置"
-            WindowChrome.apply(to: window)
-            window.isReleasedWhenClosed = false
-            window.delegate = self
-            window.contentView = NSHostingView(rootView: SettingsView().environment(model))
-            window.contentMinSize = NSSize(width: DS.Size.settingsWidth, height: DS.Size.settingsHeight)
-            window.setFrameAutosaveName("OpenStatsSettingsWindow")
-            if window.frame.width < DS.Size.settingsDefaultSize.width { window.center() }
-            settingsWindow = window
-        }
-        NSApp.activate()
-        settingsWindow?.makeKeyAndOrderFront(nil)
-        updateActivationPolicy()
-    }
-
-    public func windowWillClose(_ notification: Notification) {
-        DispatchQueue.main.async { [weak self] in self?.updateActivationPolicy() }
-    }
+    @objc private func openSettingsFromMenu() { model.openSettings() }
 
     /// 有窗口打开时显示在程序坞与 ⌘Tab 里，全部关闭后回到仅菜单栏
     private func updateActivationPolicy() {
-        let hasWindow = mainWindow.isVisible || settingsWindow?.isVisible == true
+        let hasWindow = mainWindow.isVisible
         let policy: NSApplication.ActivationPolicy = hasWindow ? .regular : .accessory
         guard NSApp.activationPolicy() != policy else { return }
         NSApp.setActivationPolicy(policy)

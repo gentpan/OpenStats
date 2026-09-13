@@ -16,6 +16,7 @@ struct KeepAwakePage: View {
                 LidCard().frame(maxWidth: .infinity)
             }
             .fixedSize(horizontal: false, vertical: true)
+            LidBatterySettings()
         }
     }
 }

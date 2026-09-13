@@ -29,8 +29,8 @@ final class MainWindowController: NSObject, NSWindowDelegate {
     }
 
     private func makeWindow() -> NSWindow {
-        let width = DS.Size.settingsSidebar + DS.Size.panelWidth
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: DS.Size.settingsSidebar + DS.Size.windowDefaultContentWidth,
+        let width = DS.Size.sidebarWidth + DS.Size.panelWidth
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: DS.Size.sidebarWidth + DS.Size.windowDefaultContentWidth,
                                                   height: DS.Size.panelMinHeight * 2),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                               backing: .buffered,
@@ -56,7 +56,7 @@ final class MainWindowController: NSObject, NSWindowDelegate {
         let height = min(measuring.fittingSize.height, visible.height - DS.Space.s12)
         // 至少 720pt 高（屏幕放得下时），页面较短也不会开成一个小窗口
         let size = NSSize(width: min(window.frame.width, visible.width - DS.Space.s12),
-                          height: min(max(height, DS.Size.settingsDefaultSize.height), visible.height - DS.Space.s12))
+                          height: min(max(height, DS.Size.windowDefaultHeight), visible.height - DS.Space.s12))
         return NSRect(x: visible.midX - size.width / 2, y: visible.midY - size.height / 2,
                       width: size.width, height: size.height)
     }
