@@ -29,6 +29,8 @@ enum SnapshotRenderer {
         demand.processes = true
         demand.temperatures = Set(TemperatureGroup.allCases)
         demand.fans = true
+        demand.power = true
+        demand.cpuFrequency = true
         await model.hub.update(demand)
         await model.hub.start { snapshot in model.handle(snapshot) }
         try? await Task.sleep(for: .seconds(12))

@@ -77,6 +77,8 @@ public final class AppModel {
         if showing(.gpu, .gpu) { groups.insert(.gpu) }
         if settings.enabledAlerts.contains(.cpuTemperature) { groups.insert(.cpu) }
         demand.temperatures = groups
+        demand.power = (window && tab == .thermal) || thermalPopover
+        demand.cpuFrequency = showing(.cpu, .cpu)
         demand.fans = (window && (tab == .thermal || tab == .overview)) || menu.contains(.fan)
             || fans.mode != .automatic || thermalPopover
         return demand

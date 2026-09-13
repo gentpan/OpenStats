@@ -15,7 +15,7 @@ let package = Package(
     ],
     targets: [
         .target(name: "SMC"),
-        .target(name: "Metrics", dependencies: ["SMC"]),
+        .target(name: "Metrics", dependencies: ["SMC"], linkerSettings: [.linkedLibrary("IOReport")]),
         .target(name: "HelperShared"),
         .target(name: "Cleaner"),
         .target(name: "Updates"),

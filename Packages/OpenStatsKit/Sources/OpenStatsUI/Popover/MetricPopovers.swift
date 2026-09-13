@@ -46,7 +46,8 @@ struct CPUPopover: View {
                 SectionCard(title: section.title) {
                     ForEach(store.topology.clusters) { cluster in
                         let average = CoreClusterBars.average(of: cluster, perCore: cpu?.perCore ?? []) ?? 0
-                        ShareRow(label: "\(cluster.name) · \(cluster.coreIndices.count) 核", value: Format.percent(average),
+                        let frequency = store.power?.clusterFrequency[cluster.id].map { " · \(Format.frequency(megahertz: $0))" } ?? ""
+                        ShareRow(label: "\(cluster.name) · \(cluster.coreIndices.count) 核\(frequency)", value: Format.percent(average),
                                  fraction: average, color: DS.Palette.cluster(cluster.id))
                     }
                     if let busiest = busiestCore(store.topology, cpu?.perCore ?? []) {
@@ -552,6 +553,10 @@ struct ThermalPopover: View {
                         }
                     }
                 }
+            case .thermalPower:
+                SectionCard(title: section.title, trailing: { Text(store.power?.system.map(Format.watts) ?? "—") }) {
+                    PowerRows(power: store.power, history: store.powerHistory.elements, compact: true)
+                }
             default:
                 EmptyView()
             }
@@ -565,4 +570,33 @@ func fanStatusText(fans: [FanState], mode: FanController.Mode) -> String {
     if fans.isEmpty { return "未检测到风扇" }
     guard fans.contains(where: \.isManual) else { return "由 macOS 调节" }
     return mode == .automatic ? "其他程序手动控制" : "OpenStats 控制中"
+}
+
+/// 功耗明细：整机、电源输入、电池、GPU，附整机功耗走势
+struct PowerRows: View {
+    let power: PowerReading?
+    let history: [Double]
+    var compact = false
+
+    var body: some View {
+        if let power, power.system != nil || power.gpu != nil {
+            if history.count > 1 {
+                LineHistoryChart(values: history, maxValue: max(history.max() ?? 0, 10) * 1.2,
+                                 color: DS.Palette.warning, height: compact ? DS.Size.tileChart : DS.Size.chartHeight)
+            }
+            if let system = power.system { InfoRow(label: "整机", text: Format.watts(system)) }
+            if let adapter = power.adapter { InfoRow(label: "电源输入", text: Format.watts(adapter)) }
+            if let battery = power.battery {
+                // PPBR 为正表示电池在放电供电，接通电源时是充电功率
+                InfoRow(label: power.adapter == nil ? "电池放电" : "电池充电", text: Format.watts(abs(battery)))
+            }
+            if let gpu = power.gpu { InfoRow(label: "GPU", text: Format.watts(gpu)) }
+            Text("由 SMC 与系统能耗统计读取；新款芯片不提供可靠的 CPU 单独功耗")
+                .dsFont(.xs)
+                .foregroundStyle(DS.Palette.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+        } else {
+            Text("这台 Mac 不提供功耗读数").dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+        }
+    }
 }

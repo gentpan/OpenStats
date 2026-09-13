@@ -192,6 +192,7 @@ public struct MetricsSnapshot: Sendable {
     public var processes: [ProcessUsage]?
     public var systemCounts: SystemCounts?
     public var sensors: SensorReadings?
+    public var power: PowerReading?
 
     public init() {}
 }

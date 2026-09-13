@@ -12,6 +12,7 @@ struct ThermalPage: View {
                 FanCard().frame(maxWidth: .infinity)
             }
             .fixedSize(horizontal: false, vertical: true)
+            PowerCard()
             FanSafetySettings()
         }
     }
@@ -63,6 +64,18 @@ private struct TemperatureRow: View {
                     .foregroundStyle(DS.Palette.textTertiary)
                     .padding(.leading, DS.Size.labelColumn + DS.Space.s3)
             }
+        }
+    }
+}
+
+private struct PowerCard: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let power = model.store.power
+        Card {
+            CardHeader(icon: "bolt", title: "功耗", detail: power?.system.map { "整机 \(Format.watts($0))" } ?? "读取中")
+            PowerRows(power: power, history: model.store.powerHistory.elements)
         }
     }
 }

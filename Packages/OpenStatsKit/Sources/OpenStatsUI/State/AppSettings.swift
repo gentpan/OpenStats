@@ -59,8 +59,8 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
         case .memory: [.memoryWaterline, .memoryCompression, .memoryApps]
         case .network: [.networkHistory, .networkProbe, .networkInterface, .networkAddresses, .networkDNS, .networkProcesses]
         case .gpu: [.gpuHistory, .gpuDetails]
-        case .temperature: [.thermalSensors, .thermalFans]
-        case .fan: [.thermalFans, .thermalSensors]
+        case .temperature: [.thermalSensors, .thermalFans, .thermalPower]
+        case .fan: [.thermalFans, .thermalSensors, .thermalPower]
         }
     }
 
@@ -85,7 +85,7 @@ public enum PopoverSection: String, CaseIterable, Identifiable, Sendable {
     case memoryWaterline, memoryCompression, memoryApps
     case networkHistory, networkProbe, networkInterface, networkAddresses, networkDNS, networkProcesses
     case gpuHistory, gpuDetails
-    case thermalSensors, thermalFans
+    case thermalSensors, thermalFans, thermalPower
 
     public var id: String { rawValue }
 
@@ -107,6 +107,7 @@ public enum PopoverSection: String, CaseIterable, Identifiable, Sendable {
         case .gpuDetails: "显卡信息"
         case .thermalSensors: "温度"
         case .thermalFans: "风扇"
+        case .thermalPower: "功耗"
         }
     }
 }

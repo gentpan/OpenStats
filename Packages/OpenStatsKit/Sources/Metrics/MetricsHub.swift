@@ -14,6 +14,10 @@ public struct MetricsDemand: Sendable, Equatable {
     public var systemProcesses = false
     public var temperatures: Set<TemperatureGroup> = []
     public var fans = false
+    /// 整机功耗与 GPU 功耗
+    public var power = false
+    /// 各类核心的频率
+    public var cpuFrequency = false
 
     public init() {}
 }
@@ -24,6 +28,7 @@ public actor MetricsHub {
     private var network = NetworkSampler()
     private var processes = ProcessSampler()
     private let sensors = SensorSampler()
+    private let power = PowerSampler()
 
     private var demand = MetricsDemand()
     private var handler: (@MainActor @Sendable (MetricsSnapshot) -> Void)?
@@ -35,6 +40,7 @@ public actor MetricsHub {
     private var lastDisk = Date.distantPast
     private var lastBattery = Date.distantPast
     private var lastInterface = Date.distantPast
+    private var lastPower = Date.distantPast
 
     public init() {}
 
@@ -48,12 +54,16 @@ public actor MetricsHub {
         let needsImmediateRefresh = newDemand.interval < demand.interval
             || (newDemand.processes && !demand.processes)
             || (newDemand.disk && !demand.disk)
+        if (newDemand.power && !demand.power) || (newDemand.cpuFrequency && !demand.cpuFrequency) {
+            lastPower = .distantPast
+        }
         demand = newDemand
         if needsImmediateRefresh {
             lastDisk = .distantPast
             lastBattery = .distantPast
             lastInterface = .distantPast
         }
+
         restart()
     }
 
@@ -81,6 +91,8 @@ public actor MetricsHub {
         demand.processes = true
         demand.temperatures = Set(TemperatureGroup.allCases)
         demand.fans = true
+        demand.power = true
+        demand.cpuFrequency = true
         return demand
     }
 
@@ -132,6 +144,11 @@ public actor MetricsHub {
         }
         if !demand.temperatures.isEmpty || demand.fans {
             snapshot.sensors = sensors.sample(groups: demand.temperatures, includeFans: demand.fans)
+        }
+        // IOReport 采样有一定开销，至少间隔 2 秒
+        if demand.power || demand.cpuFrequency, now.timeIntervalSince(lastPower) >= 1.9 {
+            snapshot.power = power.sample(gpu: demand.power, frequency: demand.cpuFrequency, now: now)
+            lastPower = now
         }
         return snapshot
     }

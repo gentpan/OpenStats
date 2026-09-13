@@ -65,6 +65,15 @@ public enum Format {
         fahrenheit ? "\(Int((celsius * 9 / 5 + 32).rounded()))°F" : "\(Int(celsius.rounded()))°C"
     }
 
+    public static func watts(_ value: Double) -> String {
+        value < 10 ? "\(value.formatted(.number.precision(.fractionLength(1)))) W" : "\(Int(value.rounded())) W"
+    }
+
+    /// 频率：MHz 输入，1000 以上显示为 GHz
+    public static func frequency(megahertz value: Double) -> String {
+        value >= 1000 ? "\((value / 1000).formatted(.number.precision(.fractionLength(2)))) GHz" : "\(Int(value.rounded())) MHz"
+    }
+
     public static func rpm(_ value: Double) -> String {
         "\(Int(value.rounded())) RPM"
     }
