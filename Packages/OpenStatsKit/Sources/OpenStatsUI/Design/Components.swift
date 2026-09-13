@@ -211,6 +211,7 @@ struct IconButton: View {
 
 // MARK: - 侧边栏
 
+/// 侧边栏的一项。选中态不填色：由容器上的 `sidebarGlider()` 画左侧滑动的蓝色光条与淡淡的高亮
 struct SidebarButton: View {
     let title: String
     let symbol: String
@@ -227,20 +228,82 @@ struct SidebarButton: View {
                 Text(title).dsFont(.sm, weight: isSelected ? .semibold : .regular)
                 Spacer()
             }
-            .foregroundStyle(isSelected ? DS.Palette.onPrimary : DS.Palette.textPrimary)
-            .padding(.horizontal, DS.Space.s2)
+            .foregroundStyle(isSelected ? DS.Palette.primary : hovering ? DS.Palette.textPrimary : DS.Palette.textSecondary)
+            .padding(.leading, DS.Space.s3)
+            .padding(.trailing, DS.Space.s2)
             .frame(height: DS.Size.controlHeight)
-            .background(background, in: RoundedRectangle(cornerRadius: DS.Radius.md))
             .contentShape(Rectangle())
+            .animation(DS.Motion.quick, value: isSelected)
+            .animation(DS.Motion.quick, value: hovering)
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .anchorPreference(key: SidebarRowsKey.self, value: .bounds) { [SidebarRow(isSelected: isSelected, bounds: $0)] }
     }
+}
 
-    private var background: Color {
-        if isSelected { return DS.Palette.primary }
-        return hovering ? DS.Palette.surfaceHover : .clear
+struct SidebarRow {
+    let isSelected: Bool
+    let bounds: Anchor<CGRect>
+}
+
+struct SidebarRowsKey: PreferenceKey {
+    static let defaultValue: [SidebarRow] = []
+    static func reduce(value: inout [SidebarRow], nextValue: () -> [SidebarRow]) { value += nextValue() }
+}
+
+extension View {
+    /// 放在包含 SidebarButton 的容器上：左侧一条两端渐隐的细线，选中项位置有一段发光的蓝色光条，
+    /// 切换时带回弹地滑过去，光条右侧拖出一片渐淡的蓝色高亮
+    func sidebarGlider() -> some View {
+        overlayPreferenceValue(SidebarRowsKey.self) { rows in
+            GeometryReader { proxy in
+                SidebarGlider(frames: rows.map { proxy[$0.bounds] },
+                              selected: rows.first(where: \.isSelected).map { proxy[$0.bounds] })
+            }
+            .allowsHitTesting(false)
+        }
+    }
+}
+
+private struct SidebarGlider: View {
+    let frames: [CGRect]
+    let selected: CGRect?
+
+    private static let barWidth: CGFloat = 2
+    private static let glowWidth = DS.Space.s1 + DS.Space.s1 / 2
+
+    var body: some View {
+        if let first = frames.min(by: { $0.minY < $1.minY }), let last = frames.max(by: { $0.maxY < $1.maxY }) {
+            ZStack(alignment: .topLeading) {
+                // 底轨：整列的细线，上下两端渐隐
+                Rectangle()
+                    .fill(LinearGradient(colors: [.clear, DS.Palette.border, DS.Palette.border, .clear], startPoint: .top, endPoint: .bottom))
+                    .frame(width: DS.Size.stroke, height: last.maxY - first.minY)
+                    .offset(x: first.minX, y: first.minY)
+
+                if let selected {
+                    Rectangle()
+                        .fill(LinearGradient(colors: [DS.Palette.primary.opacity(0.14), DS.Palette.primary.opacity(0)],
+                                             startPoint: .leading, endPoint: .trailing))
+                        .frame(width: selected.width, height: selected.height)
+                        .offset(x: selected.minX, y: selected.minY)
+                    Capsule()
+                        .fill(DS.Palette.primary)
+                        .frame(width: Self.glowWidth, height: selected.height * 0.6)
+                        .blur(radius: DS.Space.s2)
+                        .offset(x: selected.minX - Self.glowWidth / 2, y: selected.midY - selected.height * 0.3)
+                    Rectangle()
+                        .fill(LinearGradient(colors: [DS.Palette.primary.opacity(0), DS.Palette.primary, DS.Palette.primary.opacity(0)],
+                                             startPoint: .top, endPoint: .bottom))
+                        .frame(width: Self.barWidth, height: selected.height)
+                        .offset(x: selected.minX - Self.barWidth / 2, y: selected.minY)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .animation(.spring(response: 0.45, dampingFraction: 0.6), value: selected)
+        }
     }
 }
 

@@ -77,6 +77,7 @@ private struct MainSidebar: View {
                 IconButton(systemName: "power", help: "退出 OpenStats") { model.quit() }
             }
         }
+        .sidebarGlider()
         .padding(.horizontal, DS.Space.s3)
         // 顶部留出窗口红绿灯按钮的位置
         .padding(.top, DS.Size.windowHeader + DS.Space.s2)

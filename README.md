@@ -46,10 +46,10 @@ Developed and tested on Apple Silicon. The interface is in Simplified Chinese.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Not released yet · **45** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Not released yet · **46** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-09-13</b> · Unreleased · 30 added · 9 style · 6 fixed</summary>
+<summary><b>2026-09-13</b> · Unreleased · 30 added · 10 style · 6 fixed</summary>
 
 **Added**
 
@@ -86,6 +86,7 @@ Not released yet · **45** changes in development · [full changelog](CHANGELOG.
 
 **Style**
 
+- 主窗口与设置窗口的侧边栏选中样式：左侧一条两端渐隐的细线，选中项有发光的蓝色光条，切换时带回弹地滑过去，右侧拖出渐淡的蓝色高亮；不再整块填蓝。
 - 仪表盘“快捷开关”改为开关样式：防休眠、合盖运行、散热模式各一行，右侧开关，下面一行小字说明当前状态。
 - 进程表按窗口宽度自动隐藏次要列，窄窗口里名称列不会被挤没。
 - 内存详情的“释放内存”移到标题栏，执行中与完成后在按钮上显示进度和结果；主窗口内存页顶栏同样提供。

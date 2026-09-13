@@ -52,6 +52,7 @@ public struct SettingsView: View {
                 }
                 Spacer()
             }
+            .sidebarGlider()
             .padding(.horizontal, DS.Space.s3)
             .padding(.top, DS.Size.windowHeader + DS.Space.s2)
             .padding(.bottom, DS.Space.s3)
