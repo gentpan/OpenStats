@@ -5,17 +5,26 @@ hosting SwiftUI, no third-party dependencies. The Xcode project is generated fro
 `project.yml` by XcodeGen; everything testable lives in the local Swift package.
 
 - `App/` — `main.swift` and the asset catalog.
+- `Widget/` — the sandboxed WidgetKit extension (“System overview”), embedded in `Contents/PlugIns`.
+  It samples CPU, memory, disk and battery itself through `Metrics`, so it works without the app.
 - `Helper/` — the privileged helper (`OpenStatsHelper`) and its launchd plist, embedded in
   the app bundle for `SMAppService.daemon`.
+- `Packages/OpenStatsKit/Sources/Localization` — `tr(_:)` and the English table (see below).
 - `Packages/OpenStatsKit/Sources/SMC` — the AppleSMC user client, fan control, temperature
   key discovery.
-- `Packages/OpenStatsKit/Sources/Metrics` — one sampler per metric and `MetricsHub`.
-- `Packages/OpenStatsKit/Sources/Cleaner` — cleanup rules, `SafetyGuard`, `CleanEngine`.
+- `Packages/OpenStatsKit/Sources/Metrics` — one sampler per metric and `MetricsHub`; power and CPU
+  frequency (`PowerSampler`), disk activity and NVMe SMART (`DiskSamplers`), Bluetooth battery,
+  the SQLite history store.
+- `Packages/OpenStatsKit/Sources/Cleaner` — cleanup rules, `SafetyGuard`, `CleanEngine`, the app
+  uninstaller's leftover search and the launchd startup-item list.
+- `Packages/OpenStatsKit/Sources/Updates` — the update manifest and the download → verify →
+  replace → relaunch steps.
 - `Packages/OpenStatsKit/Sources/HelperShared` — the XPC protocol and maintenance commands
   shared by the app and the helper.
 - `Packages/OpenStatsKit/Sources/OpenStatsUI` — design tokens, panel pages, settings,
   menu-bar renderer, app controller, snapshot renderer.
-- `Packages/OpenStatsKit/Tests` — metrics, SMC decoding and cleanup safety.
+- `Packages/OpenStatsKit/Tests` — metrics, SMC decoding, cleanup safety, updates, UI logic and
+  localization.
 
 ## Build
 
@@ -32,7 +41,7 @@ make test             # swift test in the package
 the first Developer ID Application identity from the keychain (and `--timestamp` for Release)
 when there is one. `make release` runs `Scripts/release.sh`: build, verify team, timestamp and
 hardened runtime on both binaries, notarize and staple the app, build and notarize the DMG,
-and write a Homebrew cask. The helper derives its client requirement from its own signing
+write the online-update zip and `appcast.json`, and write a Homebrew cask (`auto_updates true`). The helper derives its client requirement from its own signing
 team at run time, so no team ID is hard-coded.
 
 ## Sampling
@@ -131,6 +140,43 @@ is open and back to accessory when all are closed.
 - **DNS** — `networksetup -setdnsservers` through the helper (protocol 3), which re-validates the
   service name and every address; without the helper, a one-off administrator prompt runs the
   same fixed command.
+
+## Online updates
+
+`UpdateController` fetches `https://getopenstats.com/download/appcast.json` at launch and daily
+(version, date, notes taken from `CHANGELOG.md` by `Scripts/appcast.py`, zip URL, sha256, size). An
+update is installed only after: sha256 matches, the zip holds exactly one `.app`, its bundle ID and
+version match, `SecStaticCodeCheckValidity` passes with a requirement pinned to the running app's
+team, and `spctl --assess` accepts it (notarized). The old bundle is renamed into a same-volume
+temporary folder, the new one moved into place (restored on failure; an administrator prompt is
+used when the folder is not writable), and a detached shell waits for the process to exit before
+reopening the app. After an update the old helper may still be running; the app disconnects, waits
+for its 30 s idle exit and checks the protocol version again before asking for a reinstall.
+
+## Power, disk and history
+
+- System, adapter and battery power come from SMC `PSTR`, `PDTR`, `PPBR`. GPU power comes from the
+  IOReport *Energy Model* `GPU Energy` counter; CPU energy counters on recent chips barely update,
+  so CPU power is not shown. Cluster frequencies are residency-weighted averages of *CPU Complex
+  Performance States*, using the `voltage-states*-sram` tables of `pmgr` (Hz on older chips, MHz on
+  newer ones). Each IOReport sample costs about 5 ms of CPU, so it runs at most every 2 s and only
+  while a page shows it.
+- Disk activity diffs `IOBlockStorageDriver` statistics; SSD health reads the NVMe SMART log
+  through the system `NVMeSMARTLib` plug-in (no root).
+- `HistoryRecorder` folds each sample into a per-minute record (averages, CPU and temperature
+  peaks, worst memory pressure) and writes it to `history.sqlite`; records older than 8 days are
+  pruned hourly. Queries bucket by 1, 5 or 30 minutes and charts break lines across gaps.
+
+## Localization
+
+Source strings are Simplified Chinese. `Scripts/l10n_wrap.py` wraps every Chinese literal in
+`tr(...)` (skipping logger calls, `case` patterns and multi-line strings) and lists the keys.
+`tr` returns the input unless English is active; otherwise it looks the text up in
+`Localization/Translations.swift` — exact keys first, then templates where `{}` stands for an
+interpolated value, longest literal fragments first, translating captured values once more. The
+language is chosen at launch (System follows the global `AppleLanguages`) and applies after a
+relaunch; dates use `L10n.locale`. `--snapshot <dir> --language en` renders English screenshots and
+writes any untranslated string to `untranslated.txt`.
 
 `--snapshot <dir>` renders every main-window page, popover, settings section and the menu bar in light and
 dark, through real `NSHostingView`s in off-screen windows — `ImageRenderer` washes out pages
