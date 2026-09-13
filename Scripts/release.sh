@@ -40,7 +40,7 @@ echo "版本 ${VERSION} · 签名身份：${SIGN_ID}"
 make build CONFIG=Release SIGN_ID="$SIGN_ID"
 
 codesign --verify --deep --strict --verbose=2 "$APP"
-for binary in "$APP" "$APP/Contents/MacOS/OpenStatsHelper"; do
+for binary in "$APP" "$APP/Contents/MacOS/OpenStatsHelper" "$APP/Contents/PlugIns/OpenStatsWidget.appex"; do
   details="$(codesign -dvv "$binary" 2>&1)"
   echo "$details" | grep -q "TeamIdentifier=${TEAM_ID}" \
     || { echo "error: $binary 未使用团队 ${TEAM_ID} 签名" >&2; exit 1; }

@@ -61,6 +61,38 @@ targets:
         embed: true
         copy:
           destination: executables
+      - target: OpenStatsWidget
+        embed: true
+
+  # 桌面小组件（沙盒扩展），嵌入 OpenStats.app/Contents/PlugIns
+  OpenStatsWidget:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: Widget
+        excludes:
+          - "*.entitlements"
+    info:
+      path: Widget/Info.plist
+      properties:
+        CFBundleDisplayName: OpenStats
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: Widget/OpenStatsWidget.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+    settings:
+      base:
+        PRODUCT_NAME: OpenStatsWidget
+        PRODUCT_BUNDLE_IDENTIFIER: com.openstats.app.widget
+        SKIP_INSTALL: YES
+    dependencies:
+      - package: OpenStatsKit
+        product: Metrics
 
   OpenStatsHelper:
     type: tool
