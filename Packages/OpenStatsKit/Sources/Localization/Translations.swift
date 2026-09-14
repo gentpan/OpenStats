@@ -25,7 +25,6 @@ extension Translations {
 5 小时	5 hours
 60 秒峰值	Peak
 7 天	7 days
-ASN 库	ASN database
 Apple 智能暂时不可用。	Apple Intelligence is temporarily unavailable.
 Apple 智能模型还在下载或准备中，请稍后再试。	The Apple Intelligence model is still downloading or preparing. Try again later.
 Apple 智能没有给出回答：{}	Apple Intelligence didn't answer: {}
@@ -59,7 +58,6 @@ DerivedData，下次编译时自动重建	DerivedData; rebuilt on the next build
 GPU 占用	GPU Usage
 Google（8.8.8.8）	Google (8.8.8.8)
 IP 地址	IP Addresses
-IP 归属地数据库	IP Location Database
 IP 类型	IP type
 IP 纯净度	IP cleanliness
 OpenStats {} 已发布	OpenStats {} is available
@@ -86,8 +84,6 @@ VPN / 代理	VPN / Proxy
 VPN 隧道	VPN Tunnel
 Xcode 归档	Xcode Archives
 Xcode 编译缓存	Xcode Build Cache
-ipapi.is 在线查询	ipapi.is online lookup
-ipinfo.io 在线查询	ipinfo.io (online)
 macOS 系统目录（系统组件）	macOS system folder (system component)
 npm 缓存	npm Cache
 {} {} 英寸	{} {}-inch
@@ -102,13 +98,10 @@ npm 缓存	npm Cache
 {} 个进程	{} processes
 {} 分钟	{} min
 {} 可用 {} · 共 {}	{} {} free · {} total
-{} 在线查询	{} online lookup
 {} 天	{} d
 {} 天 {} 小时	{} d {} h
 {} 小时	{} h
 {} 小时 {} 分钟	{} h {} min
-{} 文件类型不对	{} has the wrong file type
-{} 校验不一致，已丢弃	{} failed the checksum and was discarded
 {} 核	{} cores
 {} 核图形处理器	{}-core GPU
 {} 正在运行	{} is running
@@ -151,17 +144,13 @@ npm 缓存	npm Cache
 上次检查正常	Last check was fine
 上次检查：{}	Last checked: {}
 下载	Download
-下载 {} 失败	Failed to download {}
-下载后归属地查询完全离线；数据库由 OpenStats 官网每周同步 MaxMind 的最新版本	Once downloaded, lookups are fully offline. The database is synced weekly from MaxMind by the OpenStats website.
 下载失败：{}	Download failed: {}
-下载数据库	Download Database
 下载目录中的 .dmg / .pkg / .xip / .iso，移到废纸篓	.dmg / .pkg / .xip / .iso files in Downloads; moved to Trash
 不可用	Unavailable
 不在允许清理的目录内	Not inside an allowed cleanup folder
 不在可卸载的位置：{}	Not in a location that can be uninstalled: {}
 不提供电量	No battery info
 不是团队 {} 签名的完整应用（{}）	Not a complete app signed by team {} ({})
-不是城市、国家或 ASN 数据库（{}）	Not a City, Country or ASN database ({})
 不是应用程序	Not an application
 不是绝对路径	Not an absolute path
 不能删除清理目录本身	Can't delete the cleanup folder itself
@@ -181,7 +170,6 @@ npm 缓存	npm Cache
 仅系统不休眠	Keep system awake
 介质错误	Media errors
 从左侧选择应用，或把应用拖到这里	Choose an app on the left, or drop one here
-从文件导入…	Import from File…
 从未	Never
 代理	Proxy
 以单核满载为 100%	100% = one full core
@@ -222,7 +210,6 @@ npm 缓存	npm Cache
 健康 {}	Health {}
 健康度	Health
 健康度是现在充满时的容量与出厂容量之比，低于 80% 时苹果建议更换电池	Health is today's full charge capacity versus the design capacity; Apple recommends a replacement below 80%
-元数据不是字典	Metadata is not a dictionary
 充电上限可在系统设置中设为 80%–100%，长期接电源时有助于延缓电池老化	Set a charge limit of 80%–100% in System Settings to slow battery aging when you stay plugged in
 充电中	Charging
 充电盒	Case
@@ -336,7 +323,6 @@ npm 缓存	npm Cache
 只在菜单栏显示温度、开启过热通知或打开温度页面时记录	Recorded only when temperature is in the menu bar, overheating alerts are on, or a temperature page is open
 只在菜单栏显示电池或打开电池页面时记录	Recorded only while Battery is in the menu bar or the Battery page is open
 只显示菜单栏时的采样间隔；打开弹窗或主窗口时为 1 秒（进程页 2 秒）	Sampling interval when only the menu bar is shown; 1 second with a popover or window open (2 seconds on Processes)
-只有国家、省 / 州与城市；把公网 IP 发给 db-ip.com	Country, state and city only; sends your public IP to db-ip.com
 只查找以该应用包名命名的文件，以及 Application Support、Logs 下与应用同名的目录；钥匙串与其他应用共享的数据不会动。程序坞里的图标会一并移除	Only files named after the app's bundle ID, plus folders with the app's name in Application Support and Logs, are included. Keychains and data shared with other apps are never touched. The Dock icon is removed as well
 可以恢复，但清空废纸篓前不会释放空间	Recoverable, but space isn't freed until the Trash is emptied
 可执行文件：{}	Executable: {}
@@ -364,7 +350,7 @@ npm 缓存	npm Cache
 合盖运行需要修改系统睡眠设置，需安装辅助工具（管理员授权一次）。	Lid mode changes system sleep settings and needs the helper (one-time admin approval).
 同步	Sync
 同步失败	Sync failed
-同步的内容：菜单栏项目与风格、刷新频率、外观与语言、详情弹窗的区块、连接探测、通知、快捷键、风扇安全温度、合盖电量下限。当前页面、辅助工具、历史记录与归属地库留在本机。	What syncs: menu bar items and styles, refresh rate, appearance and language, popover sections, connection probe, notifications, hotkeys, fan safety temperature and lid-mode battery floor. The current page, the helper, history and the GeoIP database stay on this Mac.
+同步的内容：菜单栏项目与风格、刷新频率、外观与语言、详情弹窗的区块、连接探测、通知、快捷键、风扇安全温度、合盖电量下限。当前页面、辅助工具与历史记录留在本机。	What syncs: menu bar items and styles, refresh rate, appearance and language, popover sections, connection probe, notifications, hotkeys, fan safety temperature and lid-mode battery floor. The current page, the helper and history stay on this Mac.
 后台低频探测	Background Probing
 启动于	Booted
 启动时和之后每天检查一次，发现新版本时显示更新摘要	Checks at launch and daily, and shows what's new when an update is found
@@ -378,8 +364,6 @@ npm 缓存	npm Cache
 唤醒	Wakeups
 团队 {}	team {}
 国内网络建议选阿里云或腾讯；选路由器只检测本地连接	In mainland China, Alibaba Cloud or Tencent work best; Router only checks the local link
-国家、城市与 ASN 在本机查询，不经过任何在线服务	Country, city and ASN are looked up on this Mac without any online service
-国家库	Country database
 图形	Graphics
 图形处理器	GPU
 图形核心	GPU cores
@@ -388,15 +372,12 @@ npm 缓存	npm Cache
 圆环表示当前占用比例	A ring shows current usage
 在 cleanip.io 查看这个 IP 的完整报告	Open this IP's full report on cleanip.io
 在主窗口打开“{}”	Open “{}” in the main window
-在本机的 MaxMind 数据库里查国家、城市与 ASN，不向任何服务发送 IP；数据库未就绪时暂用 CleanIP.io	Looks up country, city and ASN in the local MaxMind database and sends your IP nowhere; uses CleanIP.io until the database is ready
 在线升级	Online Updates
 在线升级：发现新版本时显示更新摘要，一键安装并自动重启	Online updates: see what's new, install in one click and relaunch automatically
-在线查询	Online lookup
 在菜单栏显示	Show in Menu Bar
 在菜单栏显示{}	Show {} in menu bar
 在访达中显示	Show in Finder
 型号	Model
-城市库	City database
 处理器	Processor
 处理器核心	CPU cores
 备用空间	Available spare
@@ -418,7 +399,6 @@ npm 缓存	npm Cache
 定时探测网络	Connectivity Probe
 家目录	Home folder
 容量	Capacity
-导入失败：{}	Import failed: {}
 导出…	Export…
 导出失败：{}	Export failed: {}
 导出时间	Exported at
@@ -428,7 +408,6 @@ npm 缓存	npm Cache
 将清理 {} 个项目，共 {}。{}	{} items, {} total, will be cleaned. {}
 将移到废纸篓	Will move to Trash
 小标签在上、数值在下，最紧凑	Small label above the value; most compact
-尚未下载	Not downloaded
 尚未检查	Not checked yet
 屏幕保持常亮	Keep display on
 屏幕可按设置关闭，下载、编译等后台任务继续运行	The display can turn off as usual while downloads and builds keep running
@@ -448,7 +427,6 @@ npm 缓存	npm Cache
 已取消	Cancelled
 已取消登录	Sign-in cancelled
 已启用	Enabled
-已导入 {}	Imported {}
 已导出 {}	Exported {}
 已将 {} 与 {} 项残留移到废纸篓，约 {}{}{}。需要时可以在废纸篓里放回。	Moved {} and {} leftovers to the Trash, about {}{}{}. You can put them back from the Trash.
 已开启同步	Sync is on
@@ -458,11 +436,9 @@ npm 缓存	npm Cache
 已拷贝	Copied
 已推出“{}”	Ejected “{}”
 已是最新版本	Up to date
-已更新 {} 个数据库	Updated {} databases
 已用	Used
 已用 {} · {}	{} used · {}
 已用内存占比	Memory used
-已经是最新	Already up to date
 已记录的数据会从本机删除，无法恢复。	Recorded data will be deleted from this Mac and can't be recovered.
 已运行	Uptime
 已运行 	Up 
@@ -514,11 +490,6 @@ npm 缓存	npm Cache
 强制刷新：忽略缓存，立即重新查询公网 IP 与归属地	Force refresh: ignore the cache and look up the public IP and location again now
 强制退出	Force Quit
 归属地	Location
-归属地、ASN、网络类型、原生 / 广播、纯净度与风险评分，中文地名；把公网 IP 发给 cleanip.io	Location, ASN, network type, native / broadcast, cleanliness and risk scores; sends your public IP to cleanip.io
-归属地与 ASN；把公网 IP 发给 ipapi.is，匿名额度每天 30 次，同一 IP 的结果记住一天	Location and ASN; sends your public IP to ipapi.is. Anonymous quota is 30 a day, so a result is kept for a day
-归属地与 ASN；把公网 IP 发给 ipinfo.io，匿名额度很小，容易被限流	Location and ASN; sends your public IP to ipinfo.io. The anonymous quota is tiny and easily exhausted
-归属地数据库	Location database
-归属地数据源	Location data source
 当前 {} · 发布于 {} · {} · {}	Current {} · Released {} · {} · {}
 当前为临时签名的开发构建，辅助工具只能校验应用标识。使用 Developer ID 证书构建后会自动启用团队校验。	This is an ad-hoc signed development build, so the helper can only check the bundle ID. Team verification turns on automatically with a Developer ID build.
 当前效果（实时数据）	Preview (live data)
@@ -552,9 +523,7 @@ npm 缓存	npm Cache
 打开 SMC 失败 ({})	Failed to open SMC ({})
 打开登录项设置	Open Login Items Settings
 打开网络详情时使用	Used while network details are open
-打开网络详情时向 Cloudflare（1.1.1.1）或 ipify 查询一次公网地址，10 分钟内不重复请求	Asks Cloudflare (1.1.1.1) or ipify for the public address once when network details open, at most every 10 minutes
-打开网络详情时向 Cloudflare（1.1.1.1）或 ipify 查询一次公网地址；归属地与 ASN 在本机数据库里查，10 分钟内不重复请求	When network details open, asks Cloudflare (1.1.1.1) or ipify for your public address; location and ASN come from the local database. At most once every 10 minutes.
-打开网络详情时查询公网地址；本地数据库还没准备好时，归属地与 ASN 暂由 ipinfo.io 在线查询	Looks up your public address when network details open; until the local database is ready, location and ASN come from ipinfo.io
+打开网络详情时向 Cloudflare（1.1.1.1）或 ipify 查询一次公网地址，10 分钟内不重复请求；归属地、ASN、网络类型与纯净度由这台 Mac 直接向 cleanip.io 查询，只发送公网地址	When network details open, asks Cloudflare (1.1.1.1) or ipify for your public address, at most once every 10 minutes; location, ASN, network type and cleanliness are looked up by this Mac directly at cleanip.io, sending only the public address
 打开进程页	Show Processes
 打开通知设置	Open Notification Settings
 托管	Hosting
@@ -594,8 +563,6 @@ npm 缓存	npm Cache
 散热模式	Cooling
 数据	Data
 数据来源	Source
-数据来源：cleanip.io	Data source: cleanip.io
-数据来源：cleanip.io，点击打开官网	Data source: cleanip.io. Click to open the site
 整体风格	Overall style
 整体风格套用到所有项目。想让某个项目不一样，在下面“显示项目”里给它单独选一种，比如 CPU 用圆环、风扇用数字。	The overall style applies to every item. To make one item different, pick a style for it under Items below, say a ring for CPU and plain numbers for the fan.
 整机	System
@@ -625,12 +592,10 @@ npm 缓存	npm Cache
 显示为 {}×{}	Looks like {}×{}
 显示名称：{}	Display name: {}
 显示器	Displays
-显示城市名称，数据库约 60 MB；关闭时只下载国家库（约 9 MB）	Shows city names; the database is about 60 MB. When off, only the country database (about 9 MB) is downloaded.
 显示序列号	Show Serial Number
 显示项目	Items
 暂时没有拿到评分，稍后会再试	No score yet; it will try again later
 更新内容	What's New
-更新失败：{}	Update failed: {}
 更省电，负责后台和轻量任务	More efficient; handles background and light work
 替换后未找到应用	App not found after replacement
 替换应用失败：{}	Failed to replace the app: {}
@@ -648,9 +613,7 @@ npm 缓存	npm Cache
 最高	Max
 最高 / 平均	Max / Avg
 最高温度	Max temperature
-服务器上还没有数据库，稍后再试	The server doesn't have the database yet. Try again later.
 服务器在 getopenstats.com，不上传任何监控数据；随时可以删除。	The server is at getopenstats.com; no monitoring data is uploaded, and you can delete everything at any time.
-服务器清单里没有 {}	{} is not in the server manifest
 服务器返回 {}	Server returned {}
 服务器返回的数据格式不正确	The server returned malformed data
 未使用	Unused
@@ -667,12 +630,8 @@ npm 缓存	npm Cache
 未签名（开发构建）	Unsigned (development build)
 未连接	Not connected
 未连接网络	No network
-本产品包含 MaxMind 创建的 GeoLite2 数据，可从 https://www.maxmind.com 获取。	This product includes GeoLite2 data created by MaxMind, available from https://www.maxmind.com.
-本地 GeoLite2 数据库	Local GeoLite2 database
-本地 GeoLite2（MaxMind）	Local GeoLite2 (MaxMind)
 本地 IPv4	Local IPv4
 本地 IPv6	Local IPv6
-本地 MaxMind GeoLite2	Local MaxMind GeoLite2
 本地快照	Local snapshots
 本机信息	This Mac
 机型	Model
@@ -722,7 +681,6 @@ npm 缓存	npm Cache
 正在导出…	Exporting…
 正在扫描应用…	Scanning apps…
 正在收集走势…	Collecting trend…
-正在更新…	Updating…
 正在本机生成…	Generating on this Mac…
 正在查找残留…	Finding leftovers…
 正在查询…	Looking up…
@@ -744,8 +702,6 @@ npm 缓存	npm Cache
 正常	Normal
 此刻各核心的占用；超过 60% 变橙色、85% 变红色	Current load of each core; orange above 60%, red above 85%
 此设备没有可调节的风扇	This Mac has no adjustable fans
-每 3 天检查一次	Checks every 3 days
-每 3 天检查一次 · 上次检查 {}	Checks every 3 days · last checked {}
 每个应用按一个核心满载为 100% 计算，与活动监视器一致，所以各应用相加可以超过顶部的总占用	Each app is measured with one full core as 100%, like Activity Monitor, so the apps can add up to more than the total above
 每个指标一个图标，点击弹出该项详情	One icon per metric; click for its details
 每分钟把主要指标的平均值与峰值写入本机数据库，保留 7 天，不上传	Writes averages and peaks of key metrics to a local database every minute. Kept for 7 days, never uploaded.
@@ -773,7 +729,6 @@ npm 缓存	npm Cache
 浏览器	Browsers
 深色	Dark
 深色菜单栏预览	Dark menu bar preview
-清单里的文件地址无效	Invalid file URL in the manifest
 清理	Cleanup
 清理中…	Cleaning…
 清理可回收的缓存内存（需要管理员授权或辅助工具）	Frees reclaimable cached memory (needs admin approval or the helper)
@@ -794,7 +749,6 @@ npm 缓存	npm Cache
 点击拷贝	Click to copy
 版本	Version
 版本 {}	Version {}
-版本 {} · {}	Version {} · {}
 版本 {}{}	Version {}{}
 版本是 {}，清单写的是 {}	Version is {}, but the manifest says {}
 版本清单格式不正确	Invalid version manifest
@@ -855,7 +809,6 @@ npm 缓存	npm Cache
 磁盘清理	Disk Cleanup
 磁盘空间不足	Low Disk Space
 磁盘空间偏紧	Disk space is tight
-离线查询	Offline lookup
 移到废纸篓	Move to Trash
 移到废纸篓？	Move to the Trash?
 移动网络	Mobile
@@ -869,7 +822,6 @@ npm 缓存	npm Cache
 窗口状态	Saved State
 立即切换；显示器、应用名称等由系统提供的文字在下次启动时切换	Applies right away; names supplied by macOS, such as displays and apps, switch at next launch
 立即同步	Sync now
-立即检查更新	Check Now
 竖向电量条表示当前占用比例	A vertical meter shows current usage
 等待批准	Waiting for Approval
 等待选择	Waiting for your choice
@@ -893,7 +845,6 @@ npm 缓存	npm Cache
 繁忙	Busy
 纯净度 {} 分	Cleanliness score {}
 纯净度看信誉、来路、邻居与网络类型四项；机房 IP 常见信誉高、来路和类型偏低。数据来自 cleanip.io	Cleanliness weighs reputation, origin, neighbors and network type; data-center IPs often score high on reputation but low on origin and type. Data from cleanip.io
-纯净度评分来自 CleanIP.io。在「设置 · 网络」把归属地数据源改为 CleanIP.io 后显示。	Cleanliness scores come from CleanIP.io. Choose it as the location data source in Settings › Network to show them.
 线程	Threads
 线程 {}	Threads {}
 线程数（只能读取自己的进程）	Thread count (your processes only)
@@ -909,7 +860,6 @@ npm 缓存	npm Cache
 缓存与日志直接删除，下载内容移到废纸篓。	Caches and logs are deleted; downloads go to the Trash.
 缓存也先移到废纸篓	Move caches to Trash too
 编辑	Edit
-缺少 node_count / record_size / ip_version	Missing node_count / record_size / ip_version
 网络	Network
 网络名称	Network name
 网络已恢复	Network Restored
@@ -929,7 +879,6 @@ npm 缓存	npm Cache
 腾讯（119.29.29.29）	Tencent (119.29.29.29)
 自 {} 起	Since {}
 自动	Auto
-自动更新	Auto Update
 自动检查更新	Check Automatically
 自动（由路由器分配）	Automatic (from router)
 自定义	Custom
@@ -1029,7 +978,6 @@ npm 缓存	npm Cache
 退出应用…	Quit App…
 退出登录	Sign out
 适中	Moderate
-选择 GeoLite2 City / Country / ASN 的 .mmdb 文件	Choose a GeoLite2 City / Country / ASN .mmdb file
 通用	General
 通电时间	Power-on hours
 通电次数	Power cycles

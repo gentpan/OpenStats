@@ -1,7 +1,7 @@
 import Foundation
 import Localization
 
-/// 同步到云端的设置文档：只含偏好，不含本机状态（当前页签、辅助工具安装状态、历史库、归属地库）。
+/// 同步到云端的设置文档：只含偏好，不含本机状态（当前页签、辅助工具安装状态、历史库）。
 /// 枚举以原始值保存，字段全部可选：旧版本读到新字段会忽略，新版本读到旧文档不会解码失败；
 /// 应用时逐项校验，不认识的值跳过
 public struct SettingsDocument: Codable, Equatable, Sendable {
@@ -23,10 +23,7 @@ public struct SettingsDocument: Codable, Equatable, Sendable {
     public var probeInBackground: Bool?
     public var probeSeconds: Int?
     public var probeTarget: String?
-    public var geoSource: String?
     public var publicIPLookup: Bool?
-    public var geoIncludeCity: Bool?
-    public var geoAutoUpdate: Bool?
     public var enabledAlerts: [String]?
     public var alertCPUTemperature: Int?
     public var alertCPULoad: Int?
@@ -60,10 +57,7 @@ extension AppSettings {
         doc.probeInBackground = probeInBackground
         doc.probeSeconds = probeSeconds
         doc.probeTarget = probeTarget.rawValue
-        doc.geoSource = geoSource.rawValue
         doc.publicIPLookup = publicIPLookup
-        doc.geoIncludeCity = geoIncludeCity
-        doc.geoAutoUpdate = geoAutoUpdate
         doc.enabledAlerts = enabledAlerts.map(\.rawValue).sorted()
         doc.alertCPUTemperature = alertCPUTemperature
         doc.alertCPULoad = alertCPULoad
@@ -107,10 +101,7 @@ extension AppSettings {
         assign(\.probeInBackground, doc.probeInBackground)
         assign(\.probeSeconds, option(doc.probeSeconds, in: Self.probeOptions))
         assign(\.probeTarget, doc.probeTarget.flatMap(ProbeTarget.init(rawValue:)))
-        assign(\.geoSource, doc.geoSource.flatMap(GeoSource.init(rawValue:)))
         assign(\.publicIPLookup, doc.publicIPLookup)
-        assign(\.geoIncludeCity, doc.geoIncludeCity)
-        assign(\.geoAutoUpdate, doc.geoAutoUpdate)
         assign(\.enabledAlerts, doc.enabledAlerts.map { Set($0.compactMap(AlertKind.init(rawValue:))) })
         assign(\.alertCPUTemperature, option(doc.alertCPUTemperature, in: Self.alertTemperatureOptions))
         assign(\.alertCPULoad, option(doc.alertCPULoad, in: Self.alertLoadOptions))

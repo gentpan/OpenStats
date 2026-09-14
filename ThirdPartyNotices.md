@@ -1,13 +1,5 @@
 # 第三方声明
 
-## MaxMind GeoLite2
-
-IP 归属地与 ASN 查询使用 MaxMind 的 GeoLite2 数据库（不随源码分发，由官网服务器定期同步后供应用下载）。
-
-This product includes GeoLite2 data created by MaxMind, available from https://www.maxmind.com.
-
-`Packages/OpenStatsKit/Sources/Metrics/MaxMindDatabase.swift` 按 MaxMind DB 文件格式规范 2.0 自行实现，未使用第三方库。
-
 ## flag-icons
 
 `Assets/flags-svg/` 中的国旗 SVG（应用内为 `Scripts/render_flags.sh` 渲染的 PNG）来自

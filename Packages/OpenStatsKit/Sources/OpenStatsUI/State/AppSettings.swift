@@ -185,44 +185,6 @@ public enum ProbeTarget: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-/// 公网 IP 归属地的数据源
-public enum GeoSource: String, CaseIterable, Identifiable, Sendable {
-    case cleanIP, ipapi, dbip, ipinfo, localDatabase
-
-    public var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .cleanIP: "CleanIP.io"
-        case .ipapi: "ipapi.is"
-        case .dbip: "DB-IP"
-        case .ipinfo: "ipinfo.io"
-        case .localDatabase: tr("本地 GeoLite2 数据库")
-        }
-    }
-
-    var detail: String {
-        switch self {
-        case .cleanIP: tr("归属地、ASN、网络类型、原生 / 广播、纯净度与风险评分，中文地名；把公网 IP 发给 cleanip.io")
-        case .ipapi: tr("归属地与 ASN；把公网 IP 发给 ipapi.is，匿名额度每天 30 次，同一 IP 的结果记住一天")
-        case .dbip: tr("只有国家、省 / 州与城市；把公网 IP 发给 db-ip.com")
-        case .ipinfo: tr("归属地与 ASN；把公网 IP 发给 ipinfo.io，匿名额度很小，容易被限流")
-        case .localDatabase: tr("在本机的 MaxMind 数据库里查国家、城市与 ASN，不向任何服务发送 IP；数据库未就绪时暂用 CleanIP.io")
-        }
-    }
-
-    /// 对应的在线数据源；本地数据库没有
-    var provider: GeoProvider? {
-        switch self {
-        case .cleanIP: .cleanIP
-        case .ipapi: .ipapi
-        case .dbip: .dbip
-        case .ipinfo: .ipinfo
-        case .localDatabase: nil
-        }
-    }
-}
-
 /// 菜单栏风格：整体选一种套用到所有指标，个别指标可以单独指定（AppSettings.styleOverrides）；风格内部的排版保持一致
 public enum MenuBarStyle: String, CaseIterable, Identifiable, Sendable {
     case stacked, inline, icon, ring, pie, history, line, meter, dot
@@ -479,21 +441,9 @@ public final class AppSettings {
     public var probeTarget: ProbeTarget {
         didSet { defaults.set(probeTarget.rawValue, forKey: Keys.probeTarget) }
     }
-    /// 公网 IP 归属地的数据源
-    public var geoSource: GeoSource {
-        didSet { defaults.set(geoSource.rawValue, forKey: Keys.geoSource) }
-    }
-    /// 打开网络详情时查询公网 IP（会访问 Cloudflare / ipify）
+    /// 打开网络详情时查询公网 IP（会访问 Cloudflare / ipify），归属地与纯净度由 cleanip.io 提供
     public var publicIPLookup: Bool {
         didSet { defaults.set(publicIPLookup, forKey: Keys.publicIPLookup) }
-    }
-    /// 本地归属地库包含城市数据（GeoLite2-City，体积约为国家库的 7 倍）
-    public var geoIncludeCity: Bool {
-        didSet { defaults.set(geoIncludeCity, forKey: Keys.geoIncludeCity) }
-    }
-    /// 定期从官网检查归属地数据库更新
-    public var geoAutoUpdate: Bool {
-        didSet { defaults.set(geoAutoUpdate, forKey: Keys.geoAutoUpdate) }
     }
     /// 打开了系统通知的状况
     public var enabledAlerts: Set<AlertKind> {
@@ -579,10 +529,7 @@ public final class AppSettings {
         probeSeconds = Self.probeOptions.contains(defaults.integer(forKey: Keys.probeSeconds))
             ? defaults.integer(forKey: Keys.probeSeconds) : 2
         probeTarget = defaults.string(forKey: Keys.probeTarget).flatMap(ProbeTarget.init(rawValue:)) ?? .cloudflare
-        geoSource = defaults.string(forKey: Keys.geoSource).flatMap(GeoSource.init(rawValue:)) ?? .cleanIP
         publicIPLookup = defaults.object(forKey: Keys.publicIPLookup) as? Bool ?? true
-        geoIncludeCity = defaults.bool(forKey: Keys.geoIncludeCity)
-        geoAutoUpdate = defaults.object(forKey: Keys.geoAutoUpdate) as? Bool ?? true
         autoCheckUpdates = defaults.object(forKey: Keys.autoCheckUpdates) as? Bool ?? true
         historyEnabled = defaults.object(forKey: Keys.historyEnabled) as? Bool ?? true
         language = defaults.string(forKey: Keys.language).flatMap(AppLanguage.init(rawValue:)) ?? .system
@@ -645,10 +592,7 @@ public final class AppSettings {
         static let probeSeconds = "probeSeconds"
         static let probeInBackground = "probeInBackground"
         static let probeTarget = "probeTarget"
-        static let geoSource = "geoSource"
         static let publicIPLookup = "publicIPLookup"
-        static let geoIncludeCity = "geoIncludeCity"
-        static let geoAutoUpdate = "geoAutoUpdate"
         static let autoCheckUpdates = "autoCheckUpdates"
         static let historyEnabled = "historyEnabled"
         static let hotKeys = "hotKeys"

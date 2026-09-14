@@ -54,7 +54,6 @@ public final class AppController: NSObject, NSApplicationDelegate {
         applyAppearance()
         updateNetworkVisibility()
         appliedLanguage = model.settings.language
-        Task { await model.geo.updateIfNeeded() }
         startUpdateChecks()
         model.alerts.openTab = { [weak self] tab in
             self?.menuBar.dismissPopovers()
@@ -213,7 +212,6 @@ public final class AppController: NSObject, NSApplicationDelegate {
             _ = model.settings.probeTarget
             _ = model.settings.probeSeconds
             _ = model.settings.publicIPLookup
-            _ = model.settings.geoSource
         } onChange: { [weak self] in
             Task { @MainActor in
                 guard let self else { return }

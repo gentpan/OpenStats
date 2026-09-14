@@ -1,48 +1,6 @@
 import Foundation
 
-/// 在线归属地数据源。都由每台 Mac 直接查询自己的公网 IP，不经过我们的服务器
-public enum GeoProvider: String, CaseIterable, Sendable, Codable {
-    /// cleanip.io：归属地、ASN、网络类型、原生 / 广播、纯净度与风险评分，中文地名
-    case cleanIP
-    /// ipapi.is 匿名接口：归属地与 ASN，按客户端 IP 每天 30 次
-    case ipapi
-    /// DB-IP 免费接口：只有国家、省 / 州与城市
-    case dbip
-    /// ipinfo.io 匿名接口：归属地与 ASN，匿名额度很小
-    case ipinfo
-
-    public var displayName: String {
-        switch self {
-        case .cleanIP: "CleanIP.io"
-        case .ipapi: "ipapi.is"
-        case .dbip: "DB-IP"
-        case .ipinfo: "ipinfo.io"
-        }
-    }
-
-    /// 同一个 IP 的结果保留多久
-    var cacheLifetime: TimeInterval {
-        self == .cleanIP ? 60 * 60 : 24 * 60 * 60
-    }
-
-    func url(for ip: String) -> URL? {
-        var components: URLComponents?
-        switch self {
-        case .cleanIP:
-            components = URLComponents(string: "https://cleanip.io/cli")
-            components?.queryItems = [URLQueryItem(name: "ip", value: ip), URLQueryItem(name: "json", value: "1")]
-        case .ipapi:
-            components = URLComponents(string: "https://api.ipapi.is/")
-            components?.queryItems = [URLQueryItem(name: "q", value: ip)]
-        case .dbip:
-            components = URLComponents(string: "https://api.db-ip.com/v2/free/\(ip)")
-        case .ipinfo:
-            components = URLComponents(string: "https://ipinfo.io/\(ip)/json")
-        }
-        return components?.url
-    }
-}
-
+/// 公网地址与 cleanip.io 给出的归属地、网络类型与纯净度
 public struct PublicAddresses: Sendable, Equatable, Codable {
     public var ipv4: String?
     public var ipv6: String?
@@ -51,14 +9,13 @@ public struct PublicAddresses: Sendable, Equatable, Codable {
     public var city: String?
     /// 省 / 州，例如 “New York”
     public var region: String?
-    /// 数据源给的是中文地名时，这里是英文，供英文界面使用
+    /// cleanip.io 给的是中文地名，这里是英文，供英文界面使用
     public var cityEnglish: String?
     public var regionEnglish: String?
     /// 自治系统号，例如 “AS4134”
     public var asn: String?
     /// 网络所属组织（英文），例如 “CHINANET-BACKBONE”
     public var organization: String?
-    /// 以下只有 CleanIP.io 提供
     public var hostname: String?
     /// 网络类型：Residential / Business / Hosting / Mobile …
     public var networkType: String?
@@ -74,7 +31,6 @@ public struct PublicAddresses: Sendable, Equatable, Codable {
     public var purity: Purity?
     public var risk: Risk?
     public var reportURL: URL?
-    public var source: Source = .online(.cleanIP)
 
     public struct Purity: Sendable, Equatable, Codable {
         public var score: Int
@@ -101,12 +57,6 @@ public struct PublicAddresses: Sendable, Equatable, Codable {
         }
     }
 
-    public enum Source: Sendable, Equatable, Codable {
-        /// 本机的 MaxMind GeoLite2 数据库
-        case localDatabase
-        case online(GeoProvider)
-    }
-
     public init(ipv4: String? = nil, ipv6: String? = nil, countryCode: String? = nil,
                 city: String? = nil, region: String? = nil, asn: String? = nil, organization: String? = nil) {
         self.ipv4 = ipv4
@@ -118,7 +68,7 @@ public struct PublicAddresses: Sendable, Equatable, Codable {
         self.organization = organization
     }
 
-    /// 把在线查到的归属地信息并进来；国家代码以 Cloudflare 给的为准，没有时才用数据源的
+    /// 把 cleanip.io 查到的信息并进来；国家代码以 Cloudflare 给的为准，没有时才用 cleanip.io 的
     public mutating func apply(_ geo: PublicAddressLookup.GeoInfo) {
         city = geo.city
         region = geo.region
@@ -142,8 +92,8 @@ public struct PublicAddresses: Sendable, Equatable, Codable {
 
 /// 查询公网 IP 与归属地。只在用户打开网络详情时请求，不携带任何本机信息。
 /// 公网地址来自 Cloudflare trace（直连 IP，不依赖 DNS，同时给出国家代码），回退 ipify；
-/// 归属地等信息按用户选择的数据源在线查询，由每台 Mac 自己直接查。这些接口按客户端 IP 限额，
-/// 所以同一个公网 IP 的结果会记住一段时间，收到 429 后到当天（UTC）结束都不再请求
+/// 归属地、ASN、网络类型与纯净度由每台 Mac 自己直接向 cleanip.io 查，不经过我们的服务器。
+/// 接口按客户端 IP 限额，所以同一个公网 IP 的结果会记住一小时，收到 429 后到当天（UTC）结束都不再请求
 public enum PublicAddressLookup {
     private static let session: URLSession = {
         let configuration = URLSessionConfiguration.ephemeral
@@ -158,24 +108,23 @@ public enum PublicAddressLookup {
 
     private static let geoCache = GeoCache()
 
-    /// `includeGeo` 为假时只查询公网 IP，不请求任何归属地服务
-    public static func fetch(includeGeo: Bool = true, provider: GeoProvider = .cleanIP) async -> PublicAddresses {
+    /// `includeGeo` 为假时只查询公网 IP，不请求 cleanip.io
+    public static func fetch(includeGeo: Bool = true) async -> PublicAddresses {
         async let v4 = lookup(trace: "https://1.1.1.1/cdn-cgi/trace", fallback: "https://api.ipify.org")
         async let v6 = lookup(trace: "https://[2606:4700:4700::1111]/cdn-cgi/trace", fallback: "https://api6.ipify.org")
         let (ipv4, ipv6) = await (v4, v6)
         var result = PublicAddresses(ipv4: ipv4.ip, ipv6: ipv6.ip, countryCode: ipv4.country ?? ipv6.country)
-        result.source = .online(provider)
-        guard includeGeo, let ip = result.ipv4 ?? result.ipv6, let geo = await geoCache.lookup(ip, provider: provider) else { return result }
+        guard includeGeo, let ip = result.ipv4 ?? result.ipv6, let geo = await geoCache.lookup(ip) else { return result }
         result.apply(geo)
         return result
     }
 
     /// 只查一个已知地址的归属地，公网 IP 没变时用它补全，不必重新取地址
-    public static func geo(for ip: String, provider: GeoProvider) async -> GeoInfo? {
-        await geoCache.lookup(ip, provider: provider)
+    public static func geo(for ip: String) async -> GeoInfo? {
+        await geoCache.lookup(ip)
     }
 
-    // MARK: 归属地
+    // MARK: cleanip.io
 
     public struct GeoInfo: Sendable, Equatable {
         public var countryCode: String?
@@ -197,16 +146,11 @@ public enum PublicAddressLookup {
         public var reportURL: URL?
     }
 
-    static func parse(_ data: Data, provider: GeoProvider) -> GeoInfo? {
-        switch provider {
-        case .cleanIP: parseCleanIP(data)
-        case .ipapi: parseGeo(data)
-        case .dbip: parseDBIP(data)
-        case .ipinfo: parseIpinfo(data)
-        }
+    static func cleanIPURL(for ip: String) -> URL? {
+        var components = URLComponents(string: "https://cleanip.io/cli")
+        components?.queryItems = [URLQueryItem(name: "ip", value: ip), URLQueryItem(name: "json", value: "1")]
+        return components?.url
     }
-
-    // MARK: CleanIP.io
 
     struct CleanIPResponse: Decodable {
         struct Geo: Decodable {
@@ -304,121 +248,24 @@ public enum PublicAddressLookup {
         return info
     }
 
-    // MARK: ipapi.is
-
-    /// ipapi.is 匿名接口的响应：`asn` 形如 “AS7018 AT&T Enterprises, LLC”，`country` 是英文全名，`company` 是地址持有方
-    struct GeoResponse: Decodable {
-        let ip: String?
-        let company: String?
-        let asn: String?
-        let city: String?
-        let region: String?
-        let country: String?
-    }
-
-    static func parseGeo(_ data: Data) -> GeoInfo? {
-        guard let response = try? JSONDecoder().decode(GeoResponse.self, from: data) else { return nil }
-        var info = GeoInfo()
-        info.countryCode = response.country.flatMap(nonEmpty).flatMap(countryCode(fromName:))
-        info.city = response.city.flatMap(nonEmpty)
-        info.region = response.region.flatMap(nonEmpty)
-        let (asn, asnOrganization) = splitASN(response.asn)
-        info.asn = asn
-        // 地址持有方通常比自治系统的注册名更能说明“是谁的网络”
-        info.organization = response.company.flatMap(nonEmpty) ?? asnOrganization
-        return info
-    }
-
-    // MARK: DB-IP
-
-    struct DBIPResponse: Decodable {
-        let countryCode: String?
-        let stateProv: String?
-        let city: String?
-    }
-
-    static func parseDBIP(_ data: Data) -> GeoInfo? {
-        guard let response = try? JSONDecoder().decode(DBIPResponse.self, from: data) else { return nil }
-        var info = GeoInfo()
-        info.countryCode = response.countryCode.flatMap(validCountryCode)
-        info.region = response.stateProv.flatMap(nonEmpty)
-        info.city = response.city.flatMap(nonEmpty)
-        return info
-    }
-
-    // MARK: ipinfo.io
-
-    struct IpinfoResponse: Decodable {
-        let country: String?
-        let region: String?
-        let city: String?
-        let org: String?
-    }
-
-    static func parseIpinfo(_ data: Data) -> GeoInfo? {
-        guard let response = try? JSONDecoder().decode(IpinfoResponse.self, from: data) else { return nil }
-        var info = GeoInfo()
-        info.countryCode = response.country.flatMap(validCountryCode)
-        info.region = response.region.flatMap(nonEmpty)
-        info.city = response.city.flatMap(nonEmpty)
-        let (asn, organization) = splitASN(response.org)
-        info.asn = asn
-        info.organization = organization
-        return info
-    }
-
-    /// “AS7018 AT&T Enterprises, LLC” → (“AS7018”, “AT&T Enterprises, LLC”)；没有 AS 前缀时整段当组织名
-    static func splitASN(_ text: String?) -> (String?, String?) {
-        guard let text = text.flatMap(nonEmpty) else { return (nil, nil) }
-        let parts = text.split(separator: " ", maxSplits: 1).map(String.init)
-        if let first = parts.first, first.hasPrefix("AS"), Int(first.dropFirst(2)) != nil {
-            return (first, parts.count > 1 ? parts[1] : nil)
-        }
-        return (nil, text)
-    }
-
-    /// 英文国家名转两位代码：先查几个系统名称对不上的别名，再按系统的英文区域名反查
-    static func countryCode(fromName name: String) -> String? {
-        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let alias = countryAliases[trimmed.lowercased()] { return alias }
-        let english = Locale(identifier: "en_US")
-        for region in Locale.Region.isoRegions where region.identifier.count == 2 {
-            if english.localizedString(forRegionCode: region.identifier)?.caseInsensitiveCompare(trimmed) == .orderedSame {
-                return validCountryCode(region.identifier)
-            }
-        }
-        return nil
-    }
-
-    private static let countryAliases: [String: String] = [
-        "china": "CN", "china mainland": "CN", "united states": "US", "usa": "US", "united kingdom": "GB", "uk": "GB",
-        "russia": "RU", "south korea": "KR", "north korea": "KP", "hong kong": "HK", "macau": "MO", "macao": "MO",
-        "taiwan": "TW", "vietnam": "VN", "viet nam": "VN", "turkey": "TR", "türkiye": "TR", "czech republic": "CZ",
-        "czechia": "CZ", "iran": "IR", "syria": "SY", "laos": "LA", "brunei": "BN", "bolivia": "BO", "venezuela": "VE",
-        "tanzania": "TZ", "moldova": "MD", "palestine": "PS", "the netherlands": "NL", "netherlands": "NL",
-        "ivory coast": "CI", "cape verde": "CV", "swaziland": "SZ", "myanmar": "MM", "burma": "MM", "congo": "CG",
-        "dr congo": "CD", "democratic republic of the congo": "CD", "micronesia": "FM", "vatican": "VA", "reunion": "RE",
-        "curacao": "CW", "saint martin": "MF", "sint maarten": "SX",
-    ]
-
-    /// 按数据源与 IP 缓存；收到 429 后该数据源到当天（UTC）结束都不再请求
+    /// 按 IP 缓存一小时；收到 429 后到当天（UTC）结束都不再请求
     actor GeoCache {
+        private static let lifetime: TimeInterval = 60 * 60
         private var entries: [String: (info: GeoInfo?, date: Date)] = [:]
-        private var blockedUntil: [GeoProvider: Date] = [:]
+        private var blockedUntil: Date?
 
-        func lookup(_ ip: String, provider: GeoProvider) async -> GeoInfo? {
-            let key = "\(provider.rawValue)|\(ip)"
-            if let entry = entries[key], Date().timeIntervalSince(entry.date) < provider.cacheLifetime { return entry.info }
-            if let until = blockedUntil[provider], Date() < until { return nil }
-            guard let url = provider.url(for: ip) else { return nil }
+        func lookup(_ ip: String) async -> GeoInfo? {
+            if let entry = entries[ip], Date().timeIntervalSince(entry.date) < Self.lifetime { return entry.info }
+            if let blockedUntil, Date() < blockedUntil { return nil }
+            guard let url = PublicAddressLookup.cleanIPURL(for: ip) else { return nil }
             let (data, status) = await PublicAddressLookup.getWithStatus(url)
             if status == 429 {
-                blockedUntil[provider] = Self.nextUTCMidnight()
+                blockedUntil = Self.nextUTCMidnight()
                 return nil
             }
             guard status == 200, let data else { return nil }
-            let info = PublicAddressLookup.parse(data, provider: provider)
-            entries[key] = (info, Date())
+            let info = PublicAddressLookup.parseCleanIP(data)
+            entries[ip] = (info, Date())
             return info
         }
 

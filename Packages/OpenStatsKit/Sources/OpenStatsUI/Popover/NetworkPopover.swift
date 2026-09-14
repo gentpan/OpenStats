@@ -209,12 +209,7 @@ private struct AddressSection: View {
         let publicAddresses = network.publicAddresses
 
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
-            // 标题、数据来源字标、IPv4 / IPv6 切换、刷新排在一行；320 宽放不下时字标依次缩小，卡片不会被撑宽
-            ViewThatFits(in: .horizontal) {
-                header(publicAddresses, logoHeight: DS.TextSize.sm.rawValue)
-                header(publicAddresses, logoHeight: DS.TextSize.xs.rawValue)
-                header(publicAddresses, logoHeight: DS.TextSize.xs.rawValue - DS.Space.s1 / 2)
-            }
+            header
             InfoRow(label: tr("本地 IPv4")) { CopyableText(text: physical?.ipv4.first ?? "—") }
             InfoRow(label: tr("本地 IPv6")) { CopyableText(text: physical?.ipv6.first ?? "—") }
             InfoRow(label: tr("路由器")) { CopyableText(text: physical?.router ?? "—") }
@@ -271,8 +266,8 @@ private struct AddressSection: View {
         return parts.joined(separator: " · ")
     }
 
-    /// 标题行：IP 地址 · 数据来源 ……… [IPv4 | IPv6] ⟳
-    private func header(_ addresses: PublicAddresses?, logoHeight: CGFloat) -> some View {
+    /// 标题行：IP 地址 ……… [IPv4 | IPv6] ⟳；数据来源的字标只放在下面的纯净度区块里
+    private var header: some View {
         let network = model.network
         return HStack(spacing: DS.Space.s2) {
             Text(PopoverSection.networkAddresses.title)
@@ -280,9 +275,6 @@ private struct AddressSection: View {
                 .foregroundStyle(DS.Palette.textSecondary)
                 .lineLimit(1)
                 .fixedSize()
-            if let source = sourceAccessory(addresses, logoHeight: logoHeight) {
-                source
-            }
             Spacer(minLength: 0)
             if model.settings.publicIPLookup {
                 HStack(spacing: DS.Space.s1) {
@@ -295,19 +287,6 @@ private struct AddressSection: View {
                     }
                 }
             }
-        }
-    }
-
-    /// 标题后的数据来源：CleanIP.io 用它的字标（默认与标题文字同高，点了打开官网），其他来源写名字
-    private func sourceAccessory(_ addresses: PublicAddresses?, logoHeight: CGFloat) -> AnyView? {
-        guard let addresses, addresses.countryCode != nil || addresses.asn != nil else { return nil }
-        switch addresses.source {
-        case .online(.cleanIP):
-            return AnyView(CleanIPLink(height: logoHeight, help: tr("数据来源：cleanip.io，点击打开官网")))
-        case .online(let provider):
-            return AnyView(Text(verbatim: provider.displayName).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary).fixedSize())
-        case .localDatabase:
-            return AnyView(Text("GeoLite2").dsFont(.xs).foregroundStyle(DS.Palette.textTertiary).fixedSize())
         }
     }
 
@@ -347,13 +326,6 @@ private struct AddressSection: View {
         return badges
     }
 
-    static func sourceLabel(_ source: PublicAddresses.Source) -> String {
-        switch source {
-        case .localDatabase: tr("本地 GeoLite2（MaxMind）")
-        case .online(let provider): tr("\(provider.displayName) 在线查询")
-        }
-    }
-
     static func networkTypeLabel(_ raw: String) -> String {
         switch raw.lowercased() {
         case "residential", "isp": tr("住宅宽带")
@@ -379,7 +351,7 @@ private struct AddressSection: View {
 
 // MARK: - IP 纯净度
 
-/// CleanIP.io 给出的纯净度评分与风险标记；其他数据源没有这一项
+/// cleanip.io 给出的纯净度评分与风险标记
 private struct PuritySection: View {
     @Environment(AppModel.self) private var model
 
@@ -436,9 +408,6 @@ private struct PuritySection: View {
                 }
             } else if !settings.publicIPLookup {
                 Text(tr("查询已关闭")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
-            } else if settings.geoSource != .cleanIP {
-                Text(tr("纯净度评分来自 CleanIP.io。在「设置 · 网络」把归属地数据源改为 CleanIP.io 后显示。"))
-                    .dsFont(.xs).foregroundStyle(DS.Palette.textSecondary).fixedSize(horizontal: false, vertical: true)
             } else if network.isLookingUpPublic {
                 Text(tr("正在查询…")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
             } else {
@@ -527,27 +496,50 @@ private struct DNSSection: View {
             InfoRow(label: tr("正在使用")) {
                 Text(verbatim: network.details.map { $0.dnsServers.isEmpty ? "—" : $0.dnsServers.joined(separator: "\n") } ?? "—")
             }
-            InfoRow(label: tr("配置方式"), text: manual.isEmpty ? tr("自动（由路由器分配）") : matched?.title ?? tr("手动"))
+            // 配置方式直接是一个下拉菜单：选预设立即切换，选“手动”展开输入框；比六个并排的按钮省两行
+            if let physical {
+                let isCustom = !manual.isEmpty && matched == nil
+                HStack(spacing: DS.Space.s2) {
+                    Text(tr("配置方式")).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
+                    Spacer(minLength: DS.Space.s2)
+                    if isCustom, !editingManual {
+                        MiniIconButton(systemName: "pencil", help: tr("修改地址")) {
+                            manualText = manual.joined(separator: ", ")
+                            editingManual = true
+                        }
+                    }
+                    Picker(tr("配置方式"), selection: Binding<DNSPreset?>(
+                        get: { editingManual ? nil : manual.isEmpty ? .automatic : matched },
+                        set: { choice in
+                            if let choice {
+                                editingManual = false
+                                apply(choice.servers, service: physical.serviceName)
+                            } else {
+                                manualText = manual.joined(separator: ", ")
+                                editingManual = true
+                            }
+                        })) {
+                        ForEach(DNSPreset.allCases) { preset in
+                            Text(preset.title).tag(DNSPreset?.some(preset))
+                        }
+                        Divider()
+                        Text(tr("手动")).tag(DNSPreset?.none)
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .controlSize(.small)
+                    .fixedSize()
+                    .disabled(maintenance.isApplyingDNS)
+                }
+            } else {
+                InfoRow(label: tr("配置方式"), text: manual.isEmpty ? tr("自动（由路由器分配）") : matched?.title ?? tr("手动"))
+            }
 
             if let tunnel = network.details?.tunnel {
                 InfoBanner(icon: "info.circle", text: tr("流量经过 \(tunnel.name)，系统 DNS 可能由它接管，修改后不一定生效。"), tone: .neutral)
             }
 
             if let physical {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: DS.Space.s1), count: 3), spacing: DS.Space.s1) {
-                    ForEach(DNSPreset.allCases) { preset in
-                        ChipButton(title: preset.title, isSelected: !editingManual && matched == preset) {
-                            editingManual = false
-                            apply(preset.servers, service: physical.serviceName)
-                        }
-                    }
-                    ChipButton(title: tr("手动"), isSelected: editingManual || (!manual.isEmpty && matched == nil)) {
-                        manualText = manual.joined(separator: ", ")
-                        editingManual.toggle()
-                    }
-                }
-                .disabled(maintenance.isApplyingDNS)
-
                 if editingManual {
                     HStack(spacing: DS.Space.s2) {
                         TextField(tr("例如 1.1.1.1, 8.8.8.8"), text: $manualText)

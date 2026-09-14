@@ -53,16 +53,14 @@ public final class NetworkController {
     /// 详情关闭、只在菜单栏显示网速时的低频探测间隔
     static let backgroundProbeSeconds = 10
 
-    @ObservationIgnored private let geo: GeoDatabaseController
-
     /// 上次查到的公网 IP 信息：点开弹窗时先显示它，只有超过 7 天或公网 IP 变了才重新查归属地
     private struct PublicCache: Codable {
         var results: [String: PublicAddresses]
         var geoDates: [String: Date]
-        var source: String
     }
     static let geoCacheLifetime: TimeInterval = 7 * 24 * 60 * 60
-    private static let cacheKey = "publicAddressCache3"
+    /// 第 4 版起只有 cleanip.io 一个数据源，旧版本缓存里可能是别的数据源的结果，不再读取
+    private static let cacheKey = "publicAddressCache4"
 
     /// 用户按过“重置统计”后的累计流量基线：界面显示 当前累计 − 基线。
     /// 随开机时间一起保存，重启后系统计数器归零、基线作废，自动回到开机后累计
@@ -80,12 +78,10 @@ public final class NetworkController {
         return sysctlbyname("kern.boottime", &boot, &size, nil, 0) == 0 ? TimeInterval(boot.tv_sec) : nil
     }()
 
-    init(settings: AppSettings, geo: GeoDatabaseController) {
+    init(settings: AppSettings) {
         self.settings = settings
-        self.geo = geo
         if let data = UserDefaults.standard.data(forKey: Self.cacheKey),
-           let cache = try? JSONDecoder().decode(PublicCache.self, from: data),
-           cache.source == settings.geoSource.rawValue, settings.publicIPLookup {
+           let cache = try? JSONDecoder().decode(PublicCache.self, from: data), settings.publicIPLookup {
             publicResults = Dictionary(uniqueKeysWithValues: cache.results.compactMap { key, value in IPFamily(rawValue: key).map { ($0, value) } })
         }
         if let data = UserDefaults.standard.data(forKey: Self.trafficBaselineKey),
@@ -219,24 +215,21 @@ public final class NetworkController {
 
     // MARK: 公网 IP
 
-    /// 先只取公网地址（Cloudflare，便宜且不限额），再按地址族各查一次归属地：地址没变、结果不满 7 天、
-    /// 数据源没换的那一族沿用缓存，否则重新查并写回缓存。`force` 为真时（用户点了刷新）两族都重查
+    /// 先只取公网地址（Cloudflare，便宜且不限额），再按地址族各向 cleanip.io 查一次：地址没变、结果不满 7 天
+    /// 的那一族沿用缓存，否则重新查并写回缓存。`force` 为真时（用户点了刷新）两族都重查
     func lookUpPublicAddresses(force: Bool = false) {
         guard settings.publicIPLookup, !isLookingUpPublic else { return }
         // 有缓存可显示时不转圈，后台悄悄核对
         isLookingUpPublic = publicResults.isEmpty || force
         let localIPv4 = details?.physical?.ipv4 ?? []
         Task {
-            let source = settings.geoSource
-            let provider = source.provider ?? .cleanIP
-            let useLocal = source == .localDatabase && geo.isAvailable
-            let base = await PublicAddressLookup.fetch(includeGeo: false, provider: provider)
+            let base = await PublicAddressLookup.fetch(includeGeo: false)
             let cached = Self.loadCache()
             let now = Date()
 
             @MainActor func resolve(_ family: IPFamily, ip: String?) async -> PublicAddresses? {
                 guard let ip else { return nil }
-                if !force, let cached, cached.source == source.rawValue,
+                if !force, let cached,
                    let old = cached.results[family.rawValue], (family == .v4 ? old.ipv4 : old.ipv6) == ip,
                    let date = cached.geoDates[family.rawValue], now.timeIntervalSince(date) < Self.geoCacheLifetime {
                     var kept = old
@@ -245,16 +238,8 @@ public final class NetworkController {
                     return kept
                 }
                 var result = base
-                if !useLocal, let info = await PublicAddressLookup.geo(for: ip, provider: provider) {
+                if let info = await PublicAddressLookup.geo(for: ip) {
                     result.apply(info)
-                }
-                // 选了本地 GeoLite2，或在线查不到时，退回本地数据库
-                if useLocal || (result.asn == nil && result.city == nil && geo.isAvailable), let location = geo.locate(ip) {
-                    result.countryCode = location.countryCode ?? result.countryCode
-                    result.city = location.city
-                    result.asn = location.asn
-                    result.organization = location.organization
-                    result.source = .localDatabase
                 }
                 guard result.asn != nil || result.city != nil || result.purity != nil else {
                     // 这次没查到，地址又没变，先继续用旧的
@@ -270,14 +255,14 @@ public final class NetworkController {
             if let v4 = await v4 { results[.v4] = v4 }
             if let v6 = await v6 { results[.v6] = v6 }
 
-            var dates = cached?.source == source.rawValue ? cached?.geoDates ?? [:] : [:]
+            var dates = cached?.geoDates ?? [:]
             for (family, result) in results {
                 let previous = cached?.results[family.rawValue]
                 let sameAsCached = previous?.asn == result.asn && previous?.purity == result.purity && previous?.city == result.city
                 if force || !sameAsCached || dates[family.rawValue] == nil { dates[family.rawValue] = now }
             }
             Self.saveCache(PublicCache(results: Dictionary(uniqueKeysWithValues: results.map { ($0.key.rawValue, $0.value) }),
-                                       geoDates: dates, source: source.rawValue))
+                                       geoDates: dates))
             publicResults = results
             if publicResults[publicFamily] == nil, let only = publicResults.keys.first { publicFamily = only }
             lastPublicLookup = (Date(), localIPv4)

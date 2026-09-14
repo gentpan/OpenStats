@@ -103,8 +103,6 @@ final class DiagnosticsExporter {
         row(tr("合盖运行"), model.keepAwake.lidClosedActive ? tr("开启") : tr("关闭"))
         row(tr("登录时启动"), model.launchAtLoginEnabled ? tr("开启") : tr("关闭"))
         row(tr("在线升级"), tr("上次检查 \(model.updates.lastChecked.map { ISO8601DateFormatter().string(from: $0) } ?? tr("从未"))，最新 \(model.updates.release?.version ?? tr("当前版本"))"))
-        let geo = model.geo.installed.values.sorted { $0.edition < $1.edition }.map { "\($0.edition) \($0.build)" }
-        row(tr("归属地数据库"), geo.isEmpty ? tr("未安装") : geo.joined(separator: tr("，")))
 
         section(tr("设置"))
         row(tr("菜单栏项目"), settings.orderedMenuBarItems.map(\.rawValue).joined(separator: ", "))

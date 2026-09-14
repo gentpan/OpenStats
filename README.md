@@ -47,10 +47,10 @@ Developed and tested on Apple Silicon. The interface is in Simplified Chinese.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.2.0** (2026-09-13) · **50** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.2.0** (2026-09-13) · **52** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-09-15</b> · Unreleased · 3 added · 2 added · 11 changed · 4 fixed · 1 added</summary>
+<summary><b>2026-09-15</b> · Unreleased · 3 added · 2 added · 13 changed · 4 fixed · 1 added</summary>
 
 **Added**
 
@@ -65,6 +65,8 @@ Latest release **0.2.0** (2026-09-13) · **50** changes in development · [full 
 
 **Changed**
 
+- 公网 IP 的归属地只用 cleanip.io：去掉「设置 · 网络」里的归属地数据源选择，ipapi.is、DB-IP、ipinfo.io 三个在线数据源与本地 MaxMind GeoLite2 数据库（含下载、导入、自动更新的整个“IP 归属地数据库”设置区块）一并移除；归属地、ASN、网络类型与纯净度都由这台 Mac 直接向 cleanip.io 查询，只发送公网地址。以前缓存的其他数据源结果不再读取，打开网络详情时会重新查一次。
+- 网络详情的 IP 地址区块标题不再放 cleanip.io 字标，字标只留在 IP 纯净度区块里；纯净度色带改为直角，去掉两端的圆角。
 - 「设置 · 菜单栏」每个显示项目下面多了一行“菜单栏风格”：给这一项单独选一种风格（默认跟随整体，菜单里标出整体现在是哪种），旁边是这一项按当前风格、实时读数画出的预览，改了立刻能看到。以前这个选择藏在开关旁一个没有说明的下拉里，不容易发现。温度、风扇只提供文字类的三种风格；原“风格”分组改名“整体风格”并加了说明。
 - 菜单栏弹窗右上角的两个按钮：左边改为该指标自己的图标（网络是网络图标、磁盘是硬盘），点了直接进主窗口里这个指标的页面；右边的齿轮进总设置。
 - 网络详情的 IP 地址区块精简：原生 / 广播、住宅 / 机房、运营商类型（ISP 等）改为 cleanip.io 样式的徽章，去掉反向解析、网络类型、住宅概率、数据来源四行；数据来源改为标题后的小标记，CleanIP.io 显示它的字标：与标题文字同高、不留上下空白，点了打开 cleanip.io。徽章样式作为通用组件收进设计系统。
@@ -242,9 +244,9 @@ OpenStats only touches the network for two optional features, both of which can 
 Settings → Network:
 
 - **Public IP**: when you open network details, one request to Cloudflare `1.1.1.1` (ipify as fallback)
-  for your public address, cached for 10 minutes. Region and ASN are looked up on the Mac in a MaxMind
-  GeoLite2 database downloaded from `getopenstats.com` and verified by sha256; until it is downloaded,
-  `ipapi.is` answers instead (anonymous, queried directly from each Mac, cached per IP for a day).
+  for your public address, cached for 10 minutes. Location, ASN, network type and the cleanliness score
+  come from `cleanip.io`, queried directly from each Mac with nothing but the public address and never
+  through our servers; a result is kept for a week unless the address changes or you refresh.
 - **Connection probe**: an ICMP ping to the target you pick (Cloudflare, Google, Alibaba Cloud,
   Tencent or your router) every 1, 2 or 5 seconds, only while the network item is in the menu bar
   or network details are open.

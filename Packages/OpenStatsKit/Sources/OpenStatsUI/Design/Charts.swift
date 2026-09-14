@@ -537,7 +537,6 @@ struct ScoreBand: View {
                         }
                     }
                     .frame(height: height)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
                     ZStack(alignment: .topLeading) {
                         // A 与 A+ 的分界太密，刻度上不标 95；弹窗那么窄时 85 也挤不下
                         ForEach([0] + bands.map(\.upper).filter { $0 != 95 && ($0 != 85 || width >= DS.Size.panelWidth / 2) }, id: \.self) { tick in

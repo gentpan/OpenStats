@@ -172,24 +172,6 @@ struct LiveSamplerTests {
 }
 
 @Suite struct GeoParsingTests {
-    @Test func parsesIpapiResponse() throws {
-        let json = #"{"ip":"32.5.140.2","is_bogon":false,"company":"AT&T Global Network Services, LLC","asn":"AS7018 AT&T Enterprises, LLC","city":"New York City","region":"New York","country":"United States","lat":40.7,"lon":-74.0,"timezone":"America/New_York"}"#
-        let info = try #require(PublicAddressLookup.parseGeo(Data(json.utf8)))
-        #expect(info.countryCode == "US")
-        #expect(info.city == "New York City")
-        #expect(info.region == "New York")
-        #expect(info.asn == "AS7018")
-        #expect(info.organization == "AT&T Global Network Services, LLC")
-    }
-
-    @Test func fallsBackToASNOrganizationAndRejectsBadCountry() throws {
-        let json = #"{"ip":"2606:4700:4700::1111","asn":"Cloudflare","country":"../../etc"}"#
-        let info = try #require(PublicAddressLookup.parseGeo(Data(json.utf8)))
-        #expect(info.countryCode == nil)
-        #expect(info.asn == nil)
-        #expect(info.organization == "Cloudflare")
-    }
-
     @Test func parsesCleanIPResponse() throws {
         let json = #"{"ok":true,"ip":"32.5.140.2","hostname":"host.example.net","geo":{"country":"美国","country_code":"US","country_en":"United States","region":"佛罗里达州","city":"玛丽湖"},"geo_sources":[{"source":"maxmind","country_code":"US"},{"source":"ipinfo","region":"Florida","city":"Lake Mary"}],"network":{"asn":7018,"asn_name":"AT&T Enterprises, LLC","isp":"AT&T Enterprises, LLC","network_type":"Residential","connection_type":"Cable/DSL","native_or_broadcast":"NATIVE"},"risk":{"risk_score":2,"risk_label":"Very Clean","is_vpn":false,"is_proxy":false,"is_datacenter":false,"is_abuser":true},"purity":{"score":98,"grade":"A+","confidence":100,"ip_type":"Residential IP","is_native":true,"residential_probability":98,"recommendation":"该 IP 整体较干净"}}"#
         let info = try #require(PublicAddressLookup.parseCleanIP(Data(json.utf8)))
@@ -204,22 +186,6 @@ struct LiveSamplerTests {
         #expect(info.risk == PublicAddresses.Risk(score: 2, label: "Very Clean", flags: ["abuser"]))
         #expect(info.reportURL?.absoluteString == "https://cleanip.io/32.5.140.2")
         #expect(PublicAddressLookup.parseCleanIP(Data(#"{"ok":false,"error":"bad"}"#.utf8)) == nil)
-    }
-
-    @Test func parsesDBIPAndIpinfo() throws {
-        let dbip = try #require(PublicAddressLookup.parseDBIP(Data(#"{"ipAddress":"32.5.140.2","countryCode":"US","stateProv":"New York","city":"New York"}"#.utf8)))
-        #expect(dbip.countryCode == "US" && dbip.region == "New York" && dbip.city == "New York" && dbip.asn == nil)
-        let ipinfo = try #require(PublicAddressLookup.parseIpinfo(Data(#"{"ip":"82.139.234.155","city":"Frankfurt am Main","region":"Hesse","country":"DE","org":"AS151338 POLONETWORK LIMITED"}"#.utf8)))
-        #expect(ipinfo.countryCode == "DE" && ipinfo.city == "Frankfurt am Main")
-        #expect(ipinfo.asn == "AS151338" && ipinfo.organization == "POLONETWORK LIMITED")
-    }
-
-    @Test func mapsCountryNames() {
-        #expect(PublicAddressLookup.countryCode(fromName: "Germany") == "DE")
-        #expect(PublicAddressLookup.countryCode(fromName: "China") == "CN")
-        #expect(PublicAddressLookup.countryCode(fromName: "Hong Kong") == "HK")
-        #expect(PublicAddressLookup.countryCode(fromName: "south korea") == "KR")
-        #expect(PublicAddressLookup.countryCode(fromName: "Atlantis") == nil)
     }
 
     @Test func rejectsUnsafeCountryCode() {
@@ -255,78 +221,5 @@ struct LiveSamplerTests {
         let counts = try #require(SystemCounts.read())
         #expect(counts.processes > 0)
         #expect(counts.threads >= counts.processes)
-    }
-}
-
-@Suite struct MaxMindDatabaseTests {
-    /// 按 MaxMind DB 格式拼一个最小的 IPv4 库：只有一个节点，0.0.0.0/1 指向数据，128.0.0.0/1 没有数据
-    private func makeDatabase() -> Data {
-        func string(_ text: String) -> [UInt8] {
-            let bytes = Array(text.utf8)
-            // 长度 29 及以上时，控制字节写 29，后面跟一个字节存“长度 - 29”
-            let header: [UInt8] = bytes.count < 29 ? [UInt8(2 << 5) | UInt8(bytes.count)] : [UInt8(2 << 5) | 29, UInt8(bytes.count - 29)]
-            return header + bytes
-        }
-        func map(_ pairs: [(String, [UInt8])]) -> [UInt8] {
-            [UInt8(7 << 5) | UInt8(pairs.count)] + pairs.flatMap { string($0.0) + $0.1 }
-        }
-        func uint32(_ value: UInt32) -> [UInt8] {
-            [UInt8(6 << 5) | 4] + withUnsafeBytes(of: value.bigEndian) { Array($0) }
-        }
-        func uint16(_ value: UInt16) -> [UInt8] {
-            [UInt8(5 << 5) | 2] + withUnsafeBytes(of: value.bigEndian) { Array($0) }
-        }
-
-        // 数据段开头先放一个字符串，记录里用指针（类型 1，偏移 0）引用它
-        let sharedName = string("中国")
-        let pointerToName: [UInt8] = [0x20, 0x00]
-        let record = map([
-            ("country", map([("iso_code", string("CN")), ("names", map([("zh-CN", pointerToName), ("en", string("China"))]))])),
-            ("autonomous_system_number", uint32(4134)),
-            ("autonomous_system_organization", string("CHINANET")),
-        ])
-        let dataSection = sharedName + record
-        let nodeCount = 1
-        let recordValue = nodeCount + 16 + sharedName.count   // 数据段中记录的偏移 + 节点数 + 16
-        let tree: [UInt8] = [UInt8(recordValue >> 16), UInt8(recordValue >> 8 & 0xFF), UInt8(recordValue & 0xFF), 0, 0, 1]
-        let metadata = map([
-            ("node_count", uint32(UInt32(nodeCount))),
-            ("record_size", uint16(24)),
-            ("ip_version", uint16(4)),
-            ("database_type", string("Test-City")),
-            ("build_epoch", uint32(1_789_000_000)),
-        ])
-        let marker: [UInt8] = [0xAB, 0xCD, 0xEF] + Array("MaxMind.com".utf8)
-        return Data(tree + [UInt8](repeating: 0, count: 16) + dataSection + marker + metadata)
-    }
-
-    @Test func readsMetadata() throws {
-        let database = try MaxMindDatabase(data: makeDatabase())
-        #expect(database.databaseType == "Test-City")
-        #expect(database.ipVersion == 4)
-        #expect(database.buildDate == Date(timeIntervalSince1970: 1_789_000_000))
-    }
-
-    @Test func looksUpAddressesThroughTheTree() throws {
-        let database = try MaxMindDatabase(data: makeDatabase())
-        let record = try #require(database.lookup("1.2.3.4"))
-        #expect(record["country"]?["iso_code"]?.string == "CN")
-        #expect(record["autonomous_system_number"]?.integer == 4134)
-        #expect(database.lookup("200.1.1.1") == nil)
-        #expect(database.lookup("not an ip") == nil)
-        #expect(database.lookup("2001:db8::1") == nil)   // IPv4 库不含 IPv6
-    }
-
-    @Test func followsPointersAndPrefersChineseNames() throws {
-        let database = try MaxMindDatabase(data: makeDatabase())
-        let location = try #require(GeoLookup.locate("8.8.8.8", location: database, asn: database))
-        #expect(location.countryName == "中国")
-        #expect(location.countryCode == "CN")
-        #expect(location.asn == "AS4134")
-        #expect(location.organization == "CHINANET")
-    }
-
-    @Test func rejectsFilesWithoutMetadata() {
-        #expect(throws: MaxMindDatabase.Error.missingMetadata) { try MaxMindDatabase(data: Data(repeating: 0, count: 64)) }
     }
 }

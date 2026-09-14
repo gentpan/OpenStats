@@ -17,7 +17,6 @@ public final class AppModel {
     public let cleaner: CleanerController
     public let maintenance: MaintenanceController
     public let network: NetworkController
-    public let geo: GeoDatabaseController
     public let explainer = ProcessExplainer()
     public let updates: UpdateController
     let diagnostics = DiagnosticsExporter()
@@ -52,8 +51,7 @@ public final class AppModel {
         keepAwake = KeepAwakeController(helper: helper, settings: settings)
         cleaner = CleanerController(settings: settings)
         maintenance = MaintenanceController(helper: helper)
-        geo = GeoDatabaseController(settings: settings)
-        network = NetworkController(settings: settings, geo: geo)
+        network = NetworkController(settings: settings)
         updates = UpdateController(settings: settings)
         alerts = AlertController(settings: settings)
         history = HistoryRecorder(settings: settings, databaseURL: historyURL)
