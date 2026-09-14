@@ -23,6 +23,7 @@ public final class AppModel {
     let diagnostics = DiagnosticsExporter()
     public let alerts: AlertController
     public let uninstaller = UninstallerController()
+    public let bluetooth = BluetoothController()
     let startupItems = StartupItemsController()
     public let history: HistoryRecorder
     public let sync: SyncController
@@ -79,6 +80,7 @@ public final class AppModel {
         demand.disk = (window && [.overview, .system, .cleaner, .disk].contains(tab)) || menu.contains(.disk) || popover == .disk
         demand.diskDetail = showing(.disk, .disk)
         demand.battery = (window && [.overview, .system, .keepAwake].contains(tab)) || keepAwake.lidClosedActive
+            || menu.contains(.battery) || showing(.battery, .battery)
         demand.processes = (window && [.processes, .overview, .disk].contains(tab)) || showing(.cpu, .cpu) || showing(.memory, .memory)
             || popover == .disk
         demand.systemProcesses = window && tab == .processes
@@ -88,13 +90,22 @@ public final class AppModel {
         if (window && tab == .thermal) || thermalPopover { groups.formUnion(TemperatureGroup.allCases) }
         if menu.contains(.temperature) || fans.mode != .automatic || showing(.cpu, .cpu) { groups.insert(.cpu) }
         if showing(.gpu, .gpu) { groups.insert(.gpu) }
+        if showing(.battery, .battery) { groups.insert(.battery) }
         if settings.enabledAlerts.contains(.cpuTemperature) { groups.insert(.cpu) }
         demand.temperatures = groups
-        demand.power = (window && tab == .thermal) || thermalPopover
+        demand.power = (window && tab == .thermal) || thermalPopover || showing(.battery, .battery)
         demand.cpuFrequency = showing(.cpu, .cpu)
         demand.fans = (window && (tab == .thermal || tab == .overview)) || menu.contains(.fan)
             || fans.mode != .automatic || thermalPopover
         return demand
+    }
+
+    /// 蓝牙电量读取很慢，只在需要时轮询：电池弹窗 / 页面、本机信息页打开时每分钟；
+    /// 菜单栏开着电池项且要做低电量提示、或这台 Mac 没有电池时每 5 分钟
+    var bluetoothDemand: BluetoothController.Demand {
+        if (isMainWindowVisible && [.battery, .system].contains(settings.panelTab)) || openPopover == .battery { return .foreground }
+        if settings.menuBarItems.contains(.battery) && (settings.bluetoothLowBatteryInMenuBar || store.battery == nil) { return .background }
+        return .off
     }
 
     /// 网络详情（接口、公网 IP、进程流量）正在显示

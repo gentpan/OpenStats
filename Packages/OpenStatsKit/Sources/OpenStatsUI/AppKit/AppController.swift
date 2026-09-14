@@ -66,7 +66,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         model.sync.presentationAnchor = { [weak self] in self?.mainWindow.nsWindow }
         model.sync.start()
 
-        // 开发调试：--show-panel [cpu|memory|network|gpu|temperature|fan] 启动后展开并固定弹窗；--show-window 打开主窗口
+        // 开发调试：--show-panel [cpu|memory|network|gpu|disk|temperature|fan|battery] 启动后展开并固定弹窗；--show-window 打开主窗口
         let arguments = CommandLine.arguments
         if let index = arguments.firstIndex(of: "--show-panel") {
             let item = arguments.dropFirst(index + 1).first.flatMap(MenuBarItem.init(rawValue:)) ?? .network
@@ -90,6 +90,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
 
         let appModel = model
+        appModel.bluetooth.setDemand(appModel.bluetoothDemand)
         Task { [weak self] in
             await appModel.hub.update(appModel.demand)
             await appModel.hub.start { [weak self] snapshot in
@@ -174,6 +175,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private func observeModel() {
         withObservationTracking {
             _ = model.demand
+            _ = model.bluetoothDemand
             _ = model.settings.menuBarItems
             _ = model.settings.menuBarLayout
             _ = model.settings.menuBarStyle
@@ -195,6 +197,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 self.applyLanguageIfChanged()
                 self.model.alerts.applySettings()
                 await self.model.hub.update(self.model.demand)
+                self.model.bluetooth.setDemand(self.model.bluetoothDemand)
                 self.applyAppearance()
                 self.menuBar.update()
                 self.menuBar.refreshPopoverHeight()

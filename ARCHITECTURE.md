@@ -171,6 +171,21 @@ is open and back to accessory when all are closed.
 
 ## Online updates
 
+### Battery and Bluetooth
+
+The battery item reuses `BatterySampler` (IOKit power sources, sampled every 10 s while the item is in the
+menu bar or its popover / page is open). `BatteryPopover` is both the popover and the main-window page
+(`DetailPage`). The 24-hour charge curve comes from the history database, which gained a `battery` column
+(migrated with `ALTER TABLE` on first open); `HistoryRecorder.loadBattery()` queries it independently of
+the History page's range. Macs without a battery show only Bluetooth devices, and the menu-bar segment
+falls back to the Bluetooth device with the lowest battery.
+
+`BluetoothController` (`OpenStatsUI/State`) wraps `BluetoothBatteryReader`, which shells out to
+`system_profiler` and takes a second or two, so it polls only on demand: every minute while the battery
+popover / page or the System page is open, every five minutes when the menu bar needs it (the
+low-battery hint or a Mac without a battery), otherwise not at all. `AppModel.bluetoothDemand` derives
+that from the same visibility state as `demand`.
+
 `UpdateController` fetches `https://getopenstats.com/download/appcast.json` at launch and daily
 (version, date, notes taken from `CHANGELOG.md` by `Scripts/appcast.py`, zip URL, sha256, size). An
 update is installed only after: sha256 matches, the zip holds exactly one `.app`, its bundle ID and

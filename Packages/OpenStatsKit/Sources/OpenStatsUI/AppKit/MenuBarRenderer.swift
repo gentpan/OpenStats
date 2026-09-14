@@ -17,7 +17,15 @@ struct MenuBarReading {
     var download: Double?
     var temperature: Double?
     var fanRPM: Double?
+    var battery: Double?
+    var batteryHistory: [Double] = []
+    var batteryCharging = false
+    /// 附在电池项旁的蓝牙设备：电量低的那一个，或没有电池的 Mac 上电量最低的那一个
+    var bluetoothDevice: (symbol: String, percent: Int)?
     var keepAwake = false
+
+    /// 蓝牙设备电量低于这个百分比才在菜单栏提示
+    static let lowBluetoothPercent = 20
 
     @MainActor
     init(model: AppModel) {
@@ -34,6 +42,13 @@ struct MenuBarReading {
         download = store.network?.downloadBytesPerSecond
         temperature = store.sensors?.temperature(.cpu)?.maximum
         fanRPM = store.fastestFan?.current
+        battery = store.battery?.level
+        batteryHistory = battery.map { Array(repeating: $0, count: 30) } ?? []
+        batteryCharging = store.battery?.isCharging ?? false
+        if let lowest = model.bluetooth.lowest,
+           battery == nil || (model.settings.bluetoothLowBatteryInMenuBar && lowest.percent <= Self.lowBluetoothPercent) {
+            bluetoothDevice = (lowest.device.kind.symbol, lowest.percent)
+        }
         keepAwake = model.keepAwake.isActive
     }
 
@@ -58,6 +73,8 @@ struct MenuBarReading {
         reading.download = 1.4 * 1024 * 1024
         reading.temperature = 52
         reading.fanRPM = 1840
+        reading.battery = 0.82
+        reading.batteryHistory = Array(repeating: 0.82, count: 30)
         return reading
     }()
 
@@ -67,6 +84,7 @@ struct MenuBarReading {
         case .gpu: (gpu, gpuHistory)
         case .memory: (memory, memoryHistory)
         case .disk: (disk, diskHistory)
+        case .battery: (battery, batteryHistory)
         default: (nil, [])
         }
     }
@@ -83,6 +101,9 @@ struct MenuBarReading {
                 upload.flatMap { up in download.map { tr("上传 \(Format.menuBarRate(up)) · 下载 \(Format.menuBarRate($0))") } }
             case .temperature: temperature.map { tr("CPU 温度 \(Format.temperature($0, fahrenheit: fahrenheit))") }
             case .fan: fanRPM.map { tr("风扇 \(Format.rpm($0))") }
+            case .battery:
+                battery.map { tr("电池 \(Format.percent($0))") + (batteryCharging ? tr("，充电中") : "") }
+                    ?? bluetoothDevice.map { tr("蓝牙设备电量 \($0.percent)%") }
             }
         }
         .joined(separator: "\n")
@@ -119,6 +140,8 @@ enum MenuBarRenderer {
         static let trackAlpha: CGFloat = 0.25
         static let warningLevel = 0.6
         static let highLevel = 0.85
+        /// 电量低于这个比例按警示着色
+        static let lowBatteryLevel = 0.2
     }
 
     private struct Segment {
@@ -200,6 +223,58 @@ enum MenuBarRenderer {
             return textSegment(item: item, value: text, sample: "100°", style: style)
         case .fan:
             return textSegment(item: item, value: reading.fanRPM.map { "\(Int($0))" } ?? "—", sample: "8888", style: style)
+        case .battery:
+            return batterySegment(reading: reading, style: style, colorizeHighLoad: colorizeHighLoad)
+        }
+    }
+
+    /// 电池：按电量画图形，电量低时着色为警示；充电中在前面加一道闪电。
+    /// 没有电池的 Mac 显示电量最低的蓝牙设备；开了提示且某个设备电量低时，附在电池后面
+    private static func batterySegment(reading: MenuBarReading, style: MenuBarStyle, colorizeHighLoad: Bool) -> Segment {
+        let bluetooth = reading.bluetoothDevice.map { device in
+            combine([symbolSegment(device.symbol),
+                     inlineValue("\(device.percent)%", sample: "100%",
+                                 alert: colorizeHighLoad && device.percent <= MenuBarReading.lowBluetoothPercent)])
+        }
+        guard let level = reading.battery else {
+            return bluetooth ?? textSegment(item: .battery, value: "—", sample: "100%", style: style)
+        }
+        let fraction = min(1, max(0, level))
+        let text = Format.percent(fraction)
+        let alert = colorizeHighLoad && fraction <= Metrics.lowBatteryLevel
+        let label = MenuBarItem.battery.menuBarLabel
+        let stacked = stackedText(label: label, value: text, sample: "100%", alert: alert)
+        var segment: Segment
+        switch style {
+        case .stacked: segment = stacked
+        case .inline: segment = inlineText(label: label, value: text, sample: "100%", alert: alert)
+        case .icon:
+            let symbol = reading.batteryCharging ? "battery.100.bolt" : batterySymbol(fraction)
+            segment = combine([symbolSegment(symbol), inlineValue(text, sample: "100%", alert: alert)])
+        case .ring: segment = combine([ring(fraction: fraction, alert: alert), stacked])
+        case .pie: segment = combine([pie(fraction: fraction, alert: alert), stacked])
+        case .history: segment = combine([historyBars(reading.batteryHistory, alert: alert), stacked])
+        case .line: segment = combine([historyLine(reading.batteryHistory, alert: alert), stacked])
+        case .meter: segment = combine([meter(fraction: fraction, alert: alert), stacked])
+        // 圆点的颜色档按“越满越危险”定义，电量正好相反
+        case .dot: segment = combine([levelDot(fraction: 1 - fraction), stacked])
+        }
+        if reading.batteryCharging && style != .icon {
+            segment = combine([symbolSegment("bolt.fill"), segment])
+        }
+        if let bluetooth {
+            segment = combine([segment, bluetooth], gap: DS.Space.s2)
+        }
+        return segment
+    }
+
+    private static func batterySymbol(_ fraction: Double) -> String {
+        switch fraction {
+        case ..<0.125: "battery.0"
+        case ..<0.375: "battery.25"
+        case ..<0.625: "battery.50"
+        case ..<0.875: "battery.75"
+        default: "battery.100"
         }
     }
 

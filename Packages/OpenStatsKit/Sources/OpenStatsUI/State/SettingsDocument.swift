@@ -12,6 +12,7 @@ public struct SettingsDocument: Codable, Equatable, Sendable {
     public var styleOverrides: [String: String]?
     public var refreshSeconds: Int?
     public var colorizeHighLoad: Bool?
+    public var bluetoothLowBatteryInMenuBar: Bool?
     public var useFahrenheit: Bool?
     public var lidModeBatteryFloor: Int?
     public var fanSafetyTemperature: Int?
@@ -48,6 +49,7 @@ extension AppSettings {
         doc.styleOverrides = Dictionary(uniqueKeysWithValues: styleOverrides.map { ($0.key.rawValue, $0.value.rawValue) })
         doc.refreshSeconds = refreshSeconds
         doc.colorizeHighLoad = colorizeHighLoad
+        doc.bluetoothLowBatteryInMenuBar = bluetoothLowBatteryInMenuBar
         doc.useFahrenheit = useFahrenheit
         doc.lidModeBatteryFloor = lidModeBatteryFloor
         doc.fanSafetyTemperature = fanSafetyTemperature
@@ -94,6 +96,7 @@ extension AppSettings {
         })
         assign(\.refreshSeconds, option(doc.refreshSeconds, in: Self.refreshOptions))
         assign(\.colorizeHighLoad, doc.colorizeHighLoad)
+        assign(\.bluetoothLowBatteryInMenuBar, doc.bluetoothLowBatteryInMenuBar)
         assign(\.useFahrenheit, doc.useFahrenheit)
         assign(\.lidModeBatteryFloor, option(doc.lidModeBatteryFloor, in: Self.batteryFloorOptions))
         assign(\.fanSafetyTemperature, option(doc.fanSafetyTemperature, in: Self.fanSafetyOptions))

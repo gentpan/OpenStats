@@ -4,7 +4,7 @@ import Metrics
 import Observation
 
 public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
-    case cpu, memory, network, gpu, disk, temperature, fan
+    case cpu, memory, network, gpu, disk, temperature, fan, battery
 
     public var id: String { rawValue }
 
@@ -17,6 +17,7 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
         case .disk: tr("磁盘")
         case .temperature: tr("CPU 温度")
         case .fan: tr("风扇转速")
+        case .battery: tr("电池")
         }
     }
 
@@ -29,6 +30,7 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
         case .disk: tr("启动磁盘已用占比")
         case .temperature: tr("CPU 核心最高温度")
         case .fan: tr("转速最高的风扇")
+        case .battery: tr("电量与充电状态；没有电池的 Mac 显示蓝牙设备电量")
         }
     }
 
@@ -42,6 +44,7 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
         case .disk: "DISK"
         case .temperature: "TEMP"
         case .fan: "FAN"
+        case .battery: "BAT"
         }
     }
 
@@ -55,6 +58,7 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
         case .disk: tr("磁盘")
         case .temperature: tr("温度")
         case .fan: tr("风扇")
+        case .battery: tr("电池")
         }
     }
 
@@ -68,6 +72,7 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
         case .disk: [.diskActivity, .diskHealth, .diskProcesses]
         case .temperature: [.thermalSensors, .thermalFans, .thermalPower]
         case .fan: [.thermalFans, .thermalSensors, .thermalPower]
+        case .battery: [.batteryHistory, .batteryPower, .batteryHealth, .batteryBluetooth]
         }
     }
 
@@ -83,6 +88,7 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
         case .disk: "internaldrive"
         case .temperature: "thermometer.medium"
         case .fan: "fan"
+        case .battery: "battery.75"
         }
     }
 }
@@ -95,6 +101,7 @@ public enum PopoverSection: String, CaseIterable, Identifiable, Sendable {
     case gpuHistory, gpuDetails
     case diskActivity, diskHealth, diskProcesses
     case thermalSensors, thermalFans, thermalPower
+    case batteryHistory, batteryPower, batteryHealth, batteryBluetooth
 
     public var id: String { rawValue }
 
@@ -125,7 +132,10 @@ public enum PopoverSection: String, CaseIterable, Identifiable, Sendable {
         case .diskProcesses: tr("读写最多的应用")
         case .thermalSensors: tr("温度")
         case .thermalFans: tr("风扇")
-        case .thermalPower: tr("功耗")
+        case .thermalPower, .batteryPower: tr("功耗")
+        case .batteryHistory: tr("电量历史")
+        case .batteryHealth: tr("电池健康")
+        case .batteryBluetooth: tr("蓝牙设备")
         }
     }
 }
@@ -299,12 +309,12 @@ public enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
 
 /// 主窗口侧边栏的页面
 public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
-    case overview, system, history, cpu, gpu, memory, disk, network, thermal, processes, keepAwake, cleaner, uninstaller, startupItems
+    case overview, system, history, cpu, gpu, memory, disk, network, thermal, battery, processes, keepAwake, cleaner, uninstaller, startupItems
     case settingsGeneral, settingsMenuBar, settingsNotifications, settingsAccount, settingsHelper, settingsAbout
 
     public var id: String { rawValue }
 
-    static let monitors: [PanelTab] = [.overview, .system, .history, .cpu, .gpu, .memory, .disk, .network, .thermal]
+    static let monitors: [PanelTab] = [.overview, .system, .history, .cpu, .gpu, .memory, .disk, .network, .thermal, .battery]
     static let tools: [PanelTab] = [.processes, .startupItems, .keepAwake, .cleaner, .uninstaller]
     static let settings: [PanelTab] = [.settingsGeneral, .settingsMenuBar, .settingsNotifications, .settingsAccount, .settingsHelper, .settingsAbout]
 
@@ -324,6 +334,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .disk: tr("磁盘")
         case .network: tr("网络")
         case .thermal: tr("温度与风扇")
+        case .battery: tr("电池")
         case .processes: tr("进程")
         case .keepAwake: tr("防休眠")
         case .cleaner: tr("清理")
@@ -349,6 +360,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .disk: "internaldrive"
         case .network: "network"
         case .thermal: "fan"
+        case .battery: "battery.75"
         case .processes: "list.bullet.rectangle"
         case .keepAwake: "cup.and.saucer"
         case .cleaner: "sparkles"
@@ -372,6 +384,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .network: .network
         case .disk: .disk
         case .thermal: .temperature
+        case .battery: .battery
         default: nil
         }
     }
@@ -392,6 +405,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .network: self = .network
         case .disk: self = .disk
         case .temperature, .fan: self = .thermal
+        case .battery: self = .battery
         }
     }
 }
@@ -423,6 +437,10 @@ public final class AppSettings {
     }
     public var colorizeHighLoad: Bool {
         didSet { defaults.set(colorizeHighLoad, forKey: Keys.colorizeHighLoad) }
+    }
+    /// 键盘、鼠标、耳机等蓝牙设备电量低时，在菜单栏电池项旁提示
+    public var bluetoothLowBatteryInMenuBar: Bool {
+        didSet { defaults.set(bluetoothLowBatteryInMenuBar, forKey: Keys.bluetoothLowBatteryInMenuBar) }
     }
     public var useFahrenheit: Bool {
         didSet { defaults.set(useFahrenheit, forKey: Keys.useFahrenheit) }
@@ -544,6 +562,7 @@ public final class AppSettings {
         refreshSeconds = Self.refreshOptions.contains(defaults.integer(forKey: Keys.refreshSeconds))
             ? defaults.integer(forKey: Keys.refreshSeconds) : 2
         colorizeHighLoad = defaults.bool(forKey: Keys.colorizeHighLoad)
+        bluetoothLowBatteryInMenuBar = defaults.object(forKey: Keys.bluetoothLowBatteryInMenuBar) as? Bool ?? true
         useFahrenheit = defaults.bool(forKey: Keys.useFahrenheit)
         lidModeBatteryFloor = Self.batteryFloorOptions.contains(defaults.integer(forKey: Keys.lidModeBatteryFloor))
             ? defaults.integer(forKey: Keys.lidModeBatteryFloor) : 20
@@ -613,6 +632,7 @@ public final class AppSettings {
         static let styleOverrides = "styleOverrides"
         static let refreshSeconds = "refreshSeconds"
         static let colorizeHighLoad = "colorizeHighLoad"
+        static let bluetoothLowBatteryInMenuBar = "bluetoothLowBatteryInMenuBar"
         static let useFahrenheit = "useFahrenheit"
         static let lidModeBatteryFloor = "lidModeBatteryFloor"
         static let fanSafetyTemperature = "fanSafetyTemperature"

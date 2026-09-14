@@ -43,6 +43,8 @@ public final class HistoryRecorder {
     public private(set) var rangeStart = Date()
     public private(set) var isQuerying = false
     public private(set) var recordCount = 0
+    /// 电池弹窗 / 页面用的最近 24 小时电量，独立于历史页当前选的范围
+    public private(set) var batteryPoints: [HistoryPoint] = []
 
     @ObservationIgnored private let settings: AppSettings
     @ObservationIgnored private var database: HistoryDatabase?
@@ -67,7 +69,8 @@ public final class HistoryRecorder {
                                        upload: snapshot.network?.uploadBytesPerSecond,
                                        gpu: snapshot.gpu?.utilization,
                                        temperature: snapshot.sensors?.temperature(.cpu)?.maximum,
-                                       power: snapshot.power?.system)
+                                       power: snapshot.power?.system,
+                                       battery: snapshot.battery?.level)
         guard let finished else { return }
         let now = Date()
         let prune = now.timeIntervalSince(lastPrune) > 60 * 60
@@ -99,6 +102,15 @@ public final class HistoryRecorder {
             rangeStart = start
             recordCount = count
             isQuerying = false
+        }
+    }
+
+    func loadBattery() {
+        guard let database else { return }
+        let end = Date()
+        let start = end.addingTimeInterval(-Range.day.duration)
+        Task {
+            batteryPoints = await database.query(from: start, to: end, bucket: Range.day.bucket)
         }
     }
 

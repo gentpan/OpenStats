@@ -39,6 +39,7 @@ public struct MainWindowView: View {
                             NetworkSettings()
                         }
                     case .thermal: ThermalPage()
+                    case .battery: DetailPage { BatteryPopover() }
                     case .processes: ProcessesPage()
                     case .keepAwake: KeepAwakePage()
                     case .cleaner: CleanerPage()

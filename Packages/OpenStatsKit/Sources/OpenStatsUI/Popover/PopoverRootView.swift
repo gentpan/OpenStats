@@ -23,6 +23,7 @@ struct PopoverRootView: View {
                 case .gpu: GPUPopover()
                 case .disk: DiskPopover()
                 case .temperature, .fan: ThermalPopover(item: item)
+                case .battery: BatteryPopover()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: isSnapshot ? nil : .infinity, alignment: .top)

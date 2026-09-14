@@ -65,6 +65,12 @@ struct HistoryPage: View {
                                  series: [.init(label: tr("平均"), color: DS.Palette.warning, value: \.power)],
                                  maxValue: nil, format: { Format.watts($0) },
                                  emptyNote: tr("只在打开温度与风扇页面时记录"))
+                if model.store.battery != nil {
+                    HistoryChartCard(icon: "battery.75", title: tr("电池电量"), points: points, start: start, end: end, hoverDate: $hoverDate,
+                                     series: [.init(label: tr("电量"), color: DS.Palette.success, value: \.battery)],
+                                     maxValue: 1, format: { Format.percent($0) },
+                                     emptyNote: tr("只在菜单栏显示电池或打开电池页面时记录"))
+                }
             }
 
             SettingsGroup(caption: tr("历史记录")) {

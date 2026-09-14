@@ -223,67 +223,13 @@ struct DisplayInfo {
     }
 }
 
-/// 已连接蓝牙设备的电量，页面打开期间每分钟刷新
+/// 已连接蓝牙设备的电量；页面打开期间由 BluetoothController 每分钟刷新
 private struct BluetoothCard: View {
-    @State private var devices: [BluetoothDevice]?
+    @Environment(AppModel.self) private var model
 
     var body: some View {
         InfoCard(icon: "dot.radiowaves.left.and.right", title: tr("蓝牙设备")) {
-            if let devices {
-                if devices.isEmpty {
-                    Text(tr("没有已连接的蓝牙设备")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
-                }
-                ForEach(devices) { device in
-                    HStack(spacing: DS.Space.s2) {
-                        Image(systemName: symbol(device.kind))
-                            .font(.system(size: DS.TextSize.sm.rawValue))
-                            .foregroundStyle(DS.Palette.textSecondary)
-                            .frame(width: DS.Size.iconStandalone)
-                        Text(verbatim: device.name)
-                            .dsFont(.xs, weight: .medium)
-                            .foregroundStyle(DS.Palette.textPrimary)
-                            .lineLimit(1)
-                        Spacer(minLength: DS.Space.s2)
-                        if device.batteries.isEmpty {
-                            Text(tr("不提供电量")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
-                        }
-                        ForEach(device.batteries, id: \.label) { battery in
-                            HStack(spacing: DS.Space.s1) {
-                                if device.batteries.count > 1 {
-                                    Text(verbatim: battery.label).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
-                                }
-                                ProgressTrack(fraction: Double(battery.percent) / 100,
-                                              color: battery.percent <= 20 ? DS.Palette.error : DS.Palette.success,
-                                              height: DS.Space.s1 + DS.Space.s1 / 2)
-                                    .frame(width: DS.Space.s8)
-                                Text(verbatim: "\(battery.percent)%")
-                                    .dsFont(.xs, weight: .medium)
-                                    .foregroundStyle(DS.Palette.textPrimary)
-                                    .monospacedDigit()
-                            }
-                        }
-                    }
-                }
-            } else {
-                Text(tr("正在读取…")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
-            }
-        }
-        .task {
-            while !Task.isCancelled {
-                devices = await Task.detached { BluetoothBatteryReader.read() }.value
-                try? await Task.sleep(for: .seconds(60))
-            }
-        }
-    }
-
-    private func symbol(_ kind: BluetoothDevice.Kind) -> String {
-        switch kind {
-        case .keyboard: "keyboard"
-        case .mouse: "computermouse"
-        case .trackpad: "rectangle.and.hand.point.up.left"
-        case .headphones: "headphones"
-        case .phone: "iphone"
-        case .other: "dot.radiowaves.left.and.right"
+            BluetoothDeviceList(devices: model.bluetooth.devices)
         }
     }
 }

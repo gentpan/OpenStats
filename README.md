@@ -47,17 +47,41 @@ Developed and tested on Apple Silicon. The interface is in Simplified Chinese.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.2.0** (2026-09-13) · **31** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.2.0** (2026-09-13) · **50** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-09-15</b> · Unreleased · 1 changed · 1 fixed · 1 added</summary>
+<summary><b>2026-09-15</b> · Unreleased · 3 added · 2 added · 11 changed · 4 fixed · 1 added</summary>
+
+**Added**
+
+- 菜单栏新增“电池”项目：电量按九种风格显示（电量条、圆环、饼图、数字等），充电中带闪电，电量低于 20% 按“高负载时着色”变红。点击弹出电池详情：电量与剩余 / 充满时间、适配器功率、电池温度、最近 24 小时电量曲线、功耗、健康度与循环次数、已连接蓝牙设备的电量（AirPods 左右耳与充电盒、妙控键盘 / 鼠标 / 触控板），可跳到系统电池设置；主窗口也有对应的“电池”页，历史页多了电池电量曲线。没有电池的 Mac（mini、Studio、iMac）上这个项目改为显示电量最低的蓝牙设备，弹窗只列蓝牙设备。「设置 · 菜单栏」新增“蓝牙设备电量低时提示”：某个设备低于 20% 时在电池项目旁显示它的图标与电量。
+- 网络详情“接口”区块右上角新增重置按钮：把开机后下载 / 上传归零、从现在起重新累计，标题旁标出起算时间，两行改叫“重置后下载 / 上传”；重启后自动回到开机后累计，右键按钮可随时改回。
+- 磁盘页从展示页变成能动手的磁盘工具，新增四张卡片：- 空间占用：统计家目录里每个文件夹占多少，并列出最大的 20 个文件（应用、照片图库等按整体算一个）；可在访达中显示，家目录里、Library 之外的文件可以直接移到废纸篓。只读扫描，文件多时需要几十秒，可随时停止。- 文件系统检查：调用系统的 diskutil 对启动盘做一次只读检查，相当于“磁盘工具”的急救但不修改任何东西；记住上次检查的时间与结果，发现问题时提示去磁盘工具修复。- 本地快照：列出 Time Machine 留在本机的快照（它们计入“可清除”空间），可一键全部删除；辅助工具够新时由它执行，否则请求一次管理员授权。辅助工具协议升到第 4 版，已安装的旧版会提示重新安装。- 其他磁盘：列出外置硬盘、U 盘、镜像与网络共享的容量，可在访达中显示或直接推出；接入、拔出时自动刷新。
+
+**Added**
+
+- 网络详情新增「IP 纯净度」区块：CleanIP.io 的纯净度评分与等级画成 F 到 A+ 的六段色带，得分处有标记；下面列出风险评分、命中的风险标记（VPN、代理、Tor、机房、滥用记录等）与一句评价，可打开完整报告。IP 地址区块也多了反向解析、网络类型与接入方式、IP 类型（住宅 / 机房）、原生 / 广播、住宅概率。
+- 「设置 · 网络」新增归属地数据源选择：CleanIP.io（默认，信息最全、中文地名）、ipapi.is、DB-IP、ipinfo.io 或本地 GeoLite2 数据库；每一项都注明会把公网 IP 发给谁。在线数据源都由每台 Mac 自己直接查、不经过我们的服务器，同一个公网 IP 的结果会记住一段时间，收到限流后当天不再请求；切换数据源后立即重新查询。
 
 **Changed**
 
+- 「设置 · 菜单栏」每个显示项目下面多了一行“菜单栏风格”：给这一项单独选一种风格（默认跟随整体，菜单里标出整体现在是哪种），旁边是这一项按当前风格、实时读数画出的预览，改了立刻能看到。以前这个选择藏在开关旁一个没有说明的下拉里，不容易发现。温度、风扇只提供文字类的三种风格；原“风格”分组改名“整体风格”并加了说明。
+- 菜单栏弹窗右上角的两个按钮：左边改为该指标自己的图标（网络是网络图标、磁盘是硬盘），点了直接进主窗口里这个指标的页面；右边的齿轮进总设置。
+- 网络详情的 IP 地址区块精简：原生 / 广播、住宅 / 机房、运营商类型（ISP 等）改为 cleanip.io 样式的徽章，去掉反向解析、网络类型、住宅概率、数据来源四行；数据来源改为标题后的小标记，CleanIP.io 显示它的字标：与标题文字同高、不留上下空白，点了打开 cleanip.io。徽章样式作为通用组件收进设计系统。
+- 公网 IP 双栈支持：IPv4 与 IPv6 各自查询归属地与纯净度、各自缓存；两族都有时 IP 地址区块用胶囊开关切换 IPv4 / IPv6。纯净度区块的标题一行排开：地址族徽章（只有一族时不标）、置信度徽章（高绿、中灰、低黄）、完整报告链接，右侧是刷新按钮；IP 地址区块也有同样的刷新按钮，都是忽略缓存立即重查，查询进行中按钮变成系统的转圈。
+- 公网 IP 的归属地结果保存在本机：点开网络详情立刻显示上次的结果，后台只向 Cloudflare 核对一下地址；地址没变且不满 7 天就不再查归属地，换了 IP、超过 7 天或点了刷新才重新查。
+- 网络详情的纯净度色带占满整行，分数放到色带上方，同一行右侧是 cleanip.io 字标，点了打开这个 IP 的完整报告。
+- 磁盘页与磁盘弹窗的“读取 / 写入”两组数值各占一半宽度，数字长短变化时位置不再左右挪动。
+- 磁盘“读写最多的应用”与网络详情“高占用进程”改为稳定的 5 条榜单：按最近十几秒的平均速率排序和画条，数字仍是当前速率；刚安静下来的应用会在榜上停留几秒再退出，不再随每秒的波动忽隐忽现、上下乱跳。
+- 磁盘页与磁盘弹窗的容量改为分段条：已用、可清除、可用三段按比例排在一条里，段内直接标名称与百分比，下方图例给出各自的容量；可清除是系统随时可以腾出的缓存，访达的“可用”把它算在内。
+- 磁盘页“读写最多的应用”与 CPU、内存详情“按应用汇总”的排行条不再画灰色底槽，只保留代表相对占比的蓝色条。
 - 「设置 · 菜单栏」的显示项目上方加了一条说明：按住 ⌘ 拖动可以调整菜单栏图标的顺序，新开启的项目由系统安排位置；各页面右上角的开关悬停时也有同样的提示。官网常见问题同步补充。
 
 **Fixed**
 
+- 网络详情的卡片被 IP 地址标题行撑宽、两侧几乎没有留白：标题、数据来源字标、IPv4 / IPv6 切换与刷新按钮一行放不下时字标自动缩小，切换胶囊也收窄了一点，卡片恢复与其他弹窗一致的边距。
+- 菜单栏弹窗的内容整体偏左、右边留白更宽：接了鼠标时系统默认常驻滚动条，滚动区域给它预留了一条宽度。现在应用内一律用浮层滚动条，内容占满整个弹窗宽度，主窗口页面同样处理。
+- 网络详情里的归属地国旗画错：中国、乌兹别克斯坦等 63 面旗子的 SVG 用了嵌套引用，系统渲染器画成一大块白。现在国旗改为预先渲染好的 PNG，全部按参考图核对过。
 - 各监控页右上角的“在菜单栏显示”开关点不动：页面的滚动区域会自动向上延伸到顶栏底下，把开关的点击截走了；现在顶栏盖在滚动区域之上，GPU、磁盘等页面的开关可以正常点击。
 
 **Added**
@@ -67,7 +91,7 @@ Latest release **0.2.0** (2026-09-13) · **31** changes in development · [full 
 </details>
 
 <details>
-<summary><b>2026-09-15</b> · Unreleased · 3 added · 4 changed</summary>
+<summary><b>2026-09-15</b> · Unreleased · 3 added · 5 changed</summary>
 
 **Added**
 
@@ -77,6 +101,7 @@ Latest release **0.2.0** (2026-09-13) · **31** changes in development · [full 
 
 **Changed**
 
+- 网络详情的 DNS 切换改为下拉菜单：“配置方式”一行直接是菜单，选 Cloudflare、Google 等预设立即切换，选“手动”展开输入框，自定义地址时旁边有铅笔按钮可再次修改；不再显示六个并排的按钮，省下两行。
 - 卸载应用：去掉“同时从程序坞移除图标”开关，卸载时始终移除程序坞图标；应用列表的滚动条改为只在滚动时显示的细条（之前接了鼠标会显示一条粗的传统滚动条），升级说明里的滚动条同样修正。
 - 主窗口的 CPU 走势图加上 0–100% 刻度与起点、中点、现在三个时间标签。
 - CPU 详情的解释性文字不再常驻：热力图怎么看、每类核心是干什么的、平均负载怎么理解、按应用汇总为什么会超过 100%，都收进区块标题旁的 ⓘ，鼠标悬停 ⓘ 或卡片内容时才显示，界面上只留数据。
@@ -147,6 +172,7 @@ Choose which sections each popover shows in Settings. `Esc` closes it.
   and one-click switching to Cloudflare, Google, Tencent, Alibaba Cloud or manual servers;
   per-process traffic.
 - **GPU**, **Temperature & fans.** History, sensor groups, fan speeds and quick modes.
+- **Battery.** Charge level, time remaining, adapter wattage and battery temperature; a 24-hour charge curve; power draw; health and cycle count; the batteries of connected Bluetooth devices (AirPods, Magic Keyboard / Mouse / Trackpad). Macs without a battery show the Bluetooth devices only.
 
 <p align="center">
   <img src="Assets/readme/popover-cpu-light.png" width="32%" alt="CPU popover">
@@ -154,7 +180,7 @@ Choose which sections each popover shows in Settings. `Esc` closes it.
   <img src="Assets/readme/popover-memory-dark.png" width="32%" alt="Memory popover, dark">
 </p>
 
-**Main window** — a sidebar with Dashboard, CPU, GPU, Memory, Network, Temperature & fans,
+**Main window** — a sidebar with Dashboard, CPU, GPU, Memory, Network, Temperature & fans, Battery,
 Processes, Keep awake and Clean; resizable in both directions. See [Cleanup](#cleanup).
 
 **Ask Apple Intelligence about a process** — right-click a process you don't recognise and the on-device

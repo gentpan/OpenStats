@@ -317,7 +317,7 @@ struct MenuBarSettings: View {
             ForEach(Array(MenuBarItem.allCases.enumerated()), id: \.element) { index, item in
                 GroupRow {
                     VStack(alignment: .leading, spacing: DS.Space.s3) {
-                        SettingRow(title: item.title, subtitle: item.subtitle, icon: item.symbol) {
+                        SettingRow(title: item.title, subtitle: itemSubtitle(item), icon: item.symbol) {
                             DSToggle(isOn: Binding(get: { settings.isEnabled(item) },
                                                    set: { settings.setEnabled(item, $0) }),
                                      label: item.title)
@@ -335,11 +335,24 @@ struct MenuBarSettings: View {
 
         SettingsGroup(caption: tr("其他")) {
             GroupRow(showsDivider: false) {
-                SettingRow(title: tr("高负载时着色"), subtitle: tr("占用超过 85% 时数值与图形显示为红色")) {
+                SettingRow(title: tr("高负载时着色"), subtitle: tr("占用超过 85%（电池电量低于 20%）时数值与图形显示为红色")) {
                     DSToggle(isOn: $settings.colorizeHighLoad, label: tr("高负载时着色"))
                 }
             }
+            GroupRow {
+                SettingRow(title: tr("蓝牙设备电量低时提示"),
+                           subtitle: tr("键盘、鼠标、耳机等低于 20% 时，在菜单栏的电池项目旁显示该设备的图标与电量；需要开启电池项目")) {
+                    DSToggle(isOn: $settings.bluetoothLowBatteryInMenuBar, label: tr("蓝牙设备电量低时提示"))
+                }
+            }
         }
+    }
+
+    /// 没有电池的 Mac 上，电池项目改为显示蓝牙设备电量
+    private func itemSubtitle(_ item: MenuBarItem) -> String {
+        item == .battery && model.store.battery == nil
+            ? tr("这台 Mac 没有电池：菜单栏显示电量最低的蓝牙设备，弹窗只列蓝牙设备")
+            : item.subtitle
     }
 
 }

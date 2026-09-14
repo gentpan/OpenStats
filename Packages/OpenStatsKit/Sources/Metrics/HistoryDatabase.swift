@@ -16,9 +16,12 @@ public struct HistoryRecord: Sendable, Equatable {
     public var gpu: Double?
     public var temperature: Double?
     public var power: Double?
+    /// 电池电量 0...1；没有电池或没在看电池时为空
+    public var battery: Double?
 
     public init(minute: Int, cpu: Double? = nil, cpuMax: Double? = nil, memory: Double? = nil, pressure: Int? = nil,
-                download: Double? = nil, upload: Double? = nil, gpu: Double? = nil, temperature: Double? = nil, power: Double? = nil) {
+                download: Double? = nil, upload: Double? = nil, gpu: Double? = nil, temperature: Double? = nil, power: Double? = nil,
+                battery: Double? = nil) {
         self.minute = minute
         self.cpu = cpu
         self.cpuMax = cpuMax
@@ -29,6 +32,7 @@ public struct HistoryRecord: Sendable, Equatable {
         self.gpu = gpu
         self.temperature = temperature
         self.power = power
+        self.battery = battery
     }
 }
 
@@ -44,6 +48,7 @@ public struct HistoryPoint: Sendable, Equatable {
     public var gpu: Double?
     public var temperature: Double?
     public var power: Double?
+    public var battery: Double?
 }
 
 /// 本机 SQLite 历史库（~/Library/Application Support/OpenStats/history.sqlite），只存每分钟汇总，7 天约 1 万行
@@ -75,7 +80,7 @@ public actor HistoryDatabase {
         CREATE TABLE IF NOT EXISTS samples (
             minute INTEGER PRIMARY KEY,
             cpu REAL, cpu_max REAL, memory REAL, pressure INTEGER,
-            download REAL, upload REAL, gpu REAL, temperature REAL, power REAL
+            download REAL, upload REAL, gpu REAL, temperature REAL, power REAL, battery REAL
         );
         """
         guard sqlite3_exec(handle, schema, nil, nil, nil) == SQLITE_OK else {
@@ -84,6 +89,8 @@ public actor HistoryDatabase {
             db = nil
             throw Error.open(message)
         }
+        // 旧库没有 battery 列：加上；新库已经有，这句报“列已存在”，忽略
+        sqlite3_exec(handle, "ALTER TABLE samples ADD COLUMN battery REAL", nil, nil, nil)
     }
 
     deinit {
@@ -92,15 +99,15 @@ public actor HistoryDatabase {
 
     public func insert(_ record: HistoryRecord) {
         let sql = """
-        INSERT OR REPLACE INTO samples (minute, cpu, cpu_max, memory, pressure, download, upload, gpu, temperature, power)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT OR REPLACE INTO samples (minute, cpu, cpu_max, memory, pressure, download, upload, gpu, temperature, power, battery)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else { return }
         defer { sqlite3_finalize(statement) }
         sqlite3_bind_int64(statement, 1, Int64(record.minute))
         let values: [Double?] = [record.cpu, record.cpuMax, record.memory, record.pressure.map(Double.init),
-                                 record.download, record.upload, record.gpu, record.temperature, record.power]
+                                 record.download, record.upload, record.gpu, record.temperature, record.power, record.battery]
         for (index, value) in values.enumerated() {
             let position = Int32(index + 2)
             if let value, value.isFinite {
@@ -117,7 +124,7 @@ public actor HistoryDatabase {
         let size = max(60, bucket)
         let sql = """
         SELECT (minute / ?) * ? AS slot, AVG(cpu), MAX(cpu_max), AVG(memory), MAX(pressure),
-               AVG(download), AVG(upload), AVG(gpu), MAX(temperature), AVG(power)
+               AVG(download), AVG(upload), AVG(gpu), MAX(temperature), AVG(power), AVG(battery)
         FROM samples WHERE minute >= ? AND minute < ?
         GROUP BY slot ORDER BY slot
         """
@@ -136,7 +143,8 @@ public actor HistoryDatabase {
         while sqlite3_step(statement) == SQLITE_ROW {
             points.append(HistoryPoint(date: Date(timeIntervalSince1970: TimeInterval(sqlite3_column_int64(statement, 0))),
                                        cpu: double(1), cpuMax: double(2), memory: double(3), pressure: double(4).map { Int($0) },
-                                       download: double(5), upload: double(6), gpu: double(7), temperature: double(8), power: double(9)))
+                                       download: double(5), upload: double(6), gpu: double(7), temperature: double(8), power: double(9),
+                                       battery: double(10)))
         }
         return points
     }
@@ -171,7 +179,7 @@ public struct HistoryAccumulator: Sendable {
 
     /// 加入一次采样；跨到下一分钟时返回上一分钟的记录
     public mutating func add(date: Date, cpu: Double?, memory: Double?, pressure: Int?, download: Double?, upload: Double?,
-                             gpu: Double?, temperature: Double?, power: Double?) -> HistoryRecord? {
+                             gpu: Double?, temperature: Double?, power: Double?, battery: Double? = nil) -> HistoryRecord? {
         let current = Int(date.timeIntervalSince1970) / 60 * 60
         var finished: HistoryRecord?
         if let minute, minute != current {
@@ -197,6 +205,7 @@ public struct HistoryAccumulator: Sendable {
         average("gpu", gpu)
         peak("temperature", temperature)
         average("power", power)
+        average("battery", battery)
         return finished
     }
 
@@ -215,6 +224,6 @@ public struct HistoryAccumulator: Sendable {
         func mean(_ key: String) -> Double? { sums[key].map { $0.total / Double($0.count) } }
         return HistoryRecord(minute: minute, cpu: mean("cpu"), cpuMax: maxima["cpu"], memory: mean("memory"),
                              pressure: maxima["pressure"].map { Int($0) }, download: mean("download"), upload: mean("upload"),
-                             gpu: mean("gpu"), temperature: maxima["temperature"], power: mean("power"))
+                             gpu: mean("gpu"), temperature: maxima["temperature"], power: mean("power"), battery: mean("battery"))
     }
 }

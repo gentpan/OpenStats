@@ -213,6 +213,7 @@ npm 缓存	npm Cache
 保持运行	Keep alive
 信号强度	Signal
 修改 DNS 需要管理员权限：已安装辅助工具时直接修改，否则每次弹出系统授权框。	Changing DNS needs administrator permission: it's applied directly when the helper is installed, otherwise the system asks each time.
+修改地址	Edit addresses
 偏好设置	Preferences
 偏高	Elevated
 停止	Stop
@@ -220,6 +221,7 @@ npm 缓存	npm Cache
 停用失败：{}	Failed to turn off: {}
 健康 {}	Health {}
 健康度	Health
+健康度是现在充满时的容量与出厂容量之比，低于 80% 时苹果建议更换电池	Health is today's full charge capacity versus the design capacity; Apple recommends a replacement below 80%
 元数据不是字典	Metadata is not a dictionary
 充电上限可在系统设置中设为 80%–100%，长期接电源时有助于延缓电池老化	Set a charge limit of 80%–100% in System Settings to slow battery aging when you stay plugged in
 充电中	Charging
@@ -287,6 +289,7 @@ npm 缓存	npm Cache
 单行文字	Inline Text
 占用	Usage
 占用超过 85% 时数值与图形显示为红色	Show values and graphs in red above 85%
+占用超过 85%（电池电量低于 20%）时数值与图形显示为红色	Values and graphics turn red above 85% usage (below 20% battery)
 占用高于	Usage above
 卷	Volume
 卸载	Uninstall
@@ -331,6 +334,7 @@ npm 缓存	npm Cache
 只在打开温度与风扇页面时记录	Recorded only while Temperature & Fans is open
 只在菜单栏显示 GPU 或打开 GPU 相关页面时记录	Recorded only when GPU is in the menu bar or a GPU page is open
 只在菜单栏显示温度、开启过热通知或打开温度页面时记录	Recorded only when temperature is in the menu bar, overheating alerts are on, or a temperature page is open
+只在菜单栏显示电池或打开电池页面时记录	Recorded only while Battery is in the menu bar or the Battery page is open
 只显示菜单栏时的采样间隔；打开弹窗或主窗口时为 1 秒（进程页 2 秒）	Sampling interval when only the menu bar is shown; 1 second with a popover or window open (2 seconds on Processes)
 只有国家、省 / 州与城市；把公网 IP 发给 db-ip.com	Country, state and city only; sends your public IP to db-ip.com
 只查找以该应用包名命名的文件，以及 Application Support、Logs 下与应用同名的目录；钥匙串与其他应用共享的数据不会动。程序坞里的图标会一并移除	Only files named after the app's bundle ID, plus folders with the app's name in Application Support and Logs, are included. Keychains and data shared with other apps are never touched. The Dock icon is removed as well
@@ -636,6 +640,7 @@ npm 缓存	npm Cache
 最强	Strongest
 最忙的核心	Busiest core
 最快，重活优先交给它们	Fastest; heavy work goes here first
+最近 24 小时	Last 24 hours
 最近 60 秒	Last 60 seconds
 最近没有应用在读写磁盘	No apps are reading or writing right now
 最近的内存压力走势	Recent memory pressure
@@ -811,12 +816,16 @@ npm 缓存	npm Cache
 由 macOS 调节	Managed by macOS
 由辅助工具执行	Handled by the helper
 电池	Battery
+电池 {}	Battery {}
 电池供电	On battery
+电池健康	Battery health
 电池健康度下降	Battery Health Low
 电池充电	Battery charging
 电池放电	Battery discharging
 电池最大容量为 {}，续航会明显缩短。可以在“系统设置 › 电池”查看是否建议维修。	Battery maximum capacity is {}, so battery life will be noticeably shorter. Check System Settings › Battery for service recommendations.
 电池最大容量低于 80%，每 30 天最多提醒一次	Battery maximum capacity drops below 80%; at most once every 30 days
+电池温度	Battery temperature
+电池电量	Battery level
 电池设置	Battery Settings
 电源	Power
 电源供电	On power adapter
@@ -824,7 +833,9 @@ npm 缓存	npm Cache
 电源适配器{}	Power adapter{}
 电量	Battery
 电量下限	Battery floor
+电量与充电状态；没有电池的 Mac 显示蓝牙设备电量	Charge level and charging state; Macs without a battery show Bluetooth device batteries
 电量低于 {}%，已关闭合盖运行	Battery below {}%; lid mode turned off
+电量历史	Charge history
 电量条	Meter
 登录以同步设置	Sign in to sync settings
 登录启动项	Launch Agents
@@ -871,6 +882,7 @@ npm 缓存	npm Cache
 系统服务	System Services
 系统正在把内存写到磁盘，可能会变慢。可以关掉占用大的应用。	The system is swapping memory to disk and may slow down. Quit apps that use a lot of memory.
 系统版号	Build
+系统电池设置…	System Battery Settings…
 系统级资源库（第三方驱动、辅助工具或后台服务）	System Library (third-party drivers, helpers or background services)
 系统维护	Maintenance
 系统自动	Automatic
@@ -934,7 +946,9 @@ npm 缓存	npm Cache
 菜单栏项目	Menu Bar Items
 菜单栏风格	Menu bar style
 蓝牙设备	Bluetooth Devices
+蓝牙设备电量 {}%	Bluetooth device battery {}%
 蓝牙设备电量低	Bluetooth Battery Low
+蓝牙设备电量低时提示	Low Bluetooth battery hint
 解压失败：{}	Unzip failed: {}
 计算中	Calculating
 记录历史数据	Record History
@@ -990,13 +1004,17 @@ npm 缓存	npm Cache
 运行中 · PID {}	Running · PID {}
 还可用	Available
 还有 {} 个	{} more
+还没有足够的记录。菜单栏显示电池或打开这个页面时，每分钟记录一次电量	Not enough records yet. The level is recorded every minute while Battery is in the menu bar or this page is open
+还能用 {}	{} left
 这个快捷键已被其他应用或系统占用，请换一个	This shortcut is used by another app or the system. Choose another.
 这台 Mac 不提供功耗读数	This Mac doesn't report power
 这台 Mac 不支持 Apple 智能。	This Mac doesn't support Apple Intelligence.
 这台 Mac 没有电池	This Mac has no battery
+这台 Mac 没有电池：菜单栏显示电量最低的蓝牙设备，弹窗只列蓝牙设备	This Mac has no battery: the menu bar shows the Bluetooth device with the lowest battery, and the popover lists Bluetooth devices only
 这段时间没有记录	No records for this period
 这段时间还没有记录。OpenStats 运行时每分钟记录一次，睡眠与锁屏期间不记录。	No records for this period yet. OpenStats records once a minute while running, except during sleep and lock.
 这里列出资源库里的 LaunchAgents 与 LaunchDaemons。停用只写入系统的停用记录并卸载，不删除文件，随时可以重新启用；登录时打开的应用与后台权限在系统设置里管理。	Lists LaunchAgents and LaunchDaemons from your Library folders. Turning one off records it as disabled and unloads it without deleting files, so you can turn it back on anytime. Login apps and background permissions are managed in System Settings.
+这里只显示已连接蓝牙设备的电量	Only connected Bluetooth devices are shown here
 进程	Processes
 进程 {} · 线程 {}	Processes {} · Threads {}
 进程名：{}	Process name: {}
@@ -1028,9 +1046,11 @@ npm 缓存	npm Cache
 重新扫描	Rescan
 重新查询公网 IP	Look Up Public IP Again
 重新生成	Regenerate
+重新读取蓝牙设备电量	Read Bluetooth device batteries again
 重置上传与下载统计：从现在起重新累计。重启后自动回到开机后的累计；右键可改回	Reset the upload and download totals and count from now on. After a restart they go back to since-boot totals; right-click to switch back
 重置后上传	Uploaded since reset
 重置后下载	Downloaded since reset
+键盘、鼠标、耳机等低于 20% 时，在菜单栏的电池项目旁显示该设备的图标与电量；需要开启电池项目	When a keyboard, mouse, headphones or similar drops below 20%, show its icon and level next to the Battery item in the menu bar; requires the Battery item
 闲	Idle
 防休眠	Keep Awake
 防休眠已开启	Keep Awake is on
@@ -1066,6 +1086,7 @@ npm 缓存	npm Cache
 （{}）	 ({})
 ，	, 
 ，{} 项未能移动	, {} couldn't be moved
+，充电中	, charging
 ，已从程序坞移除	, removed from the Dock
 ：{}	: {}
 """#
