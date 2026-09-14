@@ -305,16 +305,16 @@
     <div class="shell narrow">
       <div class="section-head">
         <h2>数据不出这台 Mac</h2>
-        <p>没有账号，没有统计上报。只有两项可关闭的网络功能会联网。</p>
+        <p>没有统计上报。账号是可选的，只用来同步偏好设置；另有两项可关闭的网络功能会联网。</p>
       </div>
       <ul class="fact-list">
         <li><b>指标来源</b><span>内核接口（host_processor_info、host_statistics64、sysctl）、IOKit 与 SMC</span></li>
-        <li><b>账号</b><span>不需要，也没有</span></li>
+        <li><b>账号</b><span>可选。用 GitHub、Google 或 Apple 登录后，偏好设置同步到你的其他 Mac；云端只保存邮箱、姓名与设置文档，可随时删除。详见<a href="privacy.html">隐私政策</a></span></li>
         <li><b>统计上报</b><span>没有</span></li>
         <li><b>公网 IP</b><span>打开网络详情时向 Cloudflare 查询一次公网地址，10 分钟内不重复，可关闭</span></li>
-        <li><b>归属地</b><span>国家、城市与 ASN 在本机的 MaxMind GeoLite2 数据库里查，数据库从本站下载并校验</span></li>
+        <li><b>归属地</b><span>数据源自己选：CleanIP.io（默认，含网络类型与纯净度评分）、ipapi.is、DB-IP、ipinfo.io，都是这台 Mac 直接向它查自己的公网 IP；也可以用本机的 MaxMind GeoLite2 数据库完全离线查</span></li>
         <li><b>连接探测</b><span>按设定间隔 ping 你选择的目标，只在显示网络项时运行，可关闭</span></li>
-        <li><b>偏好设置</b><span>保存在本机，不含个人信息</span></li>
+        <li><b>偏好设置</b><span>保存在本机；登录后同步的那一份不含任何监控数据</span></li>
       </ul>
     </div>
   </section>
@@ -432,6 +432,10 @@
       <details class="faq" id="install">
         <summary>怎么安装、卸载？</summary>
         <p>下载 DMG 后把 OpenStats 拖进“应用程序”；也可以用 Homebrew：<code>brew install --cask gentpan/tap/openstats</code>。卸载时先在“设置 › 辅助工具”里卸载辅助工具，再把应用移到废纸篓；用 Homebrew 安装的执行 <code>brew uninstall --zap --cask openstats</code>。</p>
+      </details>
+      <details class="faq">
+        <summary>菜单栏图标的顺序怎么调？</summary>
+        <p>按住 ⌘ 键拖动任意一个图标即可，松开后位置会一直保留，重启也不变。新开启的项目由 macOS 安排初始位置，可能离其他图标较远，拖到一起就好。这是系统自带的功能，对所有菜单栏图标都有效。</p>
       </details>
       <details class="faq">
         <summary>支持 Intel Mac 吗？</summary>

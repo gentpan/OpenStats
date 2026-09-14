@@ -1,0 +1,4 @@
+	# openstats-sync：账号与设置同步接口，其余路径仍由静态站点提供
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8787
+	}

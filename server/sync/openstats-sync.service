@@ -1,0 +1,23 @@
+[Unit]
+Description=OpenStats 账号与设置同步服务
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/openstats-sync
+EnvironmentFile=/etc/openstats/sync.env
+Environment=SYNC_DB=/var/lib/openstats-sync/sync.db
+User=openstats-sync
+Group=openstats-sync
+StateDirectory=openstats-sync
+Restart=on-failure
+RestartSec=3
+# 只需要读配置、写自己的数据目录
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+ReadWritePaths=/var/lib/openstats-sync
+
+[Install]
+WantedBy=multi-user.target
