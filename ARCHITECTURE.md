@@ -161,7 +161,10 @@ is open and back to accessory when all are closed.
   type, native / broadcast and the cleanliness score come from `cleanip.io`, queried directly from each
   Mac by `PublicAddressLookup` (one request per address family; results are cached per IP for an hour
   in memory and for a week on disk, and a 429 stops further calls until the next UTC day). Country
-  codes are validated before being used as flag file names.
+  codes are validated before being used as flag file names. `server/geoip/` still holds the systemd
+  timer that syncs MaxMind GeoLite2 onto `getopenstats.com/geoip/` (account and key in
+  `/etc/openstats/maxmind.env` on the server); the app no longer downloads those files, they are kept
+  for other uses.
 - **Per-process traffic** — cumulative bytes from `/usr/bin/nettop`, diffed between samples.
 - **DNS** — `networksetup -setdnsservers` through the helper (protocol 3), which re-validates the
   service name and every address; without the helper, a one-off administrator prompt runs the
