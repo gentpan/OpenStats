@@ -37,6 +37,13 @@ make install          # Release into /Applications
 make test             # swift test in the package
 ```
 
+Versions read `0.2.0 (0003)`: `MARKETING_VERSION` changes only when releasing
+(`make bump-patch` for small releases, `make bump-minor` for larger ones), and the four-digit
+`CURRENT_PROJECT_VERSION` goes up by one on every `make build` (`BUMP=0` skips it). Build numbers
+never reset, so every package has a larger `CFBundleVersion` than the one before. Build products are
+unregistered from Launch Services so only `/Applications/OpenStats.app` shows up in Spotlight and the
+widget gallery.
+
 `project.yml` defaults to ad-hoc signing so the project opens anywhere. The Makefile passes
 the first Developer ID Application identity from the keychain (and `--timestamp` for Release)
 when there is one. `make release` runs `Scripts/release.sh`: build, verify team, timestamp and

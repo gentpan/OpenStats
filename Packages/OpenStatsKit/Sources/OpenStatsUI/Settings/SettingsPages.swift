@@ -766,7 +766,7 @@ struct AboutSettings: View {
                     AppGlyph(size: DS.Space.s12)
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                         Text("OpenStats").dsFont(.lg, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
-                        Text(verbatim: tr("版本 \(version)\(build.map { tr("（\($0)）") } ?? "")"))
+                        Text(verbatim: tr("版本 \(version)\(build.map { " (\($0))" } ?? "")"))
                             .dsFont(.sm)
                             .foregroundStyle(DS.Palette.textSecondary)
                     }
