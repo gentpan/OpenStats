@@ -12,7 +12,8 @@ scp -i "$KEY" -o BatchMode=yes openstats-geoip-update.sh openstats-geoip.service
   sudo install -m 755 /tmp/openstats-geoip-update.sh /usr/local/bin/openstats-geoip-update
   sudo install -m 644 /tmp/openstats-geoip.service /tmp/openstats-geoip.timer /etc/systemd/system/
   sudo install -d -m 755 /var/www/getopenstats.com/geoip
-  sudo install -d -m 700 /etc/openstats
+  # 目录与同步服务共用（root:openstats-sync 750），这里只保证存在，不改权限，否则同步服务读不到 Apple 私钥
+  sudo mkdir -p /etc/openstats
   sudo systemctl daemon-reload
   sudo systemctl enable --now openstats-geoip.timer
   rm -f /tmp/openstats-geoip-update.sh /tmp/openstats-geoip.service /tmp/openstats-geoip.timer

@@ -15,6 +15,6 @@ case "$ACCOUNT$LICENSE" in *[!A-Za-z0-9_]*) echo "账号或 Key 含有意外字�
 
 # 通过标准输入写入，命令行参数里不出现 Key
 printf 'MAXMIND_ACCOUNT_ID=%s\nMAXMIND_LICENSE_KEY=%s\n' "$ACCOUNT" "$LICENSE" \
-  | "${SSH[@]}" 'sudo install -d -m 700 /etc/openstats && sudo tee /etc/openstats/maxmind.env >/dev/null && sudo chmod 600 /etc/openstats/maxmind.env && echo "已写入 /etc/openstats/maxmind.env"'
+  | "${SSH[@]}" 'sudo mkdir -p /etc/openstats && sudo tee /etc/openstats/maxmind.env >/dev/null && sudo chmod 600 /etc/openstats/maxmind.env && echo "已写入 /etc/openstats/maxmind.env"'
 echo "开始第一次同步（三个库约 80 MB，需要一两分钟）…"
 "${SSH[@]}" 'sudo systemctl start openstats-geoip.service && cat /var/www/getopenstats.com/geoip/manifest.json && echo'
