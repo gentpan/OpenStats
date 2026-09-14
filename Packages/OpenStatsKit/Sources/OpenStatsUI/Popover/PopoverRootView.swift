@@ -21,6 +21,7 @@ struct PopoverRootView: View {
                 case .memory: MemoryPopover()
                 case .network: NetworkPopover()
                 case .gpu: GPUPopover()
+                case .disk: DiskPopover()
                 case .temperature, .fan: ThermalPopover(item: item)
                 }
             }
@@ -51,7 +52,9 @@ private struct PopoverHeader: View {
                 .foregroundStyle(DS.Palette.textPrimary)
             Spacer(minLength: DS.Space.s2)
             if item == .memory { PurgeMemoryButton() }
-            IconButton(systemName: "macwindow", help: tr("打开 OpenStats 主窗口")) { model.openMainWindow(nil) }
+            // 左边的按钮用该指标自己的图标，点进主窗口里它的页面；右边的齿轮进总设置
+            let page = PanelTab(item: item)
+            IconButton(systemName: page.symbol, help: tr("在主窗口打开“\(page.title)”")) { model.openMainWindow(page) }
             IconButton(systemName: "gearshape", help: tr("设置")) { model.openSettings() }
         }
     }
@@ -59,9 +62,13 @@ private struct PopoverHeader: View {
 
 // MARK: - 共用组件
 
-/// 弹窗里的一个区块：小标题 + 内容
+/// 弹窗里的一个区块：小标题 + 内容。
+/// 解释性文字不常驻界面：给 `hint` 后标题旁出现一个很淡的 ⓘ，鼠标悬停在 ⓘ 或卡片内容上才显示说明，看一遍就够的人不用一直看着它
 struct SectionCard<Trailing: View, Content: View>: View {
     let title: String
+    var hint: String?
+    /// 紧跟标题之后的小附件，例如数据来源的 logo
+    var titleAccessory: AnyView?
     @ViewBuilder var trailing: Trailing
     @ViewBuilder var content: Content
 
@@ -71,6 +78,18 @@ struct SectionCard<Trailing: View, Content: View>: View {
                 Text(title)
                     .dsFont(.xs, weight: .semibold)
                     .foregroundStyle(DS.Palette.textSecondary)
+                    .lineLimit(1)
+                    .fixedSize()
+                if let titleAccessory {
+                    titleAccessory
+                }
+                if let hint {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: DS.TextSize.xs.rawValue, weight: .medium))
+                        .foregroundStyle(DS.Palette.textTertiary)
+                        .help(hint)
+                        .accessibilityLabel(hint)
+                }
                 Spacer(minLength: DS.Space.s2)
                 trailing
                     .dsFont(.xs)
@@ -78,13 +97,22 @@ struct SectionCard<Trailing: View, Content: View>: View {
                     .lineLimit(1)
             }
             content
+                .help(optional: hint)
         }
     }
 }
 
 extension SectionCard where Trailing == EmptyView {
-    init(title: String, @ViewBuilder content: () -> Content) {
-        self.init(title: title, trailing: { EmptyView() }, content: content)
+    init(title: String, hint: String? = nil, @ViewBuilder content: () -> Content) {
+        self.init(title: title, hint: hint, trailing: { EmptyView() }, content: content)
+    }
+}
+
+extension View {
+    /// 有说明时才挂悬停提示
+    @ViewBuilder
+    func help(optional text: String?) -> some View {
+        if let text { help(text) } else { self }
     }
 }
 
@@ -165,6 +193,27 @@ struct MiniIconButton: View {
         .onHover { hovering = $0 }
         .help(help)
         .accessibilityLabel(help)
+    }
+}
+
+/// 区块标题栏里的刷新按钮：查询进行中换成系统的转圈，查完自动变回图标
+struct RefreshButton: View {
+    var loading: Bool
+    let help: String
+    let action: () -> Void
+
+    var body: some View {
+        ZStack {
+            if loading {
+                ProgressView()
+                    .controlSize(.small)
+                    .accessibilityLabel(tr("正在查询…"))
+            } else {
+                MiniIconButton(systemName: "arrow.clockwise", help: help, action: action)
+            }
+        }
+        .frame(width: DS.Size.segmentHeight, height: DS.Size.segmentHeight)
+        .animation(DS.Motion.quick, value: loading)
     }
 }
 

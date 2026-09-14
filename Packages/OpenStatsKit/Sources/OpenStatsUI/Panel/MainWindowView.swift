@@ -21,7 +21,9 @@ public struct MainWindowView: View {
                 }
 
             VStack(spacing: 0) {
+                // 页面的滚动视图会自动向上延伸到标题栏下面，与顶栏重叠；顶栏必须在它之上，否则开关收不到点击
                 PageHeader()
+                    .zIndex(1)
                 Group {
                     switch model.settings.panelTab {
                     case .overview: OverviewPage()
@@ -45,6 +47,7 @@ public struct MainWindowView: View {
                     case .settingsGeneral: SettingsTabPage { GeneralSettings() }
                     case .settingsMenuBar: SettingsTabPage { MenuBarSettings() }
                     case .settingsNotifications: SettingsTabPage { NotificationSettings() }
+                    case .settingsAccount: SettingsTabPage { AccountSettings() }
                     case .settingsHelper: SettingsTabPage { HelperSettings() }
                     case .settingsAbout: SettingsTabPage { AboutSettings() }
                     }
@@ -121,6 +124,8 @@ private struct MainSidebar: View {
         switch tab {
         case .settingsAbout: model.updates.release != nil ? .primary : nil
         case .settingsHelper: model.helper.isReady && model.helper.isOutdated ? .warning : nil
+        case .settingsAccount:
+            if model.sync.conflict != nil { .primary } else if case .failed = model.sync.phase { .warning } else { nil }
         default: nil
         }
     }
@@ -162,10 +167,18 @@ private struct PageHeader: View {
                 Chip(text: tr("防休眠已开启"), icon: "cup.and.saucer.fill", tone: .primary)
             }
             if tab == .memory { PurgeMemoryButton() }
-            if let item = tab.menuBarItem {
+            // 每个监控页都能在这里开关自己的菜单栏项目；温度与风扇页有两项，各带一个小标签
+            let items = tab.menuBarItems
+            if !items.isEmpty {
                 Text(tr("在菜单栏显示")).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
-                DSToggle(isOn: Binding(get: { settings.isEnabled(item) }, set: { settings.setEnabled(item, $0) }),
-                         label: tr("在菜单栏显示\(item.title)"))
+                ForEach(items) { item in
+                    if items.count > 1 {
+                        Text(item.popoverTitle).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+                    }
+                    DSToggle(isOn: Binding(get: { settings.isEnabled(item) }, set: { settings.setEnabled(item, $0) }),
+                             label: tr("在菜单栏显示\(item.title)"))
+                        .help(tr("开启后图标出现在菜单栏；按住 ⌘ 键拖动图标可以调整位置"))
+                }
             }
         }
         .padding(.horizontal, DS.Space.s3 + DS.Space.s1)

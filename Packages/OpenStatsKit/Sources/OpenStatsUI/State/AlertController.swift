@@ -8,13 +8,14 @@ import UserNotifications
 
 /// 可以发系统通知的状况
 public enum AlertKind: String, CaseIterable, Identifiable, Sendable {
-    case cpuTemperature, memoryPressure, diskSpace, networkDown, batteryHealth, bluetoothBattery
+    case cpuTemperature, cpuLoad, memoryPressure, diskSpace, networkDown, batteryHealth, bluetoothBattery
 
     public var id: String { rawValue }
 
     var title: String {
         switch self {
         case .cpuTemperature: tr("CPU 过热")
+        case .cpuLoad: tr("CPU 持续高负载")
         case .memoryPressure: tr("内存压力严重")
         case .diskSpace: tr("磁盘空间不足")
         case .networkDown: tr("网络断开")
@@ -26,6 +27,7 @@ public enum AlertKind: String, CaseIterable, Identifiable, Sendable {
     var detail: String {
         switch self {
         case .cpuTemperature: tr("CPU 温度持续 1 分钟高于设定值")
+        case .cpuLoad: tr("CPU 总占用持续 1 分钟高于设定值，通常是某个应用卡住或在后台狂跑")
         case .memoryPressure: tr("内存压力持续 30 秒处于严重，系统开始大量换页")
         case .diskSpace: tr("启动磁盘可用空间低于 10% 或 10 GB，每 10 分钟检查一次")
         case .networkDown: tr("网络连接中断超过 20 秒，恢复后再提示一次")
@@ -37,6 +39,7 @@ public enum AlertKind: String, CaseIterable, Identifiable, Sendable {
     var symbol: String {
         switch self {
         case .cpuTemperature: "thermometer.high"
+        case .cpuLoad: "cpu"
         case .memoryPressure: "memorychip"
         case .diskSpace: "internaldrive"
         case .networkDown: "wifi.slash"
@@ -49,6 +52,7 @@ public enum AlertKind: String, CaseIterable, Identifiable, Sendable {
     var tab: PanelTab {
         switch self {
         case .cpuTemperature: .thermal
+        case .cpuLoad: .cpu
         case .memoryPressure: .memory
         case .diskSpace: .disk
         case .networkDown: .network
@@ -59,7 +63,7 @@ public enum AlertKind: String, CaseIterable, Identifiable, Sendable {
     /// 状况持续多久才提醒
     var sustain: TimeInterval {
         switch self {
-        case .cpuTemperature: 60
+        case .cpuTemperature, .cpuLoad: 60
         case .memoryPressure: 30
         case .networkDown: 20
         case .diskSpace, .batteryHealth, .bluetoothBattery: 0
@@ -69,7 +73,7 @@ public enum AlertKind: String, CaseIterable, Identifiable, Sendable {
     /// 同一状况两次提醒的最短间隔
     var cooldown: TimeInterval {
         switch self {
-        case .cpuTemperature, .memoryPressure, .networkDown: 30 * 60
+        case .cpuTemperature, .cpuLoad, .memoryPressure, .networkDown: 30 * 60
         case .diskSpace, .bluetoothBattery: 6 * 60 * 60
         case .batteryHealth: 30 * 24 * 60 * 60
         }
@@ -178,6 +182,12 @@ public final class AlertController: NSObject {
             let limit = Double(settings.alertCPUTemperature)
             fireIfNeeded(.cpuTemperature, isActive: cpu >= limit, now: now,
                          body: tr("CPU 温度 \(Format.temperature(cpu, fahrenheit: settings.useFahrenheit))，已持续超过 1 分钟。可以检查高占用进程，或在“温度与风扇”里提高风扇转速。"))
+        }
+        if enabled.contains(.cpuLoad), let cpu = store.cpu {
+            // 只在菜单栏显示时进程列表可能是很久以前采的，不在通知里点名应用，让用户打开详情看实时的
+            let limit = Double(settings.alertCPULoad) / 100
+            fireIfNeeded(.cpuLoad, isActive: cpu.total >= limit, now: now,
+                         body: tr("CPU 占用 \(Format.percent(cpu.total))，已持续超过 1 分钟。可以打开 CPU 详情，在“按应用汇总”里看看是哪个应用在占用。"))
         }
         if enabled.contains(.memoryPressure), let memory = store.memory {
             fireIfNeeded(.memoryPressure, isActive: memory.pressure == .critical, now: now,

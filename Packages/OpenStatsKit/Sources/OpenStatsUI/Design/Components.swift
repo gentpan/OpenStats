@@ -84,17 +84,198 @@ struct ProgressTrack: View {
     let fraction: Double
     var color: Color = DS.Palette.primary
     var height: CGFloat = DS.Size.barHeight
+    /// 占比类（容量、电量）画灰色底槽；排行类（按应用汇总）只画彩色条，底槽拉满一整行反而显得杂乱
+    var showsTrack = true
 
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: DS.Radius.sm).fill(DS.Palette.track)
+                if showsTrack {
+                    RoundedRectangle(cornerRadius: DS.Radius.sm).fill(DS.Palette.track)
+                }
                 RoundedRectangle(cornerRadius: DS.Radius.sm)
                     .fill(color)
                     .frame(width: proxy.size.width * min(1, max(0, fraction)))
             }
         }
         .frame(height: height)
+    }
+}
+
+/// 分段条：把一个整体按比例切成几段，每段填自己的颜色，段内写“名称 百分比”，
+/// 第一段靠左、最后一段靠右、中间居中；段太窄放不下文字就只画色块，数值由旁边的图例补充
+struct SegmentedBar: View {
+    struct Segment: Identifiable {
+        let id: String
+        let label: String
+        let fraction: Double
+        let color: Color
+        var labelColor: Color = DS.Palette.onPrimary
+    }
+
+    let segments: [Segment]
+    var height: CGFloat = DS.Size.controlHeight
+
+    var body: some View {
+        GeometryReader { proxy in
+            let total = max(segments.reduce(0) { $0 + max(0, $1.fraction) }, 0.000_001)
+            HStack(spacing: 0) {
+                ForEach(Array(segments.enumerated()), id: \.element.id) { index, segment in
+                    let width = proxy.size.width * max(0, segment.fraction) / total
+                    let percent = Format.percent(segment.fraction / total)
+                    ZStack(alignment: index == 0 ? .leading : index == segments.count - 1 ? .trailing : .center) {
+                        Rectangle().fill(segment.color)
+                        // 放得下就写“名称 百分比”，只放得下数字就只写百分比，再窄就只画色块
+                        ViewThatFits(in: .horizontal) {
+                            Text(verbatim: "\(segment.label) \(percent)")
+                            Text(verbatim: percent)
+                            Color.clear.frame(width: 0, height: 0)
+                        }
+                        .dsFont(.xs, weight: .semibold)
+                        .foregroundStyle(segment.labelColor)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .padding(.horizontal, DS.Space.s2)
+                    }
+                    .frame(width: width)
+                    .clipped()
+                }
+            }
+        }
+        .frame(height: height)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+    }
+}
+
+/// 带图标的徽章（cleanip.io 样式）：浅色底、细边框、同色系文字，用于“原生 IP”“住宅 IP”“ISP”这类结论性标签
+struct TagBadge: View {
+    enum Tone { case success, warning, neutral, primary }
+
+    var icon: String?
+    let text: String
+    var tone: Tone = .success
+    /// 放在区块标题行里的小号：更窄的内边距
+    var compact = false
+
+    var body: some View {
+        HStack(spacing: DS.Space.s1) {
+            if let icon {
+                Image(systemName: icon)
+                    .font(.system(size: DS.TextSize.sm.rawValue, weight: .semibold))
+                    .frame(width: DS.Size.iconInline, height: DS.Size.iconInline)
+            }
+            Text(text).dsFont(.xs, weight: .semibold)
+        }
+        .foregroundStyle(foreground)
+        .padding(.horizontal, compact ? DS.Space.s1 : DS.Space.s3)
+        .padding(.vertical, compact ? DS.Space.s1 / 2 : DS.Space.s1)
+        .background(fill, in: RoundedRectangle(cornerRadius: compact ? DS.Radius.sm : DS.Radius.md))
+        .overlay(RoundedRectangle(cornerRadius: compact ? DS.Radius.sm : DS.Radius.md).strokeBorder(border, lineWidth: DS.Size.stroke))
+        .lineLimit(1)
+        .fixedSize()
+    }
+
+    private var foreground: Color {
+        switch tone {
+        case .success: DS.Badge.successText
+        case .warning: DS.Badge.warningText
+        case .neutral: DS.Badge.neutralText
+        case .primary: DS.Palette.primary
+        }
+    }
+
+    private var fill: Color {
+        switch tone {
+        case .success: DS.Badge.successFill
+        case .warning: DS.Badge.warningFill
+        case .neutral: DS.Badge.neutralFill
+        case .primary: DS.Palette.primary.opacity(0.10)
+        }
+    }
+
+    private var border: Color {
+        switch tone {
+        case .success: DS.Badge.successBorder
+        case .warning: DS.Badge.warningBorder
+        case .neutral: DS.Badge.neutralBorder
+        case .primary: DS.Palette.primary.opacity(0.30)
+        }
+    }
+}
+
+/// cleanip.io 的字标：黑色部分按文字色着色（随深浅色变化），圆环与 “.io” 保持品牌绿。
+/// 画布已裁到字形边缘，指定的高度就是字形实际高度，不留上下空白
+struct CleanIPLogo: View {
+    var height: CGFloat = DS.Size.iconInline
+
+    var body: some View {
+        // 字标画布已裁到字形边缘：600 × 98
+        let width = height * 600 / 98
+        ZStack {
+            if let ink = LogoCache.shared.image(named: "cleanip-ink", template: true) {
+                Image(nsImage: ink).resizable().foregroundStyle(DS.Palette.textPrimary)
+            }
+            if let green = LogoCache.shared.image(named: "cleanip-green", template: false) {
+                Image(nsImage: green).resizable()
+            }
+        }
+        .frame(width: width, height: height)
+        .accessibilityLabel("cleanip.io")
+    }
+}
+
+/// 可点击的 cleanip.io 字标：点了打开链接，悬停时略微变淡
+struct CleanIPLink: View {
+    static let site = URL(string: "https://cleanip.io")!
+    var height: CGFloat = DS.Size.iconInline
+    var url = CleanIPLink.site
+    var help = "cleanip.io"
+    @State private var hovering = false
+
+    var body: some View {
+        Button { NSWorkspace.shared.open(url) } label: {
+            CleanIPLogo(height: height)
+                .opacity(hovering ? 0.7 : 1)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .animation(DS.Motion.quick, value: hovering)
+        .help(help)
+    }
+}
+
+/// 胶囊切换：底槽是一条灰色胶囊，选中项是一颗蓝色胶囊滑过去，文字随之变白
+struct PillSwitch<Value: Hashable>: View {
+    @Binding var selection: Value
+    let options: [(value: Value, title: String)]
+    @Namespace private var namespace
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(options, id: \.value) { option in
+                let selected = option.value == selection
+                Button { selection = option.value } label: {
+                    Text(option.title)
+                        .dsFont(.xs, weight: .semibold)
+                        .foregroundStyle(selected ? DS.Palette.onPrimary : DS.Palette.textSecondary)
+                        .padding(.horizontal, DS.Space.s2)
+                        .frame(height: DS.Size.segmentHeight - DS.Space.s1)
+                        .background {
+                            if selected {
+                                Capsule().fill(DS.Palette.primary)
+                                    .matchedGeometryEffect(id: "pill", in: namespace)
+                            }
+                        }
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(DS.Space.s1 / 2)
+        .background(DS.Palette.track, in: Capsule())
+        .animation(DS.Motion.quick, value: selection)
+        .fixedSize()
     }
 }
 

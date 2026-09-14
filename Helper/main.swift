@@ -138,6 +138,22 @@ final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProto
         }
     }
 
+    func deleteLocalSnapshots(identifiers: [String], reply: @escaping @Sendable (String?) -> Void) {
+        queue.async { [self] in
+            guard !identifiers.isEmpty, identifiers.count <= LocalSnapshotCommand.maxCount,
+                  identifiers.allSatisfy(LocalSnapshotCommand.isValidIdentifier) else { return reply("无效的快照标识") }
+            for identifier in identifiers {
+                let result = runTool(LocalSnapshotCommand.tool, LocalSnapshotCommand.arguments(identifier: identifier))
+                guard result.status == 0 else {
+                    log.error("删除快照失败：\(result.output, privacy: .public)")
+                    return reply("tmutil 执行失败：\(result.output.trimmingCharacters(in: .whitespacesAndNewlines))")
+                }
+            }
+            log.notice("已删除 \(identifiers.count) 个本地快照")
+            reply(nil)
+        }
+    }
+
     // MARK: 状态恢复
 
     private func connectionClosed(_ id: ObjectIdentifier) {

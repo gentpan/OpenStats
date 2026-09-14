@@ -163,6 +163,10 @@ public final class HelperClient {
         await call { proxy, reply in proxy.setDNSServers(service: service, servers: servers, reply: reply) }
     }
 
+    func deleteLocalSnapshots(identifiers: [String]) async -> String? {
+        await call { proxy, reply in proxy.deleteLocalSnapshots(identifiers: identifiers, reply: reply) }
+    }
+
     /// 已安装的辅助工具的协议版本；旧版本不认识新增的方法，调用前先确认
     func remoteProtocolVersion() async -> Int? {
         refreshStatus()

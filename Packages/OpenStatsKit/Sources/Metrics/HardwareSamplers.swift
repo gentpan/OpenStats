@@ -8,13 +8,15 @@ import Localization
 public enum DiskSampler {
     public static func sample(volume: URL = URL(fileURLWithPath: "/")) -> DiskUsage? {
         let keys: Set<URLResourceKey> = [.volumeLocalizedNameKey, .volumeTotalCapacityKey,
-                                         .volumeAvailableCapacityForImportantUsageKey]
+                                         .volumeAvailableCapacityForImportantUsageKey, .volumeAvailableCapacityKey]
         guard let values = try? volume.resourceValues(forKeys: keys),
               let total = values.volumeTotalCapacity else { return nil }
-        // “重要用途可用空间”包含可清除空间，与访达显示一致
-        let available = values.volumeAvailableCapacityForImportantUsage ?? 0
+        // “重要用途可用空间”包含可清除空间，与访达显示一致；减去普通可用空间就是可清除的部分
+        let available = max(0, values.volumeAvailableCapacityForImportantUsage ?? 0)
+        let strict = Int64(values.volumeAvailableCapacity ?? 0)
         return DiskUsage(volumeName: values.volumeLocalizedName ?? tr("磁盘"),
-                         total: UInt64(total), available: UInt64(max(0, available)))
+                         total: UInt64(total), available: UInt64(available),
+                         purgeable: UInt64(max(0, available - strict)))
     }
 }
 

@@ -63,6 +63,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         model.alerts.start()
         hotKeys.onAction = { [weak self] action in self?.perform(action) }
         applyHotKeys()
+        model.sync.presentationAnchor = { [weak self] in self?.mainWindow.nsWindow }
+        model.sync.start()
 
         // 开发调试：--show-panel [cpu|memory|network|gpu|temperature|fan] 启动后展开并固定弹窗；--show-window 打开主窗口
         let arguments = CommandLine.arguments
@@ -208,13 +210,13 @@ public final class AppController: NSObject, NSApplicationDelegate {
             _ = model.settings.probeTarget
             _ = model.settings.probeSeconds
             _ = model.settings.publicIPLookup
+            _ = model.settings.geoSource
         } onChange: { [weak self] in
             Task { @MainActor in
                 guard let self else { return }
                 self.model.network.restartProbing()
-                if !self.model.settings.publicIPLookup {
-                    self.model.network.clearPublicAddresses()
-                } else if self.model.isNetworkDetailVisible {
+                self.model.network.clearPublicAddresses()
+                if self.model.settings.publicIPLookup, self.model.isNetworkDetailVisible {
                     self.model.network.lookUpPublicAddresses()
                 }
                 self.observeProbeSettings()
@@ -276,6 +278,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 MainActor.assumeIsolated {
                     guard let self else { return }
                     self.model.network.setPaused(false)
+                    self.model.sync.pullSoon()
                     Task {
                         await self.model.hub.setPaused(false)
                         await self.model.fans.reapply()
@@ -289,6 +292,9 @@ public final class AppController: NSObject, NSApplicationDelegate {
 public enum OpenStatsApplication {
     @MainActor
     public static func main() {
+        // 滚动条一律用浮层样式：接了鼠标时系统默认是常驻滚动条，SwiftUI 的 ScrollView 会给它预留一条宽度，
+        // 弹窗里的内容就会整体偏左。这是本应用自己的偏好域，只影响 OpenStats
+        UserDefaults.standard.set("WhenScrolling", forKey: "AppleShowScrollBars")
         let app = NSApplication.shared
         // 界面语言在创建任何界面之前确定，切换后重启生效
         let stored = UserDefaults.standard.string(forKey: AppSettings.languageKey).flatMap(AppLanguage.init(rawValue:)) ?? .system

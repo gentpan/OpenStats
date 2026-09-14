@@ -1,9 +1,10 @@
 import Foundation
 import Localization
+import Metrics
 import Observation
 
 public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
-    case cpu, memory, network, gpu, temperature, fan
+    case cpu, memory, network, gpu, disk, temperature, fan
 
     public var id: String { rawValue }
 
@@ -13,6 +14,7 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
         case .memory: tr("内存")
         case .network: tr("网络")
         case .gpu: "GPU"
+        case .disk: tr("磁盘")
         case .temperature: tr("CPU 温度")
         case .fan: tr("风扇转速")
         }
@@ -24,6 +26,7 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
         case .memory: tr("已用内存占比")
         case .network: tr("上传与下载速度、IP 地址、DNS")
         case .gpu: tr("GPU 占用")
+        case .disk: tr("启动磁盘已用占比")
         case .temperature: tr("CPU 核心最高温度")
         case .fan: tr("转速最高的风扇")
         }
@@ -36,6 +39,7 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
         case .memory: "RAM"
         case .network: "NET"
         case .gpu: "GPU"
+        case .disk: "DISK"
         case .temperature: "TEMP"
         case .fan: "FAN"
         }
@@ -48,6 +52,7 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
         case .memory: tr("内存")
         case .network: tr("网络")
         case .gpu: "GPU"
+        case .disk: tr("磁盘")
         case .temperature: tr("温度")
         case .fan: tr("风扇")
         }
@@ -56,10 +61,11 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
     /// 点击该项弹出的详情里可以显示的内容，按显示顺序排列
     var popoverSections: [PopoverSection] {
         switch self {
-        case .cpu: [.cpuHeatmap, .cpuClusters, .cpuLoadAverage, .cpuApps]
+        case .cpu: [.cpuCores, .cpuHeatmap, .cpuClusters, .cpuLoadAverage, .cpuApps]
         case .memory: [.memoryWaterline, .memoryCompression, .memoryApps]
-        case .network: [.networkHistory, .networkProbe, .networkInterface, .networkAddresses, .networkDNS, .networkProcesses]
+        case .network: [.networkHistory, .networkProbe, .networkInterface, .networkAddresses, .networkPurity, .networkDNS, .networkProcesses]
         case .gpu: [.gpuHistory, .gpuDetails]
+        case .disk: [.diskActivity, .diskHealth, .diskProcesses]
         case .temperature: [.thermalSensors, .thermalFans, .thermalPower]
         case .fan: [.thermalFans, .thermalSensors, .thermalPower]
         }
@@ -74,6 +80,7 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
         case .memory: "memorychip"
         case .network: "arrow.up.arrow.down"
         case .gpu: "square.3.layers.3d"
+        case .disk: "internaldrive"
         case .temperature: "thermometer.medium"
         case .fan: "fan"
         }
@@ -82,17 +89,23 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
 
 /// 详情弹窗里可以单独隐藏的区块
 public enum PopoverSection: String, CaseIterable, Identifiable, Sendable {
-    case cpuHeatmap, cpuClusters, cpuLoadAverage, cpuApps
+    case cpuHeatmap, cpuCores, cpuClusters, cpuLoadAverage, cpuApps
     case memoryWaterline, memoryCompression, memoryApps
-    case networkHistory, networkProbe, networkInterface, networkAddresses, networkDNS, networkProcesses
+    case networkHistory, networkProbe, networkInterface, networkAddresses, networkPurity, networkDNS, networkProcesses
     case gpuHistory, gpuDetails
+    case diskActivity, diskHealth, diskProcesses
     case thermalSensors, thermalFans, thermalPower
 
     public var id: String { rawValue }
 
+    /// 弹窗默认不显示的区块（主窗口详情页始终显示）：热力图已经能看出各核心此刻的占用，
+    /// 每核柱状图给想要一眼看清单个核心的人在设置里打开，避免弹窗默认太长
+    static let hiddenByDefault: Set<PopoverSection> = [.cpuCores]
+
     var title: String {
         switch self {
         case .cpuHeatmap: tr("核心热力图")
+        case .cpuCores: tr("各核心占用")
         case .cpuClusters: tr("核心分工")
         case .cpuLoadAverage: tr("排队程度")
         case .cpuApps, .memoryApps: tr("按应用汇总")
@@ -103,9 +116,13 @@ public enum PopoverSection: String, CaseIterable, Identifiable, Sendable {
         case .networkProbe: tr("连接探测")
         case .networkInterface: tr("接口")
         case .networkAddresses: tr("IP 地址")
+        case .networkPurity: tr("IP 纯净度")
         case .networkDNS: "DNS"
         case .gpuHistory: tr("使用历史")
         case .gpuDetails: tr("显卡信息")
+        case .diskActivity: tr("读写速度")
+        case .diskHealth: tr("SSD 健康")
+        case .diskProcesses: tr("读写最多的应用")
         case .thermalSensors: tr("温度")
         case .thermalFans: tr("风扇")
         case .thermalPower: tr("功耗")
@@ -158,11 +175,57 @@ public enum ProbeTarget: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-/// 菜单栏风格：一种风格统一套用到所有指标，风格内部的排版保持一致
-public enum MenuBarStyle: String, CaseIterable, Identifiable, Sendable {
-    case stacked, inline, icon, ring, pie, history, meter, dot
+/// 公网 IP 归属地的数据源
+public enum GeoSource: String, CaseIterable, Identifiable, Sendable {
+    case cleanIP, ipapi, dbip, ipinfo, localDatabase
 
     public var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .cleanIP: "CleanIP.io"
+        case .ipapi: "ipapi.is"
+        case .dbip: "DB-IP"
+        case .ipinfo: "ipinfo.io"
+        case .localDatabase: tr("本地 GeoLite2 数据库")
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .cleanIP: tr("归属地、ASN、网络类型、原生 / 广播、纯净度与风险评分，中文地名；把公网 IP 发给 cleanip.io")
+        case .ipapi: tr("归属地与 ASN；把公网 IP 发给 ipapi.is，匿名额度每天 30 次，同一 IP 的结果记住一天")
+        case .dbip: tr("只有国家、省 / 州与城市；把公网 IP 发给 db-ip.com")
+        case .ipinfo: tr("归属地与 ASN；把公网 IP 发给 ipinfo.io，匿名额度很小，容易被限流")
+        case .localDatabase: tr("在本机的 MaxMind 数据库里查国家、城市与 ASN，不向任何服务发送 IP；数据库未就绪时暂用 CleanIP.io")
+        }
+    }
+
+    /// 对应的在线数据源；本地数据库没有
+    var provider: GeoProvider? {
+        switch self {
+        case .cleanIP: .cleanIP
+        case .ipapi: .ipapi
+        case .dbip: .dbip
+        case .ipinfo: .ipinfo
+        case .localDatabase: nil
+        }
+    }
+}
+
+/// 菜单栏风格：整体选一种套用到所有指标，个别指标可以单独指定（AppSettings.styleOverrides）；风格内部的排版保持一致
+public enum MenuBarStyle: String, CaseIterable, Identifiable, Sendable {
+    case stacked, inline, icon, ring, pie, history, line, meter, dot
+
+    public var id: String { rawValue }
+
+    /// 温度、风扇没有百分比，图形类风格画不出来，只给文字类的三种
+    static func options(for item: MenuBarItem) -> [MenuBarStyle] {
+        switch item {
+        case .temperature, .fan: [.stacked, .inline, .icon]
+        default: allCases
+        }
+    }
 
     var title: String {
         switch self {
@@ -172,6 +235,7 @@ public enum MenuBarStyle: String, CaseIterable, Identifiable, Sendable {
         case .ring: tr("圆环")
         case .pie: tr("饼图")
         case .history: tr("柱状历史")
+        case .line: tr("折线历史")
         case .meter: tr("电量条")
         case .dot: tr("状态圆点")
         }
@@ -185,6 +249,7 @@ public enum MenuBarStyle: String, CaseIterable, Identifiable, Sendable {
         case .ring: tr("圆环表示当前占用比例")
         case .pie: tr("饼图表示当前占用比例")
         case .history: tr("10 根柱子是最近 10 次采样（约 20 秒）的变化")
+        case .line: tr("折线是最近 30 次采样（约 1 分钟）的走势")
         case .meter: tr("竖向电量条表示当前占用比例")
         case .dot: tr("绿色正常、橙色偏高（60% 以上）、红色很高（85% 以上）")
         }
@@ -235,13 +300,13 @@ public enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
 /// 主窗口侧边栏的页面
 public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
     case overview, system, history, cpu, gpu, memory, disk, network, thermal, processes, keepAwake, cleaner, uninstaller, startupItems
-    case settingsGeneral, settingsMenuBar, settingsNotifications, settingsHelper, settingsAbout
+    case settingsGeneral, settingsMenuBar, settingsNotifications, settingsAccount, settingsHelper, settingsAbout
 
     public var id: String { rawValue }
 
     static let monitors: [PanelTab] = [.overview, .system, .history, .cpu, .gpu, .memory, .disk, .network, .thermal]
     static let tools: [PanelTab] = [.processes, .startupItems, .keepAwake, .cleaner, .uninstaller]
-    static let settings: [PanelTab] = [.settingsGeneral, .settingsMenuBar, .settingsNotifications, .settingsHelper, .settingsAbout]
+    static let settings: [PanelTab] = [.settingsGeneral, .settingsMenuBar, .settingsNotifications, .settingsAccount, .settingsHelper, .settingsAbout]
 
     var isSettings: Bool { Self.settings.contains(self) }
 
@@ -267,6 +332,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .settingsGeneral: tr("通用")
         case .settingsMenuBar: tr("菜单栏")
         case .settingsNotifications: tr("通知")
+        case .settingsAccount: tr("账号与同步")
         case .settingsHelper: tr("辅助工具")
         case .settingsAbout: tr("关于")
         }
@@ -291,6 +357,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .settingsGeneral: "gearshape"
         case .settingsMenuBar: "menubar.rectangle"
         case .settingsNotifications: "bell.badge"
+        case .settingsAccount: "person.crop.circle"
         case .settingsHelper: "lock.shield"
         case .settingsAbout: "info.circle"
         }
@@ -303,8 +370,17 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .gpu: .gpu
         case .memory: .memory
         case .network: .network
+        case .disk: .disk
         case .thermal: .temperature
         default: nil
+        }
+    }
+
+    /// 页面右上角可以直接开关的菜单栏项目：温度与风扇页有温度、风扇两项
+    var menuBarItems: [MenuBarItem] {
+        switch self {
+        case .thermal: [.temperature, .fan]
+        default: menuBarItem.map { [$0] } ?? []
         }
     }
 
@@ -314,6 +390,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .gpu: self = .gpu
         case .memory: self = .memory
         case .network: self = .network
+        case .disk: self = .disk
         case .temperature, .fan: self = .thermal
         }
     }
@@ -384,6 +461,10 @@ public final class AppSettings {
     public var probeTarget: ProbeTarget {
         didSet { defaults.set(probeTarget.rawValue, forKey: Keys.probeTarget) }
     }
+    /// 公网 IP 归属地的数据源
+    public var geoSource: GeoSource {
+        didSet { defaults.set(geoSource.rawValue, forKey: Keys.geoSource) }
+    }
     /// 打开网络详情时查询公网 IP（会访问 Cloudflare / ipify）
     public var publicIPLookup: Bool {
         didSet { defaults.set(publicIPLookup, forKey: Keys.publicIPLookup) }
@@ -403,6 +484,14 @@ public final class AppSettings {
     /// CPU 过热提醒的温度（摄氏度）
     public var alertCPUTemperature: Int {
         didSet { defaults.set(alertCPUTemperature, forKey: Keys.alertCPUTemperature) }
+    }
+    /// CPU 持续高负载提醒的总占用阈值（百分比）
+    public var alertCPULoad: Int {
+        didSet { defaults.set(alertCPULoad, forKey: Keys.alertCPULoad) }
+    }
+    /// CPU 详情顶部走势图显示最近多少秒
+    public var cpuChartSeconds: Int {
+        didSet { defaults.set(cpuChartSeconds, forKey: Keys.cpuChartSeconds) }
     }
     /// 界面语言：界面文字立即切换；系统提供的名称（显示器、应用名）在下次启动时跟着切换
     public var language: AppLanguage {
@@ -438,6 +527,8 @@ public final class AppSettings {
     public static let batteryFloorOptions = [10, 20, 30, 40]
     public static let fanSafetyOptions = [85, 90, 95, 100]
     public static let alertTemperatureOptions = [85, 90, 95, 100]
+    public static let alertLoadOptions = [70, 80, 90]
+    public static let cpuChartOptions = [60, 180, 300]
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -462,12 +553,14 @@ public final class AppSettings {
         appearance = defaults.string(forKey: Keys.appearance).flatMap(AppearanceMode.init(rawValue:)) ?? .system
         cleanPrefersTrash = defaults.bool(forKey: Keys.cleanPrefersTrash)
         menuBarLayout = defaults.string(forKey: Keys.menuBarLayout).flatMap(MenuBarLayout.init(rawValue:)) ?? .separate
-        hiddenPopoverSections = Set(defaults.stringArray(forKey: Keys.hiddenPopoverSections)?.compactMap(PopoverSection.init(rawValue:)) ?? [])
+        hiddenPopoverSections = defaults.stringArray(forKey: Keys.hiddenPopoverSections)
+            .map { Set($0.compactMap(PopoverSection.init(rawValue:))) } ?? PopoverSection.hiddenByDefault
         probeEnabled = defaults.object(forKey: Keys.probeEnabled) as? Bool ?? true
         probeInBackground = defaults.object(forKey: Keys.probeInBackground) as? Bool ?? true
         probeSeconds = Self.probeOptions.contains(defaults.integer(forKey: Keys.probeSeconds))
             ? defaults.integer(forKey: Keys.probeSeconds) : 2
         probeTarget = defaults.string(forKey: Keys.probeTarget).flatMap(ProbeTarget.init(rawValue:)) ?? .cloudflare
+        geoSource = defaults.string(forKey: Keys.geoSource).flatMap(GeoSource.init(rawValue:)) ?? .cleanIP
         publicIPLookup = defaults.object(forKey: Keys.publicIPLookup) as? Bool ?? true
         geoIncludeCity = defaults.bool(forKey: Keys.geoIncludeCity)
         geoAutoUpdate = defaults.object(forKey: Keys.geoAutoUpdate) as? Bool ?? true
@@ -481,6 +574,10 @@ public final class AppSettings {
         enabledAlerts = Set(defaults.stringArray(forKey: Keys.enabledAlerts)?.compactMap(AlertKind.init(rawValue:)) ?? [])
         alertCPUTemperature = Self.alertTemperatureOptions.contains(defaults.integer(forKey: Keys.alertCPUTemperature))
             ? defaults.integer(forKey: Keys.alertCPUTemperature) : 95
+        alertCPULoad = Self.alertLoadOptions.contains(defaults.integer(forKey: Keys.alertCPULoad))
+            ? defaults.integer(forKey: Keys.alertCPULoad) : 80
+        cpuChartSeconds = Self.cpuChartOptions.contains(defaults.integer(forKey: Keys.cpuChartSeconds))
+            ? defaults.integer(forKey: Keys.cpuChartSeconds) : 60
     }
 
     /// 按固定顺序返回已启用的菜单栏项目
@@ -528,6 +625,7 @@ public final class AppSettings {
         static let probeSeconds = "probeSeconds"
         static let probeInBackground = "probeInBackground"
         static let probeTarget = "probeTarget"
+        static let geoSource = "geoSource"
         static let publicIPLookup = "publicIPLookup"
         static let geoIncludeCity = "geoIncludeCity"
         static let geoAutoUpdate = "geoAutoUpdate"
@@ -537,5 +635,7 @@ public final class AppSettings {
         static let language = "language"
         static let enabledAlerts = "enabledAlerts"
         static let alertCPUTemperature = "alertCPUTemperature"
+        static let alertCPULoad = "alertCPULoad"
+        static let cpuChartSeconds = "cpuChartSeconds"
     }
 }

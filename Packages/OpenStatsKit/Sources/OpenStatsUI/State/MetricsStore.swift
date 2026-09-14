@@ -3,6 +3,17 @@ import Metrics
 import Observation
 import SMC
 
+/// 一次采样的时间与数值
+public struct TimedValue: Sendable, Equatable {
+    public let date: Date
+    public let value: Double
+
+    public init(date: Date, value: Double) {
+        self.date = date
+        self.value = value
+    }
+}
+
 /// 主线程上的最新指标与短历史，只保留界面需要的数据
 @MainActor
 @Observable
@@ -14,6 +25,9 @@ public final class MetricsStore {
 
     public private(set) var cpu: CPULoad?
     public private(set) var cpuTotal = History<Double>(capacity: historyCapacity)
+    /// 带时间戳的 CPU 总占用，供可选 1 / 3 / 5 分钟的走势图按时间定位；每秒一次时正好装下 5 分钟
+    public private(set) var cpuTimeline = History<TimedValue>(capacity: timelineCapacity)
+    public static let timelineCapacity = 300
     /// 每次采样各核心的占用，用于核心热力图
     public private(set) var coreHistory = History<[Double]>(capacity: historyCapacity)
 
@@ -34,6 +48,8 @@ public final class MetricsStore {
     /// 启动时读取一次，确保面板首次打开时布局（是否有电池卡片）就已确定
     public private(set) var battery: BatteryStatus? = BatterySampler.sample()
     public private(set) var processes: [ProcessUsage] = []
+    /// 按应用汇总的磁盘读写排行，分数是最近十几秒的平均速率
+    private(set) var diskRanking = ActivityRanking()
     public private(set) var systemCounts: SystemCounts?
     public private(set) var sensors: SensorReadings?
     public private(set) var power: PowerReading?
@@ -61,6 +77,7 @@ public final class MetricsStore {
         if let cpu = snapshot.cpu {
             self.cpu = cpu
             cpuTotal.append(cpu.total)
+            cpuTimeline.append(TimedValue(date: snapshot.date, value: cpu.total))
             coreHistory.append(cpu.perCore)
         }
         if let memory = snapshot.memory {
@@ -86,7 +103,14 @@ public final class MetricsStore {
         }
         if let disk = snapshot.disk { self.disk = disk }
         if let battery = snapshot.battery { self.battery = battery }
-        if let processes = snapshot.processes { self.processes = processes }
+        if let processes = snapshot.processes {
+            self.processes = processes
+            var activity: [String: Double] = [:]
+            for row in ProcessRowModel.grouped(processes) {
+                activity[row.id] = row.disk.map { $0.read + $0.write } ?? 0
+            }
+            diskRanking.update(activity)
+        }
         if let counts = snapshot.systemCounts { systemCounts = counts }
         if let sensors = snapshot.sensors { mergeSensors(sensors) }
     }

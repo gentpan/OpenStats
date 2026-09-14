@@ -58,7 +58,7 @@ struct ReleaseSummary: View {
         if let notesHeight {
             ViewThatFits(in: .vertical) {
                 list.padding(DS.Space.s3)
-                ScrollView { list.padding(DS.Space.s3) }.overlayScrollers()
+                ScrollView { list.padding(DS.Space.s3).overlayScrollers() }
             }
             .frame(maxHeight: notesHeight)
             .background(DS.Palette.surface, in: RoundedRectangle(cornerRadius: DS.Radius.md))

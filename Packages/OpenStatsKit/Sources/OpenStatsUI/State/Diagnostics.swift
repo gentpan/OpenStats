@@ -15,6 +15,7 @@ enum Log {
     static let power = Logger(subsystem: subsystem, category: "power")
     static let network = Logger(subsystem: subsystem, category: "network")
     static let update = Logger(subsystem: subsystem, category: "update")
+    static let sync = Logger(subsystem: subsystem, category: "sync")
 }
 
 /// 导出诊断信息：版本与系统、辅助工具状态、主要设置、最近 3 天的运行日志、清理记录与崩溃报告，打成一个 zip。

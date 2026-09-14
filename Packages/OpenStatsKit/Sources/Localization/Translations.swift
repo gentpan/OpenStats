@@ -11,8 +11,12 @@ extension Translations {
  · {} 项使用中	 · {} in use
  · 移到废纸篓	 · Moves to Trash
 # OpenStats 诊断信息	# OpenStats Diagnostics
+1 个传感器	1 sensor
+1 个应用，系统自带的不列出	1 app; built-in apps are not listed
+1 个进程	1 process
 1 分钟	1 min
 1 小时	1 hour
+1 项	1 item
 10 根柱子是最近 10 次采样（约 20 秒）的变化	10 bars show the last 10 samples (about 20 seconds)
 15 分钟	15 min
 2 小时	2 hours
@@ -28,6 +32,9 @@ Apple 智能没有给出回答：{}	Apple Intelligence didn't answer: {}
 Apple 智能解释	Apple Intelligence
 Apple（系统自带）	Apple (built in)
 Application Support 中只允许清理缓存目录	Only cache folders inside Application Support can be cleaned
+CPU 占用 {}，已持续超过 1 分钟。可以打开 CPU 详情，在“按应用汇总”里看看是哪个应用在占用。	CPU usage has been {} for over a minute. Open the CPU details and check By App to see which app is busy.
+CPU 总占用持续 1 分钟高于设定值，通常是某个应用卡住或在后台狂跑	Total CPU usage stays above the set level for 1 minute, usually an app that is stuck or running wild in the background
+CPU 持续高负载	CPU Under Sustained Load
 CPU 时间	CPU Time
 CPU 时间 {}	CPU time {}
 CPU 最高	CPU max
@@ -53,6 +60,8 @@ GPU 占用	GPU Usage
 Google（8.8.8.8）	Google (8.8.8.8)
 IP 地址	IP Addresses
 IP 归属地数据库	IP Location Database
+IP 类型	IP type
+IP 纯净度	IP cleanliness
 OpenStats {} 已发布	OpenStats {} is available
 OpenStats 控制	Controlled by OpenStats
 OpenStats 控制中	Controlled by OpenStats
@@ -62,6 +71,7 @@ OpenStats 通知测试	OpenStats Test Notification
 OpenStats 防休眠	OpenStats Keep Awake
 OpenStats 需要授权以安装新版本。	OpenStats needs permission to install the new version.
 OpenStats 需要管理员权限来修改“{}”的 DNS。	OpenStats needs administrator permission to change DNS for “{}”.
+OpenStats 需要管理员权限来删除 Time Machine 本地快照。	OpenStats needs administrator privileges to delete Time Machine local snapshots.
 OpenStats 需要管理员权限来刷新 DNS 缓存。	OpenStats needs administrator permission to flush the DNS cache.
 OpenStats 需要管理员权限来释放内存。	OpenStats needs administrator permission to free memory.
 OpenStats-诊断-{}	OpenStats-Diagnostics-{}
@@ -71,15 +81,18 @@ SMC [{}] 被固件拒绝 (0x{})	SMC [{}] rejected by firmware (0x{})
 SMC [{}] 调用失败 ({})	SMC [{}] call failed ({})
 SMC 通信与 Apple Silicon 风扇解锁流程移植自该项目 · MIT License	SMC access and the Apple Silicon fan unlock sequence are ported from this project · MIT License
 SSD 健康	SSD Health
+Time Machine 在备份之间会先在本机留下快照，它们占的空间计入“可清除”，系统缺空间时会自动删。手动删除不影响已完成的备份。	Between backups Time Machine keeps snapshots on this Mac. Their space counts as purgeable and macOS removes them when it runs low. Deleting them by hand does not affect completed backups.
 VPN / 代理	VPN / Proxy
 VPN 隧道	VPN Tunnel
 Xcode 归档	Xcode Archives
 Xcode 编译缓存	Xcode Build Cache
+ipapi.is 在线查询	ipapi.is online lookup
 ipinfo.io 在线查询	ipinfo.io (online)
 macOS 系统目录（系统组件）	macOS system folder (system component)
 npm 缓存	npm Cache
 {} {} 英寸	{} {}-inch
-{} · {} 核{}	{} · {} cores{}
+{} · {} 个	{} · {}
+{} · {} 核	{} · {} cores
 {} · 每 {} 秒	{} · every {}s
 {} · 约 {}	{} · about {}
 {} · 负载 {}/{}	{} · load {}/{}
@@ -89,6 +102,7 @@ npm 缓存	npm Cache
 {} 个进程	{} processes
 {} 分钟	{} min
 {} 可用 {} · 共 {}	{} {} free · {} total
+{} 在线查询	{} online lookup
 {} 天	{} d
 {} 天 {} 小时	{} d {} h
 {} 小时	{} h
@@ -110,6 +124,7 @@ npm 缓存	npm Cache
 {}%（阈值 {}%）	{}% (threshold {}%)
 {}{}只剩 {}%，记得充电。	{}{} is down to {}%. Time to charge.
 {}{}（{}）	{}{} ({})
+{}。系统会自动分配任务，不用你操心	{}. macOS assigns work between them automatically.
 {}中	{}
 {}前	{} ago
 {}后充满	Full in {}
@@ -122,13 +137,18 @@ npm 缓存	npm Cache
 ~/Library/Caches 中各应用的缓存，删除后会按需重建	App caches in ~/Library/Caches; rebuilt as needed
 ~/Library/Logs 中的日志和诊断报告	Logs and diagnostic reports in ~/Library/Logs
 “{}”只剩 {} 可用。可以用 OpenStats 的清理功能释放缓存。	“{}” has only {} free. Use OpenStats Cleanup to clear caches.
+“{}”（{}）会移到废纸篓，可以从废纸篓放回。	“{1}” ({2}) will be moved to the Trash; you can put it back from there.
 、	, 
 一般	Fair
 一键安装	Install Now
 上传	Upload
 上传 {} · 下载 {}	Up {} · Down {}
 上传与下载速度、IP 地址、DNS	Upload and download speed, IP addresses, DNS
+上传本机设置	Upload this Mac's settings
+上次同步：{}	Last synced: {}
 上次检查 {}，最新 {}	Last checked {}, latest {}
+上次检查发现问题	Last check found problems
+上次检查正常	Last check was fine
 上次检查：{}	Last checked: {}
 下载	Download
 下载 {} 失败	Failed to download {}
@@ -151,25 +171,40 @@ npm 缓存	npm Cache
 丢包	Loss
 严重	Critical
 中等负载	Moderate load
+中等风险	Medium risk
+中继	Relay
 主显示器	Main display
 主窗口与弹窗的配色；菜单栏始终跟随系统	Colors for the window and popovers; the menu bar always follows the system
+云端只保存邮箱、姓名与设置文档	The cloud only keeps your email, name and the settings document
+云端已有 {} 在 {} 保存的设置，和这台 Mac 上的不一样。要用哪一份？	{1} saved settings to the cloud {2}, and they differ from this Mac's. Which one should be used?
 交换区	Swap
 仅系统不休眠	Keep system awake
 介质错误	Media errors
 从左侧选择应用，或把应用拖到这里	Choose an app on the left, or drop one here
 从文件导入…	Import from File…
 从未	Never
-从程序坞移除图标	Remove from Dock
+代理	Proxy
 以单核满载为 100%	100% = one full core
 以后再说	Later
 以系统权限运行的后台服务，只接受本应用的请求	A background service with system privileges that only accepts requests from this app
 仪表盘	Dashboard
+企业	Business
+企业 IP	Business IP
+企业网络	Business network
 会一并找出它留在资源库里的缓存、偏好设置、容器与登录启动项，全部移到废纸篓，可以放回	Also finds its caches, preferences, containers and launch agents in your Library and moves them all to the Trash, where you can restore them
 会结束这个应用的 {} 个进程，未保存的内容可能会丢失。强制退出会立即结束，不给应用保存的机会。	This ends {} processes of the app and unsaved work may be lost. Force Quit ends them immediately without letting the app save.
 传输速率	Link rate
 位置	Location
 位置：{}	Location: {}
 低负载	Light load
+低风险	Low risk
+住宅 IP	Residential IP
+住宅代理	Residential proxy
+住宅宽带	Residential
+住宅概率	Residential probability
+余量 {}	Headroom {}
+使用 {} 登录	Sign in with {}
+使用云端设置	Use cloud settings
 使用历史	Usage History
 使用电池	On battery
 使用电池且电量低于该值时，自动关闭合盖运行	Turn off lid-closed mode when on battery below this level
@@ -180,6 +215,7 @@ npm 缓存	npm Cache
 修改 DNS 需要管理员权限：已安装辅助工具时直接修改，否则每次弹出系统授权框。	Changing DNS needs administrator permission: it's applied directly when the helper is installed, otherwise the system asks each time.
 偏好设置	Preferences
 偏高	Elevated
+停止	Stop
 停用	Turn Off
 停用失败：{}	Failed to turn off: {}
 健康 {}	Health {}
@@ -191,18 +227,21 @@ npm 缓存	npm Cache
 全局快捷键（在任何应用中都能使用，需要包含 ⌘、⌥ 或 ⌃）	Global shortcuts (work in any app; must include ⌘, ⌥ or ⌃)
 全选	Select All
 全部	All
+全部删除	Delete all
 公网 IP	Public IP
 公网 IP 查询	Public IP Lookup
 公网 IPv4	Public IPv4
 公网 IPv6	Public IPv6
 共 {}	{} total
 共 {} 条记录	{} records
+共 {}，{} 个条目 · {}	{1} in {2} items · {3}
 关	Off
 关于	About
 关于 OpenStats	About OpenStats
 关闭	Off
 其他	Other
 其他位置	Other locations
+其他磁盘	Other disks
 其他程序手动控制	Controlled by another app
 其他程序控制	Another app
 内存	Memory
@@ -222,6 +261,13 @@ npm 缓存	npm Cache
 切换到深色	Switch to Dark
 刚刚	Just now
 刚刚被使用	Recently used
+删除	Delete
+删除…	Delete…
+删除中…	Deleting…
+删除云端数据	Delete cloud data
+删除云端数据？	Delete cloud data?
+删除全部本地快照？	Delete all local snapshots?
+删除账号、所有登录方式与云端保存的设置；这台 Mac 上的设置保留	Deletes the account, every sign-in method and the settings stored in the cloud; settings on this Mac stay
 到时后自动恢复系统默认的睡眠行为。	Normal sleep behavior resumes when time runs out.
 刷新	Refresh
 刷新 DNS 缓存	Flush DNS Cache
@@ -231,6 +277,7 @@ npm 缓存	npm Cache
 刷新频率	Refresh Rate
 剩余 {}	{} left
 剩余寿命	Life left
+剩余寿命 {}% · 已写入 {}	{}% life left · {} written
 剪切	Cut
 功耗	Power
 包名是 {}	Bundle ID is {}
@@ -240,6 +287,7 @@ npm 缓存	npm Cache
 单行文字	Inline Text
 占用	Usage
 占用超过 85% 时数值与图形显示为红色	Show values and graphs in red above 85%
+占用高于	Usage above
 卷	Volume
 卸载	Uninstall
 卸载“{}”？	Uninstall “{}”?
@@ -258,19 +306,25 @@ npm 缓存	npm Cache
 压缩包里应当只有一个 .app	The archive should contain exactly one .app
 压缩比	Compression ratio
 原因	Reason
+原生 / 广播	Native / broadcast
+原生 IP	Native IP
 去批准	Approve
 去授权	Grant Access
 双行圆点	Dots
 双行文字	Stacked Text
 双行箭头	Arrows
+反向解析	Reverse DNS
 反馈问题	Report a Problem
 发现新版本 {}	Version {} available
+发现问题	Problems found
+发现问题：{}	Problem found: {}
 发生这些状况时发送系统通知，点通知打开对应页面	Send a notification when these happen; click it to open the related page
 发送	Send
 发送测试通知	Send Test Notification
 取消	Cancel
 受保护	Protected
 受保护的项目：{}	Protected item: {}
+另一台 Mac	Another Mac
 另有 {} 移到废纸篓	Plus {} moved to Trash
 另有 {} 项	{} more
 只含当前用户的进程	Your processes only
@@ -278,16 +332,21 @@ npm 缓存	npm Cache
 只在菜单栏显示 GPU 或打开 GPU 相关页面时记录	Recorded only when GPU is in the menu bar or a GPU page is open
 只在菜单栏显示温度、开启过热通知或打开温度页面时记录	Recorded only when temperature is in the menu bar, overheating alerts are on, or a temperature page is open
 只显示菜单栏时的采样间隔；打开弹窗或主窗口时为 1 秒（进程页 2 秒）	Sampling interval when only the menu bar is shown; 1 second with a popover or window open (2 seconds on Processes)
-只查找以该应用包名命名的文件，以及 Application Support、Logs 下与应用同名的目录；钥匙串与其他应用共享的数据不会动	Only files named after the app's bundle ID, plus folders with the app's name in Application Support and Logs, are included. Keychains and data shared with other apps are never touched.
+只有国家、省 / 州与城市；把公网 IP 发给 db-ip.com	Country, state and city only; sends your public IP to db-ip.com
+只查找以该应用包名命名的文件，以及 Application Support、Logs 下与应用同名的目录；钥匙串与其他应用共享的数据不会动。程序坞里的图标会一并移除	Only files named after the app's bundle ID, plus folders with the app's name in Application Support and Logs, are included. Keychains and data shared with other apps are never touched. The Dock icon is removed as well
 可以恢复，但清空废纸篓前不会释放空间	Recoverable, but space isn't freed until the Trash is emptied
 可执行文件：{}	Executable: {}
 可清理 · 已选 {} 项	Cleanable · {} selected
+可清除	Purgeable
+可清除是系统随时可以腾出的缓存；访达显示的“可用”把它算在内	Purgeable is cache the system can free at any time; Finder's “available” figure includes it.
 可用	Available
 可用 {}	{} available
+可用 {} / 共 {}	{1} free of {2}
 可用内存只剩 {}，系统正在压缩和交换内存。关闭不用的应用可以缓解。	Only {} of memory is available and the system is compressing and swapping. Quitting unused apps will help.
 可用空间包含系统可以随时清除的缓存，与访达显示一致	Available space includes purgeable caches, matching Finder
 右侧风扇	Right Fan
 右耳	Right
+各核心占用	Per-Core Load
 各核心负载	Core Load
 各项指标正常	Everything looks good
 合上屏幕时 Mac 不进入睡眠，下载、渲染、远程连接不中断。	Your Mac stays awake with the lid closed, so downloads, renders and remote sessions continue.
@@ -299,12 +358,15 @@ npm 缓存	npm Cache
 合盖运行时散热变差，请勿放入包中。使用电池且电量低于 {}% 时会自动关闭。	Cooling is worse with the lid closed, so don't put your Mac in a bag. Turns off automatically on battery below {}%.
 合盖运行设置	Lid Mode
 合盖运行需要修改系统睡眠设置，需安装辅助工具（管理员授权一次）。	Lid mode changes system sleep settings and needs the helper (one-time admin approval).
-同时从程序坞移除图标	Also remove its Dock icon
+同步	Sync
+同步失败	Sync failed
+同步的内容：菜单栏项目与风格、刷新频率、外观与语言、详情弹窗的区块、连接探测、通知、快捷键、风扇安全温度、合盖电量下限。当前页面、辅助工具、历史记录与归属地库留在本机。	What syncs: menu bar items and styles, refresh rate, appearance and language, popover sections, connection probe, notifications, hotkeys, fan safety temperature and lid-mode battery floor. The current page, the helper, history and the GeoIP database stay on this Mac.
 后台低频探测	Background Probing
 启动于	Booted
 启动时和之后每天检查一次，发现新版本时显示更新摘要	Checks at launch and daily, and shows what's new when an update is found
 启动磁盘	Startup Disk
 启动磁盘可用空间低于 10% 或 10 GB，每 10 分钟检查一次	Startup disk has less than 10% or 10 GB free; checked every 10 minutes
+启动磁盘已用占比	Startup disk used
 启动项	Startup Items
 启用	Turn On
 启用 {}	Enable {}
@@ -320,6 +382,9 @@ npm 缓存	npm Cache
 图标	Icon
 圆环	Ring
 圆环表示当前占用比例	A ring shows current usage
+在 cleanip.io 查看这个 IP 的完整报告	Open this IP's full report on cleanip.io
+在主窗口打开“{}”	Open “{}” in the main window
+在本机的 MaxMind 数据库里查国家、城市与 ASN，不向任何服务发送 IP；数据库未就绪时暂用 CleanIP.io	Looks up country, city and ASN in the local MaxMind database and sends your IP nowhere; uses CleanIP.io until the database is ready
 在线升级	Online Updates
 在线升级：发现新版本时显示更新摘要，一键安装并自动重启	Online updates: see what's new, install in one click and relaunch automatically
 在线查询	Online lookup
@@ -332,6 +397,7 @@ npm 缓存	npm Cache
 处理器核心	CPU cores
 备用空间	Available spare
 备用空间低于阈值，建议备份	Spare capacity below threshold; back up your data
+外置硬盘、U 盘、镜像与网络共享	External drives, USB sticks, disk images and network shares
 外观	Appearance
 存储	Storage
 它只做这几件事	It only does these things
@@ -343,8 +409,10 @@ npm 缓存	npm Cache
 安装失败：{}	Install failed: {}
 安装辅助工具	Install Helper
 安静	Quiet
+完整报告	Full report
 定时 ping 一个地址，记录网络是否通畅	Pings an address regularly to record whether the network is reachable
 定时探测网络	Connectivity Probe
+家目录	Home folder
 容量	Capacity
 导入失败：{}	Import failed: {}
 导出…	Export…
@@ -362,6 +430,7 @@ npm 缓存	npm Cache
 屏幕可按设置关闭，下载、编译等后台任务继续运行	The display can turn off as usual while downloads and builds keep running
 屏幕和系统都不会因闲置而关闭或休眠	Neither the display nor the system sleeps when idle
 峰值	Peak
+峰值 {}	Peak {}
 工具	Tools
 左侧风扇	Left Fan
 左耳	Left
@@ -369,15 +438,21 @@ npm 缓存	npm Cache
 已使用 Developer ID 签名（团队 {}），辅助工具只接受同一团队签名的 OpenStats。	Signed with Developer ID (team {}); the helper only accepts OpenStats signed by the same team.
 已停用	Off
 已充满	Charged
+已删除 {} 个快照，腾出的空间稍后会反映在“可清除”里	Deleted {} snapshots; the freed space will show up under purgeable shortly
 已到设定时间，防休眠已关闭	Time's up; Keep Awake is off
 已加载	Loaded
 已取消	Cancelled
+已取消登录	Sign-in cancelled
 已启用	Enabled
 已导入 {}	Imported {}
 已导出 {}	Exported {}
 已将 {} 与 {} 项残留移到废纸篓，约 {}{}{}。需要时可以在废纸篓里放回。	Moved {} and {} leftovers to the Trash, about {}{}{}. You can put them back from the Trash.
+已开启同步	Sync is on
 已恢复自动获取 DNS	DNS is automatic again
+已扫描 {} 个条目 · {}	Scanned {} items · {}
+已把“{}”移到废纸篓	Moved “{}” to the Trash
 已拷贝	Copied
+已推出“{}”	Ejected “{}”
 已是最新版本	Up to date
 已更新 {} 个数据库	Updated {} databases
 已用	Used
@@ -393,11 +468,13 @@ npm 缓存	npm Cache
 已释放	Freed
 已释放 {} 缓存内存	Freed {} of cached memory
 布局	Layout
+干净	Clean
 平均	Average
 平均 {} · 峰值 {}{}	Avg {} · Peak {}{}
 平均 {} · 最高 {}	Avg {} · Max {}
 平均温度	Average temperature
 平均负载除以核心数：小于 1 表示任务不用排队，大于 1 表示有任务在等 CPU	Load average per core: below 1 means no waiting; above 1 means tasks are waiting for the CPU
+广播 IP	Broadcast IP
 序列号	Serial Number
 应用	Apps
 应用 {} / 辅助工具 {}	App {} / Helper {}
@@ -421,6 +498,8 @@ npm 缓存	npm Cache
 开发者	Developer
 开启	On
 开启 / 关闭“合盖不睡眠”（等同 pmset disablesleep）	Turn lid-closed sleep prevention on or off (same as pmset disablesleep)
+开启后图标出现在菜单栏；按住 ⌘ 键拖动图标可以调整位置	Adds the icon to the menu bar; hold ⌘ and drag the icon to move it
+开始分析	Analyze
 开机以来	Since boot
 开机后上传	Uploaded since boot
 开机后下载	Downloaded since boot
@@ -428,10 +507,14 @@ npm 缓存	npm Cache
 异常断电	Unsafe shutdowns
 弹窗显示	Popover Sections
 强冷	Max
+强制刷新：忽略缓存，立即重新查询公网 IP 与归属地	Force refresh: ignore the cache and look up the public IP and location again now
 强制退出	Force Quit
 归属地	Location
+归属地、ASN、网络类型、原生 / 广播、纯净度与风险评分，中文地名；把公网 IP 发给 cleanip.io	Location, ASN, network type, native / broadcast, cleanliness and risk scores; sends your public IP to cleanip.io
+归属地与 ASN；把公网 IP 发给 ipapi.is，匿名额度每天 30 次，同一 IP 的结果记住一天	Location and ASN; sends your public IP to ipapi.is. Anonymous quota is 30 a day, so a result is kept for a day
+归属地与 ASN；把公网 IP 发给 ipinfo.io，匿名额度很小，容易被限流	Location and ASN; sends your public IP to ipinfo.io. The anonymous quota is tiny and easily exhausted
 归属地数据库	Location database
-当前 {}	Current {}
+归属地数据源	Location data source
 当前 {} · 发布于 {} · {} · {}	Current {} · Released {} · {} · {}
 当前为临时签名的开发构建，辅助工具只能校验应用标识。使用 Developer ID 证书构建后会自动启用团队校验。	This is an ad-hoc signed development build, so the helper can only check the bundle ID. Team verification turns on automatically with a Developer ID build.
 当前效果（实时数据）	Preview (live data)
@@ -444,6 +527,7 @@ npm 缓存	npm Cache
 循环次数	Cycle count
 忙	Busy
 快捷开关	Quick Toggles
+快照名称格式不认识，没有删除	Unrecognized snapshot names; nothing was deleted
 性能核	Performance
 总占用	Total
 恢复系统睡眠失败：{}	Failed to restore system sleep: {}
@@ -464,15 +548,19 @@ npm 缓存	npm Cache
 打开 SMC 失败 ({})	Failed to open SMC ({})
 打开登录项设置	Open Login Items Settings
 打开网络详情时使用	Used while network details are open
+打开网络详情时向 Cloudflare（1.1.1.1）或 ipify 查询一次公网地址，10 分钟内不重复请求	Asks Cloudflare (1.1.1.1) or ipify for the public address once when network details open, at most every 10 minutes
 打开网络详情时向 Cloudflare（1.1.1.1）或 ipify 查询一次公网地址；归属地与 ASN 在本机数据库里查，10 分钟内不重复请求	When network details open, asks Cloudflare (1.1.1.1) or ipify for your public address; location and ASN come from the local database. At most once every 10 minutes.
 打开网络详情时查询公网地址；本地数据库还没准备好时，归属地与 ASN 暂由 ipinfo.io 在线查询	Looks up your public address when network details open; until the local database is ready, location and ASN come from ipinfo.io
 打开进程页	Show Processes
 打开通知设置	Open Notification Settings
+托管	Hosting
 执行中	Working
 扫描中	Scanning
 扫描中…	Scanning…
 扫描于 	Scanned 
 抖动	Jitter
+折线历史	Line History
+折线是最近 30 次采样（约 1 分钟）的走势	The line shows the last 30 samples (about a minute)
 拷贝	Copy
 拷贝 PID	Copy PID
 拷贝 PID {}	Copy PID {}
@@ -480,8 +568,10 @@ npm 缓存	npm Cache
 按下快捷键…	Press shortcut…
 按应用	By App
 按应用汇总	By App
+按文件夹	By folder
 按系统休眠	System sleep
 按进程	By Process
+换一台 Mac 登录后，菜单栏、外观、通知与快捷键等偏好会自动恢复。不登录也能使用全部功能。	Sign in on another Mac and your menu bar, appearance, notification and hotkey preferences come back automatically. Everything works without signing in.
 换入 / 换出	Swap in / out
 掌托	Palm rest
 排队程度	Run Queue
@@ -489,14 +579,26 @@ npm 缓存	npm Cache
 探测间隔	Probe Interval
 接口	Interface
 接通电源	Plugged in
+推出	Eject
+推出中…	Ejecting…
 搜索名称、PID 或用户	Search name, PID or user
 搜索应用	Search apps
 撤销	Undo
+改回开机后累计	Back to since-boot totals
+政府	Government
+教育网	Education
 散热模式	Cooling
+数据	Data
 数据来源	Source
+数据来源：cleanip.io	Data source: cleanip.io
+数据来源：cleanip.io，点击打开官网	Data source: cleanip.io. Click to open the site
+整体风格	Overall style
+整体风格套用到所有项目。想让某个项目不一样，在下面“显示项目”里给它单独选一种，比如 CPU 用圆环、风扇用数字。	The overall style applies to every item. To make one item different, pick a style for it under Items below, say a ring for CPU and plain numbers for the fan.
 整机	System
 整机 {}	System {}
 整机功耗	System Power
+文件系统检查	File system check
+文件系统结构完好，没有发现错误	The file system structure is intact; no errors found
 新版本未通过 Apple 公证检查，已放弃安装	The new version failed Apple notarization; installation stopped
 新版本需要 macOS {} 或更高版本	The new version requires macOS {} or later
 无	None
@@ -504,6 +606,9 @@ npm 缓存	npm Cache
 无法创建电源断言（{}）	Couldn't create power assertion ({})
 无法创建签名要求	Couldn't create the signing requirement
 无法打开	Couldn't open
+无法打开登录窗口	Couldn't open the sign-in window
+无法推出“{}”：{}	Couldn't eject “{1}”: {2}
+无法移到废纸篓：{}	Couldn't move to the Trash: {}
 无法读取	Unreadable
 无法读取签名	Couldn't read the signature
 无法连接辅助工具	Couldn't connect to the helper
@@ -519,14 +624,18 @@ npm 缓存	npm Cache
 显示城市名称，数据库约 60 MB；关闭时只下载国家库（约 9 MB）	Shows city names; the database is about 60 MB. When off, only the country database (about 9 MB) is downloaded.
 显示序列号	Show Serial Number
 显示项目	Items
+暂时没有拿到评分，稍后会再试	No score yet; it will try again later
 更新内容	What's New
 更新失败：{}	Update failed: {}
+更省电，负责后台和轻量任务	More efficient; handles background and light work
 替换后未找到应用	App not found after replacement
 替换应用失败：{}	Failed to replace the app: {}
 最低 {} · 最高 {} · 目标 {} RPM	Min {} · Max {} · Target {} RPM
+最大的文件	Largest files
 最小化	Minimize
 最强	Strongest
 最忙的核心	Busiest core
+最快，重活优先交给它们	Fastest; heavy work goes here first
 最近 60 秒	Last 60 seconds
 最近没有应用在读写磁盘	No apps are reading or writing right now
 最近的内存压力走势	Recent memory pressure
@@ -535,14 +644,17 @@ npm 缓存	npm Cache
 最高 / 平均	Max / Avg
 最高温度	Max temperature
 服务器上还没有数据库，稍后再试	The server doesn't have the database yet. Try again later.
+服务器在 getopenstats.com，不上传任何监控数据；随时可以删除。	The server is at getopenstats.com; no monitoring data is uploaded, and you can delete everything at any time.
 服务器清单里没有 {}	{} is not in the server manifest
 服务器返回 {}	Server returned {}
+服务器返回的数据格式不正确	The server returned malformed data
 未使用	Unused
 未保存的内容可能会丢失。强制退出会立即结束，不给应用保存的机会。	Unsaved work may be lost. Force Quit ends it immediately without letting it save.
 未安装	Not Installed
 未完成的下载	Incomplete Downloads
 未开启，Mac 按系统设置休眠	Off; your Mac sleeps as usual
 未找到 AppleSMC 服务	AppleSMC service not found
+未检出	None detected
 未检测到可调节的风扇	No adjustable fans found
 未检测到风扇	No fans detected
 未知状态	Unknown status
@@ -551,18 +663,24 @@ npm 缓存	npm Cache
 未连接	Not connected
 未连接网络	No network
 本产品包含 MaxMind 创建的 GeoLite2 数据，可从 https://www.maxmind.com 获取。	This product includes GeoLite2 data created by MaxMind, available from https://www.maxmind.com.
+本地 GeoLite2 数据库	Local GeoLite2 database
 本地 GeoLite2（MaxMind）	Local GeoLite2 (MaxMind)
 本地 IPv4	Local IPv4
 本地 IPv6	Local IPv6
 本地 MaxMind GeoLite2	Local MaxMind GeoLite2
+本地快照	Local snapshots
 本机信息	This Mac
 机型	Model
 机型标识符	Model Identifier
+机房	Data center
+机房 IP	Data center IP
 极好	Excellent
+极高风险	Very high risk
 构建	Build
 查看	View
 查看全部进程	All Processes
 查看包含的项目	Show items
+查看完整报告	View full report
 查看完整更新日志	Full Changelog
 查看清理日志	View Cleanup Log
 查询中…	Looking up…
@@ -572,13 +690,20 @@ npm 缓存	npm Cache
 标签与数值同一行，最易读	Label and value on one line; easiest to read
 标识	Identifier
 核心	Cores
+核心 {}	Core {}
+核心 {}（{}）· {}	Core {} ({}) · {}
 核心分工	Core Types
 核心数	Cores
+核心最高温度；余量是离 100°C 还差多少度，越接近 0 越可能因过热降频	Hottest core; headroom is how many degrees remain before 100°C — the closer to 0, the more likely thermal throttling
 核心热力图	Core Heatmap
 核心负载	Core Load
+检查	Check
+检查中…	Checking…
+检查完成，但没有得到明确结论	The check finished without a clear verdict
 检查更新	Check for Updates
 检查更新…	Check for Updates…
 检查更新失败	Update check failed
+检查未能完成（退出码 {}）	The check didn't complete (exit code {})
 模式	Mode
 模拟器	Simulators
 模拟器缓存	Simulator Caches
@@ -586,6 +711,8 @@ npm 缓存	npm Cache
 正在使用	In use
 正在修改 DNS…	Changing DNS…
 正在刷新…	Flushing…
+正在同步	Syncing
+正在同步…	Syncing…
 正在安装，完成后 OpenStats 会自动重启。	Installing. OpenStats will relaunch when it's done.
 正在导出…	Exporting…
 正在扫描应用…	Scanning apps…
@@ -593,6 +720,8 @@ npm 缓存	npm Cache
 正在更新…	Updating…
 正在本机生成…	Generating on this Mac…
 正在查找残留…	Finding leftovers…
+正在查询…	Looking up…
+正在核对启动盘的文件系统结构，通常几秒到几十秒	Verifying the startup disk's file system structure; this usually takes seconds to a minute
 正在核对校验值、开发者签名与 Apple 公证…	Verifying checksum, developer signature and Apple notarization…
 正在检查…	Checking…
 正在检查更新	Checking for updates
@@ -608,16 +737,19 @@ npm 缓存	npm Cache
 正在读取风扇…	Reading fans…
 正在释放…	Freeing…
 正常	Normal
+此刻各核心的占用；超过 60% 变橙色、85% 变红色	Current load of each core; orange above 60%, red above 85%
 此设备没有可调节的风扇	This Mac has no adjustable fans
 每 3 天检查一次	Checks every 3 days
 每 3 天检查一次 · 上次检查 {}	Checks every 3 days · last checked {}
+每个应用按一个核心满载为 100% 计算，与活动监视器一致，所以各应用相加可以超过顶部的总占用	Each app is measured with one full core as 100%, like Activity Monitor, so the apps can add up to more than the total above
 每个指标一个图标，点击弹出该项详情	One icon per metric; click for its details
 每分钟把主要指标的平均值与峰值写入本机数据库，保留 7 天，不上传	Writes averages and peaks of key metrics to a local database every minute. Kept for 7 days, never uploaded.
 每核 {}	{} per core
+每根柱子一个核心，按核心类型着色	One bar per core, colored by core type
 每点 {}	{} per point
 每秒让 CPU 从空闲中唤醒的次数，越高越耗电	Times per second the CPU is woken from idle; higher uses more power
 每秒读写磁盘的字节数	Bytes read and written per second
-每行一个核心，每列一次采样，最新的在右边	One row per core, one column per sample; newest on the right
+每行一个核心（共 {} 个），每列一次采样，颜色越深越忙；右侧粗条是此刻的占用	One row per core ({} in total), one column per sample, darker means busier; the wide bar on the right is the current load
 每项独立	Separate
 比 30 秒前低 {}%	{}% lower than 30s ago
 比 30 秒前高 {}%	{}% higher than 30s ago
@@ -628,6 +760,7 @@ npm 缓存	npm Cache
 没有已连接的蓝牙设备	No connected Bluetooth devices
 没有检测到显示器	No displays detected
 没有移动任何文件{}	Nothing was moved{}
+没有超过 50 MB 的文件	No files over 50 MB
 流量历史	Traffic History
 流量经过 {}，系统 DNS 可能由它接管，修改后不一定生效。	Traffic goes through {}, which may take over system DNS, so changes might not apply.
 浅色	Light
@@ -650,9 +783,9 @@ npm 缓存	npm Cache
 温度	Temperature
 温度与风扇	Thermals
 温度传感器	Temperature sensors
-温度余量	Thermal headroom
 温度单位	Temperature Unit
 满载	Maxed out
+滥用记录	Abuse reports
 点击拷贝	Click to copy
 版本	Version
 版本 {}	Version {}
@@ -663,8 +796,10 @@ npm 缓存	npm Cache
 物理地址	Hardware address
 状态	Status
 状态圆点	Status Dot
+状态正常	Healthy
 状态良好	Healthy
 现在	Now
+现在没有本地快照	No local snapshots right now
 用 Apple 智能解释	Explain with Apple Intelligence
 用 ping 测量延迟与丢包，在网络详情里以格子显示	Measures latency and loss with ping, shown as a grid in network details
 用户	User
@@ -691,30 +826,42 @@ npm 缓存	npm Cache
 电量下限	Battery floor
 电量低于 {}%，已关闭合盖运行	Battery below {}%; lid mode turned off
 电量条	Meter
+登录以同步设置	Sign in to sync settings
 登录启动项	Launch Agents
+登录回调不正确	Invalid sign-in callback
+登录已失效，请重新登录	Your session has expired. Please sign in again.
 登录时启动	Launch at Login
 登录时运行	Runs at login
 登录项设置	Login Items
 监控	Monitor
 目标转速	Target speed
+相当于“磁盘工具”里的急救，但只检查不修改：核对启动盘的目录结构、文件分配与快照元数据是否一致。	Like First Aid in Disk Utility, but read-only: checks that the startup disk's directory structure, allocation and snapshot metadata are consistent.
 确认清理	Clean
 确认通知能正常显示	Check that notifications appear
 磁盘	Disk
+磁盘已用 {}	Disk {} used
 磁盘报告了严重警告，建议尽快备份	The disk reported a critical warning; back up soon
 磁盘清理	Disk Cleanup
 磁盘空间不足	Low Disk Space
 磁盘空间偏紧	Disk space is tight
-离 100°C 还差多少度；越接近 0，越可能因过热降频	Degrees below 100°C; the closer to 0, the more likely thermal throttling
 离线查询	Offline lookup
 移到废纸篓	Move to Trash
+移到废纸篓？	Move to the Trash?
+移动网络	Mobile
+移动网络 IP	Mobile IP
+移动运营商	Mobile carrier
 空	empty
 空格	Space
 空闲	Idle
+空间占用	Space usage
 窗口	Window
 窗口状态	Saved State
+立即切换；显示器、应用名称等由系统提供的文字在下次启动时切换	Applies right away; names supplied by macOS, such as displays and apps, switch at next launch
+立即同步	Sync now
 立即检查更新	Check Now
 竖向电量条表示当前占用比例	A vertical meter shows current usage
 等待批准	Waiting for Approval
+等待选择	Waiting for your choice
 签名团队	Signing team
 签名方：{}	Signed by: {}
 签名校验未通过：{}	Signature check failed: {}
@@ -732,6 +879,9 @@ npm 缓存	npm Cache
 累计写入	Data written
 累计读取	Data read
 繁忙	Busy
+纯净度 {} 分	Cleanliness score {}
+纯净度看信誉、来路、邻居与网络类型四项；机房 IP 常见信誉高、来路和类型偏低。数据来自 cleanip.io	Cleanliness weighs reputation, origin, neighbors and network type; data-center IPs often score high on reputation but low on origin and type. Data from cleanip.io
+纯净度评分来自 CleanIP.io。在「设置 · 网络」把归属地数据源改为 CleanIP.io 后显示。	Cleanliness scores come from CleanIP.io. Choose it as the location data source in Settings › Network to show them.
 线程	Threads
 线程 {}	Threads {}
 线程数（只能读取自己的进程）	Thread count (your processes only)
@@ -740,6 +890,7 @@ npm 缓存	npm Cache
 结束它会注销当前用户，已禁止	Ending it would log you out, so it's blocked
 结束进程…	End Process…
 统一内存（CPU 与 GPU 共享）	Unified memory (shared by CPU and GPU)
+统计家目录里每个文件夹占多少空间，并找出最大的文件；只读取大小，不改动任何文件。文件多时需要几十秒。	Measures how much space each folder in your home folder takes and finds the largest files. It only reads sizes and changes nothing; with many files it can take a minute.
 继续运行	Keep running
 绿色正常、橙色偏高（60% 以上）、红色很高（85% 以上）	Green is normal, orange is high (above 60%), red is very high (above 85%)
 缓存	Caches
@@ -751,6 +902,7 @@ npm 缓存	npm Cache
 网络名称	Network name
 网络已恢复	Network Restored
 网络断开	Network Down
+网络类型	Network type
 网络运营方	Network operator
 网络连接中断超过 20 秒，恢复后再提示一次	Network has been down for over 20 seconds; notifies again when it's back
 网络连接已中断超过 20 秒。可以打开网络详情查看接口与路由器状态。	The network has been down for over 20 seconds. Open network details to check the interface and router.
@@ -758,10 +910,12 @@ npm 缓存	npm Cache
 网络：{}	Network: {}
 网页数据	Web Data
 网页缓存与脚本缓存，不涉及 Cookie、历史记录和密码	Web and script caches; cookies, history and passwords are untouched
+置信度 {}%	Confidence {}%
 联动	Wired
 能效核	Efficiency
 腾讯 DNSPod	Tencent
 腾讯（119.29.29.29）	Tencent (119.29.29.29)
+自 {} 起	Since {}
 自动	Auto
 自动更新	Auto Update
 自动检查更新	Check Automatically
@@ -776,8 +930,9 @@ npm 缓存	npm Cache
 菜单栏	Menu Bar
 菜单栏图标	Menu Bar Icons
 菜单栏布局	Menu Bar Layout
+菜单栏里的图标可以调整顺序：按住 ⌘ 键拖动任意一个，松开后位置会一直保留。新开启的项目由系统安排位置，可能离其他图标较远，拖一下就能挪到一起。	You can reorder the icons in the menu bar: hold ⌘ and drag any of them, and the position sticks. macOS picks where a newly enabled item first appears, sometimes away from the others; just drag it over.
 菜单栏项目	Menu Bar Items
-菜单栏风格	Menu Bar Style
+菜单栏风格	Menu bar style
 蓝牙设备	Bluetooth Devices
 蓝牙设备电量低	Bluetooth Battery Low
 解压失败：{}	Unzip failed: {}
@@ -786,12 +941,16 @@ npm 缓存	npm Cache
 设置	Settings
 设置 · {}	Settings · {}
 设置…	Settings…
+设置改动后 2 秒内上传；启动、唤醒与每 15 分钟检查一次云端	Changes upload within 2 seconds; the cloud is checked at launch, on wake and every 15 minutes
 设置风扇目标转速，或恢复系统自动控制	Set fan target speeds, or return them to automatic
+评分由 cleanip.io 提供，点击查看完整报告	Score by cleanip.io. Click to open the full report
+该项目在菜单栏里的实时效果	Live preview of this item in the menu bar
 详情关闭时，菜单栏显示网络项期间每 {} 秒探测一次，打开详情就能看到最近的连接情况；关闭后只在打开详情时探测，更省电	While details are closed and the network item is in the menu bar, probes every {} seconds so recent results are ready when you open details. Turn off to probe only while details are open and save power.
 语言	Language
 请从菜单退出 OpenStats	Quit OpenStats from its menu
 请先在“系统设置 → Apple 智能与 Siri”中开启 Apple 智能。	Turn on Apple Intelligence in System Settings → Apple Intelligence & Siri first.
 请在“系统设置 › 通用 › 登录项”中允许 OpenStats 的后台项目。	Allow OpenStats in System Settings › General › Login Items.
+请打开系统自带的“磁盘工具”，选择启动盘运行“急救”进行修复	Open the built-in Disk Utility, select the startup disk and run First Aid to repair it
 读 {} · 写 {}	Read {} · Write {}
 读写最多的应用	Top Disk Activity
 读写速度	Read & Write
@@ -802,9 +961,15 @@ npm 缓存	npm Cache
 负载在上升	Load rising
 负载在下降	Load falling
 负载平稳	Load steady
+账号	Account
+账号与云端设置会立即删除，无法恢复。	The account and cloud settings are deleted immediately and cannot be recovered.
+账号与同步	Account & Sync
+走势图显示最近多长时间	How far back the trend chart shows
+走势时长	Trend duration
 超级核	Super
 超过 1 天未更新的 .crdownload / .part / .download	.crdownload / .part / .download files untouched for over a day
 跟随整体	Follow global
+跟随整体（{}）	Follow overall ({})
 跟随系统	System
 路径不可读	Path not readable
 路径包含 ..	Path contains ..
@@ -824,6 +989,7 @@ npm 缓存	npm Cache
 过热温度	Overheat Threshold
 运行中 · PID {}	Running · PID {}
 还可用	Available
+还有 {} 个	{} more
 这个快捷键已被其他应用或系统占用，请换一个	This shortcut is used by another app or the system. Choose another.
 这台 Mac 不提供功耗读数	This Mac doesn't report power
 这台 Mac 不支持 Apple 智能。	This Mac doesn't support Apple Intelligence.
@@ -843,6 +1009,7 @@ npm 缓存	npm Cache
 退出 OpenStats	Quit OpenStats
 退出应用	Quit App
 退出应用…	Quit App…
+退出登录	Sign out
 适中	Moderate
 选择 GeoLite2 City / Country / ASN 的 .mmdb 文件	Choose a GeoLite2 City / Country / ASN .mmdb file
 通用	General
@@ -850,26 +1017,36 @@ npm 缓存	npm Cache
 通电次数	Power cycles
 通知	Notifications
 通知可以正常显示。发生你打开的状况时，会像这样提醒你。	Notifications are working. You'll be alerted like this when something you turned on happens.
+通过 {} 登录	Signed in with {}
+速度与省电介于两者之间	In between on speed and efficiency
 部分项目需要“完全磁盘访问权限”才能扫描（Safari 缓存、废纸篓）。	Some items need Full Disk Access to scan (Safari caches, Trash).
 配置方式	Configuration
 释放内存	Free Memory
 重做	Redo
+重新分析	Analyze again
 重新安装	Reinstall
 重新扫描	Rescan
 重新查询公网 IP	Look Up Public IP Again
 重新生成	Regenerate
+重置上传与下载统计：从现在起重新累计。重启后自动回到开机后的累计；右键可改回	Reset the upload and download totals and count from now on. After a restart they go back to since-boot totals; right-click to switch back
+重置后上传	Uploaded since reset
+重置后下载	Downloaded since reset
 闲	Idle
 防休眠	Keep Awake
 防休眠已开启	Keep Awake is on
 阿里云	Alibaba Cloud
 阿里云（223.5.5.5）	Alibaba Cloud (223.5.5.5)
 降温	Cooling
+隐私	Privacy
+隐私政策	Privacy policy
 隐藏 OpenStats	Hide OpenStats
 隐藏序列号	Hide Serial Number
 需要 macOS 26 及以上，并在系统设置中开启 Apple 智能。	Requires macOS 26 or later with Apple Intelligence turned on in System Settings.
 需要完全磁盘访问权限	Needs Full Disk Access
 需要注意	Needs attention
 需要管理员授权	Needs admin approval
+需要管理员权限。已完成的 Time Machine 备份不受影响，只是本机上这些快照对应的时间点无法再从本地恢复。	Requires administrator privileges. Completed Time Machine backups are unaffected; you just won't be able to restore these points in time from this Mac.
+非常干净	Very clean
 风扇	Fans
 风扇 {}	Fan {}
 风扇安全温度	Fan Safety Temperature
@@ -877,21 +1054,19 @@ npm 缓存	npm Cache
 风扇设置	Fan Settings
 风扇转速	Fan Speed
 风格	Style
+风险标记	Risk flags
+风险评分	Risk score
 饼图	Pie
 饼图表示当前占用比例	A pie shows current usage
 首次发送时系统会询问是否允许通知	The system asks for permission the first time
 高占用进程	Top Processes
 高负载	Heavy load
 高负载时着色	Color High Load
+高风险	High risk
 （{}）	 ({})
 ，	, 
 ，{} 项未能移动	, {} couldn't be moved
 ，已从程序坞移除	, removed from the Dock
 ：{}	: {}
-立即切换；显示器、应用名称等由系统提供的文字在下次启动时切换	Applies right away; names supplied by macOS, such as displays and apps, switch at next launch
-1 项	1 item
-1 个进程	1 process
-1 个应用，系统自带的不列出	1 app; built-in apps are not listed
-1 个传感器	1 sensor
 """#
 }

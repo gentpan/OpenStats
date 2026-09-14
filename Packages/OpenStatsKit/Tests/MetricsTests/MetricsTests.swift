@@ -172,27 +172,60 @@ struct LiveSamplerTests {
 }
 
 @Suite struct GeoParsingTests {
-    @Test func parsesIpinfoResponse() throws {
-        let json = #"{"ip":"82.139.234.155","city":"Frankfurt am Main","country":"DE","org":"AS151338 POLONETWORK LIMITED"}"#
-        let result = try #require(PublicAddressLookup.parseGeo(Data(json.utf8)))
-        #expect(result.ipv4 == "82.139.234.155")
-        #expect(result.ipv6 == nil)
-        #expect(result.countryCode == "DE")
-        #expect(result.city == "Frankfurt am Main")
-        #expect(result.asn == "AS151338")
-        #expect(result.organization == "POLONETWORK LIMITED")
+    @Test func parsesIpapiResponse() throws {
+        let json = #"{"ip":"32.5.140.2","is_bogon":false,"company":"AT&T Global Network Services, LLC","asn":"AS7018 AT&T Enterprises, LLC","city":"New York City","region":"New York","country":"United States","lat":40.7,"lon":-74.0,"timezone":"America/New_York"}"#
+        let info = try #require(PublicAddressLookup.parseGeo(Data(json.utf8)))
+        #expect(info.countryCode == "US")
+        #expect(info.city == "New York City")
+        #expect(info.region == "New York")
+        #expect(info.asn == "AS7018")
+        #expect(info.organization == "AT&T Global Network Services, LLC")
+    }
+
+    @Test func fallsBackToASNOrganizationAndRejectsBadCountry() throws {
+        let json = #"{"ip":"2606:4700:4700::1111","asn":"Cloudflare","country":"../../etc"}"#
+        let info = try #require(PublicAddressLookup.parseGeo(Data(json.utf8)))
+        #expect(info.countryCode == nil)
+        #expect(info.asn == nil)
+        #expect(info.organization == "Cloudflare")
+    }
+
+    @Test func parsesCleanIPResponse() throws {
+        let json = #"{"ok":true,"ip":"32.5.140.2","hostname":"host.example.net","geo":{"country":"美国","country_code":"US","country_en":"United States","region":"佛罗里达州","city":"玛丽湖"},"geo_sources":[{"source":"maxmind","country_code":"US"},{"source":"ipinfo","region":"Florida","city":"Lake Mary"}],"network":{"asn":7018,"asn_name":"AT&T Enterprises, LLC","isp":"AT&T Enterprises, LLC","network_type":"Residential","connection_type":"Cable/DSL","native_or_broadcast":"NATIVE"},"risk":{"risk_score":2,"risk_label":"Very Clean","is_vpn":false,"is_proxy":false,"is_datacenter":false,"is_abuser":true},"purity":{"score":98,"grade":"A+","confidence":100,"ip_type":"Residential IP","is_native":true,"residential_probability":98,"recommendation":"该 IP 整体较干净"}}"#
+        let info = try #require(PublicAddressLookup.parseCleanIP(Data(json.utf8)))
+        #expect(info.countryCode == "US")
+        #expect(info.city == "玛丽湖" && info.cityEnglish == "Lake Mary" && info.regionEnglish == "Florida")
+        #expect(info.asn == "AS7018")
+        #expect(info.organization == "AT&T Enterprises, LLC")
+        #expect(info.hostname == "host.example.net")
+        #expect(info.networkType == "Residential" && info.connectionType == "Cable/DSL")
+        #expect(info.ipType == "Residential IP" && info.isNative == true && info.residentialProbability == 98)
+        #expect(info.purity == PublicAddresses.Purity(score: 98, grade: "A+", confidence: 100, recommendation: "该 IP 整体较干净"))
+        #expect(info.risk == PublicAddresses.Risk(score: 2, label: "Very Clean", flags: ["abuser"]))
+        #expect(info.reportURL?.absoluteString == "https://cleanip.io/32.5.140.2")
+        #expect(PublicAddressLookup.parseCleanIP(Data(#"{"ok":false,"error":"bad"}"#.utf8)) == nil)
+    }
+
+    @Test func parsesDBIPAndIpinfo() throws {
+        let dbip = try #require(PublicAddressLookup.parseDBIP(Data(#"{"ipAddress":"32.5.140.2","countryCode":"US","stateProv":"New York","city":"New York"}"#.utf8)))
+        #expect(dbip.countryCode == "US" && dbip.region == "New York" && dbip.city == "New York" && dbip.asn == nil)
+        let ipinfo = try #require(PublicAddressLookup.parseIpinfo(Data(#"{"ip":"82.139.234.155","city":"Frankfurt am Main","region":"Hesse","country":"DE","org":"AS151338 POLONETWORK LIMITED"}"#.utf8)))
+        #expect(ipinfo.countryCode == "DE" && ipinfo.city == "Frankfurt am Main")
+        #expect(ipinfo.asn == "AS151338" && ipinfo.organization == "POLONETWORK LIMITED")
+    }
+
+    @Test func mapsCountryNames() {
+        #expect(PublicAddressLookup.countryCode(fromName: "Germany") == "DE")
+        #expect(PublicAddressLookup.countryCode(fromName: "China") == "CN")
+        #expect(PublicAddressLookup.countryCode(fromName: "Hong Kong") == "HK")
+        #expect(PublicAddressLookup.countryCode(fromName: "south korea") == "KR")
+        #expect(PublicAddressLookup.countryCode(fromName: "Atlantis") == nil)
     }
 
     @Test func rejectsUnsafeCountryCode() {
         #expect(PublicAddressLookup.validCountryCode("cn") == "CN")
         #expect(PublicAddressLookup.validCountryCode("../x") == nil)
         #expect(PublicAddressLookup.validCountryCode("USA") == nil)
-        let json = #"{"ip":"2606:4700:4700::1111","country":"../../etc","org":"Cloudflare"}"#
-        let result = PublicAddressLookup.parseGeo(Data(json.utf8))
-        #expect(result?.ipv6 == "2606:4700:4700::1111")
-        #expect(result?.countryCode == nil)
-        #expect(result?.asn == nil)
-        #expect(result?.organization == "Cloudflare")
     }
 }
 

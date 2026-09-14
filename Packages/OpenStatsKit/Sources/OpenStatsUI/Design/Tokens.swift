@@ -34,6 +34,8 @@ extension DS {
         static let border = Color.dynamic(light: 0x000000, lightAlpha: 0.07, dark: 0xFFFFFF, darkAlpha: 0.09)
         static let track = Color.dynamic(light: 0x000000, lightAlpha: 0.06, dark: 0xFFFFFF, darkAlpha: 0.10)
         static let neutral300 = Color.dynamic(light: 0xD1D5DB, dark: 0x3F434A)
+        /// 分段条里表示“剩余 / 空闲”的中性段，深到能衬白字
+        static let neutral500 = Color.dynamic(light: 0x6B7280, dark: 0x4B5563)
         /// 浅一档的品牌蓝，用来区分同一图表里的第二类数据（如性能核）
         static let primarySoft = Color.dynamic(light: 0x93C5FD, dark: 0x60A5FA)
 
@@ -88,6 +90,38 @@ extension NSColor {
 extension DS {
     enum TextSize: CGFloat {
         case xs = 12, sm = 14, base = 16, lg = 20, xl = 24, xxl = 32
+    }
+
+    /// 徽章配色：浅底、细边、深字，与 cleanip.io 的徽章一致
+    enum Badge {
+        static let successText = Color.dynamic(light: 0x15803D, dark: 0x75D99B)
+        static let successFill = Color.dynamic(light: 0xF0FDF4, dark: 0x142F24)
+        static let successBorder = Color.dynamic(light: 0xBBF7D0, dark: 0x29543C)
+        static let warningText = Color.dynamic(light: 0xB45309, dark: 0xF3C66C)
+        static let warningFill = Color.dynamic(light: 0xFFFBEB, dark: 0x342B1B)
+        static let warningBorder = Color.dynamic(light: 0xFDE68A, dark: 0x625030)
+        static let neutralText = Palette.textSecondary
+        static let neutralFill = Palette.elevated
+        static let neutralBorder = Palette.border
+    }
+
+    /// 0–100 分的六档色阶（F / D / C / B / A / A+），只用于评分类图表，不是界面配色
+    enum Grade {
+        static let f = Palette.error
+        static let d = Palette.warning
+        static let c = Color.dynamic(light: 0xEAB308, dark: 0xFACC15)
+        static let b = Color.dynamic(light: 0x84CC16, dark: 0xA3E635)
+        static let a = Palette.success
+        static let aPlus = Color.dynamic(light: 0x15803D, dark: 0x16A34A)
+
+        /// 分段上限与颜色，从低到高
+        static let bands: [(grade: String, upper: Int, color: Color)] = [
+            ("F", 25, f), ("D", 50, d), ("C", 70, c), ("B", 85, b), ("A", 95, a), ("A+", 100, aPlus),
+        ]
+
+        static func color(for score: Int) -> Color {
+            bands.first { score < $0.upper }?.color ?? aPlus
+        }
     }
 
     enum Space {

@@ -75,10 +75,24 @@ public struct NetworkRate: Sendable, Equatable {
 public struct DiskUsage: Sendable, Equatable {
     public var volumeName: String
     public var total: UInt64
+    /// 可用空间，包含系统可随时清除的缓存，与访达显示一致
     public var available: UInt64
+    /// 可用空间里可清除的那部分
+    public var purgeable: UInt64
+
+    public init(volumeName: String, total: UInt64, available: UInt64, purgeable: UInt64 = 0) {
+        self.volumeName = volumeName
+        self.total = total
+        self.available = available
+        self.purgeable = min(purgeable, available)
+    }
 
     public var used: UInt64 { total > available ? total - available : 0 }
     public var usedFraction: Double { total == 0 ? 0 : Double(used) / Double(total) }
+    /// 不含可清除部分的真正空闲空间
+    public var free: UInt64 { available - purgeable }
+    public var purgeableFraction: Double { total == 0 ? 0 : Double(purgeable) / Double(total) }
+    public var freeFraction: Double { total == 0 ? 0 : Double(free) / Double(total) }
 }
 
 public struct BatteryStatus: Sendable, Equatable {

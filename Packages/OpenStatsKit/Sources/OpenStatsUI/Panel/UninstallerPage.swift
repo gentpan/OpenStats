@@ -85,8 +85,9 @@ private struct AppListColumn: View {
                         }
                     }
                 }
+                // 探针必须放在内容里才找得到这个列表自己的 NSScrollView；挂在外面时接了鼠标会显示一条粗的传统滚动条
+                .overlayScrollers()
             }
-            .overlayScrollers()
         }
         .padding(.vertical, DS.Space.s3)
         .frame(maxHeight: .infinity, alignment: .top)
@@ -199,14 +200,13 @@ private struct AppDetailCard: View {
 
             HairlineDivider()
             HStack(spacing: DS.Space.s3) {
-                DSToggle(isOn: $uninstaller.removeFromDock, label: tr("从程序坞移除图标"))
-                Text(tr("同时从程序坞移除图标")).dsFont(.sm).foregroundStyle(DS.Palette.textPrimary)
                 Spacer()
                 Button(uninstaller.isRemoving ? tr("正在移除…") : tr("卸载")) { confirm() }
                     .buttonStyle(DSButtonStyle(kind: .primary))
                     .disabled(running || uninstaller.isScanning || uninstaller.isRemoving)
             }
-            Text(tr("只查找以该应用包名命名的文件，以及 Application Support、Logs 下与应用同名的目录；钥匙串与其他应用共享的数据不会动"))
+            // 程序坞里的图标始终一并移除，不单独做开关：留着一个空图标没有意义
+            Text(tr("只查找以该应用包名命名的文件，以及 Application Support、Logs 下与应用同名的目录；钥匙串与其他应用共享的数据不会动。程序坞里的图标会一并移除"))
                 .dsFont(.xs)
                 .foregroundStyle(DS.Palette.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)

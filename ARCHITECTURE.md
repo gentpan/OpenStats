@@ -21,6 +21,8 @@ hosting SwiftUI, no third-party dependencies. The Xcode project is generated fro
   replace → relaunch steps.
 - `Packages/OpenStatsKit/Sources/HelperShared` — the XPC protocol and maintenance commands
   shared by the app and the helper.
+- `Packages/OpenStatsKit/Sources/AccountSync` — the sync API client, PKCE helpers and the keychain
+  token store; `server/sync` is the Go service it talks to.
 - `Packages/OpenStatsKit/Sources/OpenStatsUI` — design tokens, panel pages, settings,
   menu-bar renderer, app controller, snapshot renderer.
 - `Packages/OpenStatsKit/Tests` — metrics, SMC decoding, cleanup safety, updates, UI logic and
@@ -113,6 +115,22 @@ right before deletion, because apps start in between.
 Regenerable caches are deleted outright; user files go to the Trash. Each action is appended
 to `~/Library/Logs/OpenStats/cleanup.log` as a JSON line.
 
+## Disk tools
+
+The disk page is also where users act on the disk. `DiskToolsController` (`OpenStatsUI/State`) fronts four
+pieces of read-mostly logic in `Cleaner/DiskTools.swift`, each testable without the UI:
+
+- `SpaceScanner` walks a root (the home folder) once, sums every top-level entry and keeps the largest files;
+  packages (`.app`, `.photoslibrary`, …) count as one item. It never follows symlinks and skips folders it
+  cannot read. `canTrash` allows Trash only for files inside the home folder, outside `Library`, with no hidden
+  path component, checked again after resolving symlinks; everything else only gets "reveal in Finder".
+- `VolumeVerifier` runs `diskutil verifyVolume /` (read-only, no privileges) and reduces the output to OK /
+  problem plus the offending line.
+- `LocalSnapshots` parses `tmutil listlocalsnapshots /`. Deleting goes through the helper
+  (`deleteLocalSnapshots`, protocol version 4) and falls back to a one-off administrator prompt; both paths only
+  accept identifiers shaped like `2026-09-14-120000` (`HelperShared/LocalSnapshotCommand`).
+- `MountedVolumes` lists browsable non-root volumes; ejecting uses `NSWorkspace`.
+
 ## Menu bar, popovers and main window
 
 `MenuBarController` owns the status items. In the *separate* layout every enabled metric gets
@@ -144,7 +162,7 @@ is open and back to accessory when all are closed.
   format (search tree + data section decoder, no dependencies). `server/geoip/` holds the systemd
   timer that syncs GeoLite2 onto getopenstats.com with the MaxMind key kept in `/etc/openstats` on the
   server; the app fetches `geoip/manifest.json`, downloads changed files, verifies sha256 and the
-  database type, then swaps them in. Without a local database it falls back to ipinfo.io. Country
+  database type, then swaps them in. Without a local database it falls back to ipapi.is (anonymous, called directly from each Mac; 30 lookups per client IP per day, so results are cached per IP for 24 h and a 429 stops further calls until the next UTC day). Country
   codes are validated before being used as flag file names.
 - **Per-process traffic** — cumulative bytes from `/usr/bin/nettop`, diffed between samples.
 - **DNS** — `networksetup -setdnsservers` through the helper (protocol 3), which re-validates the
@@ -162,6 +180,30 @@ temporary folder, the new one moved into place (restored on failure; an administ
 used when the folder is not writable), and a detached shell waits for the process to exit before
 reopening the app. After an update the old helper may still be running; the app disconnects, waits
 for its 30 s idle exit and checks the protocol version again before asking for a reinstall.
+
+## Account sync
+
+Optional. `SyncController` (in `OpenStatsUI/State`) signs in through `ASWebAuthenticationSession`:
+the app generates a PKCE verifier, opens `https://getopenstats.com/api/v1/auth/<provider>/start` with the
+S256 challenge, the server runs the GitHub / Google / Apple OAuth flow and redirects to
+`openstats://auth/callback?code=…` (the scheme is declared in `project.yml`). The app trades the one-time
+code plus the verifier for a bearer token, so a stray app that claims the scheme gains nothing. The token
+lives in the login keychain (`KeychainTokenStore`; the file keychain, because ad-hoc dev builds have no
+application identifier for the data-protection keychain).
+
+`SettingsDocument` is the synced subset of `AppSettings` — preferences only, never machine state such as the
+current tab, helper status, the history database or the GeoIP files. Enums are stored by raw value and every
+field is optional, so old and new builds can read each other's documents; `apply` validates each value and
+skips what it does not know. `exportDocument()` reads every synced property, which is also how the
+controller observes changes (`withObservationTracking`). A change is pushed whole after a 2 s debounce; the
+cloud is pulled at launch, on wake and every 15 minutes, and applied when its version differs from the last
+one seen. The last pushed or applied document is remembered so applying the cloud copy does not echo back
+as a push. On first sign-in: no cloud copy → upload; local still at defaults → apply cloud; both present and
+different → the account page asks which to keep. After that the last write wins.
+
+The service (`server/sync`, Go + SQLite, deployed by `server/sync/install.sh` behind Caddy) stores one
+document per user with a version counter, links providers that share a verified email into one user, and
+deletes everything on `DELETE /account`.
 
 ## Power, disk and history
 

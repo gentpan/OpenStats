@@ -137,6 +137,15 @@ struct NotificationSettings: View {
                         }
                     }
                 }
+                if kind == .cpuLoad, settings.enabledAlerts.contains(.cpuLoad) {
+                    GroupRow {
+                        SettingRow(title: tr("占用高于")) {
+                            SegmentedControl(selection: $settings.alertCPULoad,
+                                             options: AppSettings.alertLoadOptions.map { ($0, "\($0)%") })
+                                .frame(width: DS.Size.sidebarWidth + DS.Space.s6)
+                        }
+                    }
+                }
             }
         }
 
@@ -281,7 +290,7 @@ struct MenuBarSettings: View {
             }
         }
 
-        SettingsGroup(caption: tr("风格")) {
+        SettingsGroup(caption: tr("整体风格")) {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)],
                       spacing: DS.Space.s3) {
                 ForEach(MenuBarStyle.allCases) { style in
@@ -291,24 +300,33 @@ struct MenuBarSettings: View {
                 }
             }
             .padding(DS.Space.s3)
+            HairlineDivider()
+            Text(tr("整体风格套用到所有项目。想让某个项目不一样，在下面“显示项目”里给它单独选一种，比如 CPU 用圆环、风扇用数字。"))
+                .dsFont(.xs)
+                .foregroundStyle(DS.Palette.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, DS.Space.s4)
+                .padding(.vertical, DS.Space.s3)
         }
 
         SettingsGroup(caption: tr("显示项目")) {
+            GroupRow(showsDivider: false) {
+                InfoBanner(icon: "hand.draw",
+                           text: tr("菜单栏里的图标可以调整顺序：按住 ⌘ 键拖动任意一个，松开后位置会一直保留。新开启的项目由系统安排位置，可能离其他图标较远，拖一下就能挪到一起。"))
+            }
             ForEach(Array(MenuBarItem.allCases.enumerated()), id: \.element) { index, item in
-                GroupRow(showsDivider: index > 0) {
+                GroupRow {
                     VStack(alignment: .leading, spacing: DS.Space.s3) {
                         SettingRow(title: item.title, subtitle: item.subtitle, icon: item.symbol) {
-                            HStack(spacing: DS.Space.s3) {
-                                if settings.isEnabled(item) {
-                                    itemStylePicker(item)
-                                }
-                                DSToggle(isOn: Binding(get: { settings.isEnabled(item) },
-                                                       set: { settings.setEnabled(item, $0) }),
-                                         label: item.title)
-                            }
+                            DSToggle(isOn: Binding(get: { settings.isEnabled(item) },
+                                                   set: { settings.setEnabled(item, $0) }),
+                                     label: item.title)
                         }
-                        if settings.isEnabled(item), settings.menuBarLayout == .separate {
-                            PopoverSectionPicker(item: item)
+                        if settings.isEnabled(item) {
+                            ItemStyleRow(item: item)
+                            if settings.menuBarLayout == .separate {
+                                PopoverSectionPicker(item: item)
+                            }
                         }
                     }
                 }
@@ -324,27 +342,56 @@ struct MenuBarSettings: View {
         }
     }
 
-    /// 网速有自己的三种样式；其他指标可以单独指定风格，默认跟随整体
-    @ViewBuilder
-    private func itemStylePicker(_ item: MenuBarItem) -> some View {
+}
+
+/// 单个项目自己的菜单栏风格：网速有自己的三种样式；其他项目默认跟随整体，也可以单独选一种。
+/// 旁边用实时数据画出这一项现在在菜单栏里的样子，改了立刻能看到
+private struct ItemStyleRow: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.colorScheme) private var colorScheme
+    let item: MenuBarItem
+
+    var body: some View {
         @Bindable var settings = model.settings
-        if item == .network {
-            SegmentedControl(selection: $settings.networkStyle,
-                             options: NetworkMenuStyle.allCases.map { ($0, $0.title) })
-                .frame(width: DS.Size.sidebarWidth + DS.Space.s6)
-        } else {
-            Picker(tr("风格"), selection: Binding(get: { settings.styleOverrides[item] },
-                                             set: { settings.setStyleOverride($0, for: item) })) {
-                Text(tr("跟随整体")).tag(MenuBarStyle?.none)
-                Divider()
-                ForEach(MenuBarStyle.allCases) { style in
-                    Text(style.title).tag(MenuBarStyle?.some(style))
+        HStack(spacing: DS.Space.s3) {
+            Text(tr("菜单栏风格"))
+                .dsFont(.xs)
+                .foregroundStyle(DS.Palette.textSecondary)
+                .fixedSize()
+            if item == .network {
+                SegmentedControl(selection: $settings.networkStyle,
+                                 options: NetworkMenuStyle.allCases.map { ($0, $0.title) })
+                    .frame(width: DS.Size.sidebarWidth + DS.Space.s6)
+            } else {
+                Picker(tr("菜单栏风格"), selection: Binding(get: { settings.styleOverrides[item] },
+                                                       set: { settings.setStyleOverride($0, for: item) })) {
+                    Text(tr("跟随整体（\(settings.menuBarStyle.title)）")).tag(MenuBarStyle?.none)
+                    Divider()
+                    ForEach(MenuBarStyle.options(for: item)) { style in
+                        Text(style.title).tag(MenuBarStyle?.some(style))
+                    }
                 }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .fixedSize()
             }
-            .pickerStyle(.menu)
-            .labelsHidden()
-            .fixedSize()
+            preview
+            Spacer(minLength: 0)
         }
+        .padding(.leading, DS.Size.iconStandalone + DS.Space.s3)
+    }
+
+    /// 这一项按当前风格、实时读数画出来的样子，底色跟随浅色 / 深色外观
+    private var preview: some View {
+        let settings = model.settings
+        let image = MenuBarRenderer.image(reading: MenuBarReading(model: model), items: [item],
+                                          style: { settings.style(for: $0) }, networkStyle: settings.networkStyle,
+                                          colorizeHighLoad: settings.colorizeHighLoad, fahrenheit: settings.useFahrenheit)
+        return Image(nsImage: MenuBarRenderer.preview(image, dark: colorScheme == .dark))
+            .padding(.horizontal, DS.Space.s3)
+            .frame(height: DS.Size.segmentHeight + DS.Space.s1)
+            .background(DS.Palette.track, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+            .accessibilityLabel(tr("该项目在菜单栏里的实时效果"))
     }
 }
 
@@ -529,10 +576,21 @@ struct NetworkSettings: View {
         SettingsGroup(caption: tr("公网 IP")) {
             GroupRow(showsDivider: false) {
                 SettingRow(title: tr("查询公网 IP"),
-                           subtitle: model.geo.isAvailable
-                               ? tr("打开网络详情时向 Cloudflare（1.1.1.1）或 ipify 查询一次公网地址；归属地与 ASN 在本机数据库里查，10 分钟内不重复请求")
-                               : tr("打开网络详情时查询公网地址；本地数据库还没准备好时，归属地与 ASN 暂由 ipinfo.io 在线查询")) {
+                           subtitle: tr("打开网络详情时向 Cloudflare（1.1.1.1）或 ipify 查询一次公网地址，10 分钟内不重复请求")) {
                     DSToggle(isOn: $settings.publicIPLookup, label: tr("查询公网 IP"))
+                }
+            }
+            GroupRow {
+                SettingRow(title: tr("归属地数据源"), subtitle: settings.geoSource.detail) {
+                    Picker(tr("归属地数据源"), selection: $settings.geoSource) {
+                        ForEach(GeoSource.allCases) { source in
+                            Text(source.title).tag(source)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .fixedSize()
+                    .disabled(!settings.publicIPLookup)
                 }
             }
         }

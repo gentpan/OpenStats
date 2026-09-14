@@ -80,7 +80,7 @@ public final class MaintenanceController {
         }
     }
 
-    nonisolated private static var cancelled: String { tr("已取消") }
+    nonisolated static var cancelled: String { tr("已取消") }
 
     /// 未安装辅助工具时的回退：通过 AppleScript 请求一次性管理员授权执行命令。
     /// 命令只由固定路径与已校验的参数拼成，这里再做 AppleScript 字符串转义

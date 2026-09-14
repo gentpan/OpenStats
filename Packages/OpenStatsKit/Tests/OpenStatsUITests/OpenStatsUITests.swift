@@ -1,5 +1,5 @@
 import Foundation
-import Metrics
+@testable import Metrics
 import Testing
 @testable import OpenStatsUI
 
@@ -21,6 +21,10 @@ private func isolatedDefaults() -> UserDefaults {
         #expect(settings.panelTab == .overview)
         #expect(settings.menuBarItems == [.cpu, .memory, .network])
         #expect(settings.probeEnabled && settings.probeInBackground && settings.autoCheckUpdates)
+        // 从未调整过弹窗区块时，默认隐藏的区块生效；走势默认 1 分钟
+        #expect(settings.hiddenPopoverSections == PopoverSection.hiddenByDefault)
+        #expect(!settings.isVisible(.cpuCores) && settings.isVisible(.cpuHeatmap))
+        #expect(settings.cpuChartSeconds == 60)
     }
 
     @Test func persistsChanges() {
@@ -190,6 +194,43 @@ private func isolatedDefaults() -> UserDefaults {
     }
 }
 
+@Suite struct CoreRoleTests {
+    @Test func describesEachTierInPlainWords() {
+        let fast = CPUCluster(id: 0, name: "超级核", coreIndices: [12, 13])
+        let middle = CPUCluster(id: 1, name: "性能核", coreIndices: [4, 5])
+        let slow = CPUCluster(id: 2, name: "能效核", coreIndices: [0, 1])
+        let three = CPUTopology(brand: "Apple", logicalCores: 6, clusters: [fast, middle, slow])
+        #expect(fast.role(in: three) == "最快，重活优先交给它们")
+        #expect(middle.role(in: three) == "速度与省电介于两者之间")
+        #expect(slow.role(in: three) == "更省电，负责后台和轻量任务")
+        // 只有一类核心（Intel）时没有分工可言
+        let single = CPUTopology(brand: "Intel", logicalCores: 8, clusters: [CPUCluster(id: 0, name: "核心", coreIndices: Array(0..<8))])
+        #expect(single.clusters[0].role(in: single) == nil)
+    }
+}
+
+@Suite struct TimedLineChartTests {
+    @Test func positionsByTimeAndBreaksAtGaps() {
+        let end = Date(timeIntervalSince1970: 1_000)
+        let points = [
+            TimedValue(date: end.addingTimeInterval(-70), value: 0.9),   // 超出时长，不画
+            TimedValue(date: end.addingTimeInterval(-60), value: 0),
+            TimedValue(date: end.addingTimeInterval(-55), value: 1),
+            TimedValue(date: end.addingTimeInterval(-50), value: 0.5),
+            TimedValue(date: end.addingTimeInterval(-10), value: 0.5),   // 与上一点隔了 40 秒（睡眠），断开
+            TimedValue(date: end.addingTimeInterval(-5), value: 0.5),
+            TimedValue(date: end, value: 0.5),
+        ]
+        let segments = TimedLineChart.segments(points, duration: 60, end: end, in: CGSize(width: 120, height: 40))
+        #expect(segments.count == 2)
+        #expect(segments[0].map(\.x) == [0, 10, 20])
+        #expect(segments[1].map(\.x) == [100, 110, 120])
+        // 0 在底、1 在顶，越大越靠上
+        #expect(segments[0][0].y > segments[0][2].y && segments[0][2].y > segments[0][1].y)
+        #expect(TimedLineChart.segments([], duration: 60, end: end, in: CGSize(width: 120, height: 40)).isEmpty)
+    }
+}
+
 @Suite struct AlertTrackerTests {
     @Test func firesOnceAfterSustainAndRespectsCooldown() {
         var tracker = AlertTracker()
@@ -248,5 +289,101 @@ private func isolatedDefaults() -> UserDefaults {
 @Suite struct FunctionKeyTests {
     @Test func namesFunctionKeys() {
         #expect(HotKey(keyCode: 0x7A, modifiers: [.command], key: "\u{F704}").display == "⌘F1")
+    }
+}
+
+@MainActor
+@Suite struct SettingsDocumentTests {
+    @Test func exportsAndAppliesRoundTrip() {
+        let source = AppSettings(defaults: isolatedDefaults())
+        source.menuBarItems = [.gpu, .temperature]
+        source.menuBarStyle = .ring
+        source.styleOverrides = [.gpu: .pie]
+        source.refreshSeconds = 5
+        source.useFahrenheit = true
+        source.hiddenPopoverSections = [.cpuHeatmap, .networkDNS]
+        source.probeTarget = .aliyun
+        source.enabledAlerts = [.cpuLoad]
+        source.alertCPULoad = 90
+        source.hotKeys = [.showProcesses: HotKey(keyCode: 35, modifiers: [.command, .option], key: "p")]
+        source.panelTab = .thermal
+
+        let document = source.exportDocument()
+        let target = AppSettings(defaults: isolatedDefaults())
+        target.panelTab = .cleaner
+        target.apply(document)
+
+        #expect(target.menuBarItems == [.gpu, .temperature])
+        #expect(target.menuBarStyle == .ring)
+        #expect(target.styleOverrides == [.gpu: .pie])
+        #expect(target.refreshSeconds == 5)
+        #expect(target.useFahrenheit)
+        #expect(target.hiddenPopoverSections == [.cpuHeatmap, .networkDNS])
+        #expect(target.probeTarget == .aliyun)
+        #expect(target.enabledAlerts == [.cpuLoad])
+        #expect(target.alertCPULoad == 90)
+        #expect(target.hotKeys[.showProcesses]?.keyCode == 35)
+        // 当前页签属于本机状态，不随文档走
+        #expect(target.panelTab == .cleaner)
+        #expect(target.exportDocument() == document)
+    }
+
+    @Test func skipsUnknownAndInvalidValues() {
+        let settings = AppSettings(defaults: isolatedDefaults())
+        var document = SettingsDocument()
+        document.menuBarItems = ["cpu", "hologram"]
+        document.menuBarStyle = "neon"
+        document.refreshSeconds = 7
+        document.probeTarget = "mars"
+        document.language = "english"
+        settings.apply(document)
+        #expect(settings.menuBarItems == [.cpu])
+        #expect(settings.menuBarStyle == .stacked)
+        #expect(settings.refreshSeconds == 2)
+        #expect(settings.probeTarget == .cloudflare)
+        #expect(settings.language == .english)
+        settings.language = .system
+    }
+
+    @Test func documentSurvivesJSONWithMissingFields() throws {
+        let data = Data(#"{"schema":1,"refreshSeconds":3,"futureField":true}"#.utf8)
+        let document = try JSONDecoder().decode(SettingsDocument.self, from: data)
+        #expect(document.refreshSeconds == 3)
+        #expect(document.menuBarItems == nil)
+        let settings = AppSettings(defaults: isolatedDefaults())
+        settings.apply(document)
+        #expect(settings.refreshSeconds == 3)
+        #expect(settings.menuBarItems == [.cpu, .memory, .network])
+    }
+
+    @Test func freshSettingsEqualDefaultDocument() {
+        let settings = AppSettings(defaults: isolatedDefaults())
+        #expect(settings.exportDocument() == AppSettings.defaultDocument())
+        settings.colorizeHighLoad = true
+        #expect(settings.exportDocument() != AppSettings.defaultDocument())
+    }
+}
+
+@Suite struct ActivityRankingTests {
+    @Test func smoothsAndKeepsRecentlyActiveEntries() {
+        var ranking = ActivityRanking()
+        ranking.update(["a": 10_000, "b": 100_000])
+        #expect(ranking.ranked(limit: 5).map(\.id) == ["b", "a"])
+        // b 突然安静，a 继续：b 的分数衰减但仍在榜上，a 慢慢追上
+        for _ in 0..<3 { ranking.update(["a": 10_000]) }
+        let entries = ranking.ranked(limit: 5)
+        #expect(entries.map(\.id).contains("b"))
+        #expect(entries.first?.id == "b")
+        for _ in 0..<6 { ranking.update(["a": 10_000]) }
+        #expect(ranking.ranked(limit: 5).first?.id == "a")
+        // 长时间没有活动后从榜上移除
+        for _ in 0..<40 { ranking.update([:]) }
+        #expect(ranking.isEmpty)
+    }
+
+    @Test func limitsAndBreaksTiesByID() {
+        var ranking = ActivityRanking()
+        ranking.update(["x": 5_000, "y": 5_000, "z": 9_000])
+        #expect(ranking.ranked(limit: 2).map(\.id) == ["z", "x"])
     }
 }

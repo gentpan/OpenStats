@@ -16,10 +16,28 @@ public final class NetworkController {
     public static let probeCapacity = 120
 
     public private(set) var details: NetworkDetails?
-    public private(set) var publicAddresses: PublicAddresses?
+    /// 公网 IP 信息按地址族各存一份：两份都含 IPv4 与 IPv6 地址，归属地、纯净度等是各自那个地址的
+    public private(set) var publicResults: [IPFamily: PublicAddresses] = [:]
+    /// 界面上当前看的是哪一族；只有一族时自动跟着
+    public var publicFamily: IPFamily = .v4
+    /// 当前地址族的结果；所选那族没有时退到另一族
+    public var publicAddresses: PublicAddresses? {
+        publicResults[publicFamily] ?? publicResults[publicFamily == .v4 ? .v6 : .v4]
+    }
+    /// 两族都有归属地结果时才提供切换
+    public var hasDualStack: Bool {
+        publicResults[.v4] != nil && publicResults[.v6] != nil
+    }
+    /// 界面上标注的地址族：双栈时显示，单栈不显示
+    public var shownFamily: IPFamily? {
+        guard hasDualStack else { return nil }
+        return publicResults[publicFamily] != nil ? publicFamily : (publicFamily == .v4 ? .v6 : .v4)
+    }
     public private(set) var isLookingUpPublic = false
     public private(set) var probes = History<ProbeSample>(capacity: probeCapacity)
     public private(set) var processes: [NetworkProcessUsage] = []
+    /// 各进程流量的平滑排行，列表按它排序而不是按瞬时速率
+    @ObservationIgnored private var processRanking = ActivityRanking()
 
     @ObservationIgnored private let settings: AppSettings
     @ObservationIgnored private var probeTask: Task<Void, Never>?
@@ -37,9 +55,66 @@ public final class NetworkController {
 
     @ObservationIgnored private let geo: GeoDatabaseController
 
+    /// 上次查到的公网 IP 信息：点开弹窗时先显示它，只有超过 7 天或公网 IP 变了才重新查归属地
+    private struct PublicCache: Codable {
+        var results: [String: PublicAddresses]
+        var geoDates: [String: Date]
+        var source: String
+    }
+    static let geoCacheLifetime: TimeInterval = 7 * 24 * 60 * 60
+    private static let cacheKey = "publicAddressCache3"
+
+    /// 用户按过“重置统计”后的累计流量基线：界面显示 当前累计 − 基线。
+    /// 随开机时间一起保存，重启后系统计数器归零、基线作废，自动回到开机后累计
+    public struct TrafficBaseline: Codable, Equatable, Sendable {
+        public var download: UInt64
+        public var upload: UInt64
+        public var date: Date
+        var bootTime: TimeInterval?
+    }
+    public private(set) var trafficBaseline: TrafficBaseline?
+    private static let trafficBaselineKey = "trafficBaseline"
+    private static let bootTime: TimeInterval? = {
+        var boot = timeval()
+        var size = MemoryLayout<timeval>.size
+        return sysctlbyname("kern.boottime", &boot, &size, nil, 0) == 0 ? TimeInterval(boot.tv_sec) : nil
+    }()
+
     init(settings: AppSettings, geo: GeoDatabaseController) {
         self.settings = settings
         self.geo = geo
+        if let data = UserDefaults.standard.data(forKey: Self.cacheKey),
+           let cache = try? JSONDecoder().decode(PublicCache.self, from: data),
+           cache.source == settings.geoSource.rawValue, settings.publicIPLookup {
+            publicResults = Dictionary(uniqueKeysWithValues: cache.results.compactMap { key, value in IPFamily(rawValue: key).map { ($0, value) } })
+        }
+        if let data = UserDefaults.standard.data(forKey: Self.trafficBaselineKey),
+           let baseline = try? JSONDecoder().decode(TrafficBaseline.self, from: data),
+           baseline.bootTime == Self.bootTime {
+            trafficBaseline = baseline
+        }
+    }
+
+    // MARK: 流量统计
+
+    /// 从现在起重新累计上传与下载：把当前计数器记成基线
+    public func resetTraffic(_ rate: NetworkRate) {
+        let baseline = TrafficBaseline(download: rate.totalDownloaded, upload: rate.totalUploaded, date: Date(), bootTime: Self.bootTime)
+        trafficBaseline = baseline
+        UserDefaults.standard.set(try? JSONEncoder().encode(baseline), forKey: Self.trafficBaselineKey)
+    }
+
+    /// 改回开机后的累计
+    public func clearTrafficBaseline() {
+        trafficBaseline = nil
+        UserDefaults.standard.removeObject(forKey: Self.trafficBaselineKey)
+    }
+
+    /// 扣掉基线后的累计流量；计数器比基线小（接口变动）时按 0 算
+    public func trafficTotals(_ rate: NetworkRate) -> (download: UInt64, upload: UInt64) {
+        guard let baseline = trafficBaseline else { return (rate.totalDownloaded, rate.totalUploaded) }
+        return (rate.totalDownloaded >= baseline.download ? rate.totalDownloaded - baseline.download : 0,
+                rate.totalUploaded >= baseline.upload ? rate.totalUploaded - baseline.upload : 0)
     }
 
     // MARK: 统计
@@ -131,7 +206,7 @@ public final class NetworkController {
                 }.value
                 sampler = next
                 guard !Task.isCancelled, let self else { return }
-                self.processes = usage
+                self.processes = self.rankedProcesses(usage)
                 tick += 1
                 try? await Task.sleep(for: .seconds(2))
             }
@@ -144,25 +219,78 @@ public final class NetworkController {
 
     // MARK: 公网 IP
 
-    func lookUpPublicAddresses() {
+    /// 先只取公网地址（Cloudflare，便宜且不限额），再按地址族各查一次归属地：地址没变、结果不满 7 天、
+    /// 数据源没换的那一族沿用缓存，否则重新查并写回缓存。`force` 为真时（用户点了刷新）两族都重查
+    func lookUpPublicAddresses(force: Bool = false) {
         guard settings.publicIPLookup, !isLookingUpPublic else { return }
-        isLookingUpPublic = true
+        // 有缓存可显示时不转圈，后台悄悄核对
+        isLookingUpPublic = publicResults.isEmpty || force
         let localIPv4 = details?.physical?.ipv4 ?? []
         Task {
-            // 有本地 GeoLite2 时只向外查询公网 IP，归属地与 ASN 在本机查
-            let local = geo.isAvailable
-            var result = await PublicAddressLookup.fetch(includeGeo: !local)
-            if local, let address = result.ipv4 ?? result.ipv6, let location = geo.locate(address) {
-                result.countryCode = location.countryCode ?? result.countryCode
-                result.city = location.city
-                result.asn = location.asn
-                result.organization = location.organization
-                result.source = .localDatabase
+            let source = settings.geoSource
+            let provider = source.provider ?? .cleanIP
+            let useLocal = source == .localDatabase && geo.isAvailable
+            let base = await PublicAddressLookup.fetch(includeGeo: false, provider: provider)
+            let cached = Self.loadCache()
+            let now = Date()
+
+            @MainActor func resolve(_ family: IPFamily, ip: String?) async -> PublicAddresses? {
+                guard let ip else { return nil }
+                if !force, let cached, cached.source == source.rawValue,
+                   let old = cached.results[family.rawValue], (family == .v4 ? old.ipv4 : old.ipv6) == ip,
+                   let date = cached.geoDates[family.rawValue], now.timeIntervalSince(date) < Self.geoCacheLifetime {
+                    var kept = old
+                    kept.ipv4 = base.ipv4
+                    kept.ipv6 = base.ipv6
+                    return kept
+                }
+                var result = base
+                if !useLocal, let info = await PublicAddressLookup.geo(for: ip, provider: provider) {
+                    result.apply(info)
+                }
+                // 选了本地 GeoLite2，或在线查不到时，退回本地数据库
+                if useLocal || (result.asn == nil && result.city == nil && geo.isAvailable), let location = geo.locate(ip) {
+                    result.countryCode = location.countryCode ?? result.countryCode
+                    result.city = location.city
+                    result.asn = location.asn
+                    result.organization = location.organization
+                    result.source = .localDatabase
+                }
+                guard result.asn != nil || result.city != nil || result.purity != nil else {
+                    // 这次没查到，地址又没变，先继续用旧的
+                    if let old = cached?.results[family.rawValue], (family == .v4 ? old.ipv4 : old.ipv6) == ip { return old }
+                    return result
+                }
+                return result
             }
-            publicAddresses = result
+
+            async let v4 = resolve(.v4, ip: base.ipv4)
+            async let v6 = resolve(.v6, ip: base.ipv6)
+            var results: [IPFamily: PublicAddresses] = [:]
+            if let v4 = await v4 { results[.v4] = v4 }
+            if let v6 = await v6 { results[.v6] = v6 }
+
+            var dates = cached?.source == source.rawValue ? cached?.geoDates ?? [:] : [:]
+            for (family, result) in results {
+                let previous = cached?.results[family.rawValue]
+                let sameAsCached = previous?.asn == result.asn && previous?.purity == result.purity && previous?.city == result.city
+                if force || !sameAsCached || dates[family.rawValue] == nil { dates[family.rawValue] = now }
+            }
+            Self.saveCache(PublicCache(results: Dictionary(uniqueKeysWithValues: results.map { ($0.key.rawValue, $0.value) }),
+                                       geoDates: dates, source: source.rawValue))
+            publicResults = results
+            if publicResults[publicFamily] == nil, let only = publicResults.keys.first { publicFamily = only }
             lastPublicLookup = (Date(), localIPv4)
             isLookingUpPublic = false
         }
+    }
+
+    private static func loadCache() -> PublicCache? {
+        UserDefaults.standard.data(forKey: cacheKey).flatMap { try? JSONDecoder().decode(PublicCache.self, from: $0) }
+    }
+
+    private static func saveCache(_ cache: PublicCache) {
+        UserDefaults.standard.set(try? JSONEncoder().encode(cache), forKey: cacheKey)
     }
 
     /// 10 分钟内且本地地址未变化时沿用上次结果
@@ -174,8 +302,9 @@ public final class NetworkController {
     }
 
     func clearPublicAddresses() {
-        publicAddresses = nil
+        publicResults = [:]
         lastPublicLookup = nil
+        UserDefaults.standard.removeObject(forKey: Self.cacheKey)
     }
 
     // MARK: 探测
@@ -219,7 +348,39 @@ public final class NetworkController {
         details.physical?.hardwareAddress = "a4:83:e7:12:34:56"
         details.dnsServers = details.physical?.manualDNS.isEmpty == false ? details.physical!.manualDNS : ["192.168.1.1"]
         self.details = details
-        publicAddresses = PublicAddresses(ipv4: "203.0.113.24", ipv6: nil, countryCode: "CN",
-                                          city: "Shanghai", asn: "AS64500", organization: "EXAMPLE NETWORK")
+        var sample = PublicAddresses(ipv4: "203.0.113.24", ipv6: nil, countryCode: "CN",
+                                     city: "上海", region: "上海", asn: "AS64500", organization: "EXAMPLE NETWORK")
+        sample.cityEnglish = "Shanghai"
+        sample.networkType = "Residential"
+        sample.connectionType = "Cable/DSL"
+        sample.ipType = "Residential IP"
+        sample.isNative = true
+        sample.residentialProbability = 96
+        sample.purity = PublicAddresses.Purity(score: 94, grade: "A", confidence: 100)
+        sample.risk = PublicAddresses.Risk(score: 4, label: "Very Clean")
+        publicResults = [.v4: sample]
     }
+}
+
+extension NetworkController {
+    /// 用最近十几秒的平均流量给进程排序：刚安静下来的进程还会在榜上停留一会儿，列表不会忽隐忽现
+    func rankedProcesses(_ usage: [NetworkProcessUsage]) -> [NetworkProcessUsage] {
+        var current: [String: Double] = [:]
+        var byID: [String: NetworkProcessUsage] = [:]
+        for process in usage {
+            let key = "\(process.pid)"
+            current[key] = process.download + process.upload
+            byID[key] = process
+        }
+        processRanking.update(current)
+        return processRanking.ranked(limit: 5).compactMap { byID[$0.id] }
+    }
+}
+
+/// 公网地址的地址族
+public enum IPFamily: String, CaseIterable, Identifiable, Sendable, Codable {
+    case v4, v6
+
+    public var id: String { rawValue }
+    public var title: String { self == .v4 ? "IPv4" : "IPv6" }
 }

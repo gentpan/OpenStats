@@ -59,8 +59,12 @@ struct OverlayScrollers: NSViewRepresentable {
             DispatchQueue.main.async { [weak self] in
                 MainActor.assumeIsolated {
                     guard let scrollView = self?.enclosingScrollView else { return }
+                    guard scrollView.scrollerStyle != .overlay || !scrollView.autohidesScrollers else { return }
                     scrollView.scrollerStyle = .overlay
                     scrollView.autohidesScrollers = true
+                    // 样式改了之后重新排版，让内容占满原来留给滚动条的那一条
+                    scrollView.tile()
+                    scrollView.documentView?.needsLayout = true
                 }
             }
         }

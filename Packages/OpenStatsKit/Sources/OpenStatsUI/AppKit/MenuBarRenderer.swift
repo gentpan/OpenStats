@@ -10,6 +10,9 @@ struct MenuBarReading {
     var gpuHistory: [Double] = []
     var memory: Double?
     var memoryHistory: [Double] = []
+    /// 启动磁盘已用占比；用量几乎不变，柱状 / 折线风格画成一条平线
+    var disk: Double?
+    var diskHistory: [Double] = []
     var upload: Double?
     var download: Double?
     var temperature: Double?
@@ -25,6 +28,8 @@ struct MenuBarReading {
         gpuHistory = store.gpuHistory.elements
         memory = store.memory?.usedFraction
         memoryHistory = store.memoryHistory.elements
+        disk = store.disk?.usedFraction
+        diskHistory = disk.map { Array(repeating: $0, count: 30) } ?? []
         upload = store.network?.uploadBytesPerSecond
         download = store.network?.downloadBytesPerSecond
         temperature = store.sensors?.temperature(.cpu)?.maximum
@@ -34,15 +39,21 @@ struct MenuBarReading {
 
     init() {}
 
-    /// 设置页预览用的示例读数
+    /// 设置页预览用的示例读数：历史给 30 个点，柱状风格取最后 10 个，折线风格用全部
     static let sample: MenuBarReading = {
         var reading = MenuBarReading()
         reading.cpu = 0.34
-        reading.cpuHistory = [0.18, 0.22, 0.41, 0.36, 0.28, 0.52, 0.47, 0.31, 0.29, 0.34]
+        reading.cpuHistory = [0.12, 0.15, 0.11, 0.20, 0.33, 0.27, 0.19, 0.24, 0.45, 0.38,
+                              0.30, 0.26, 0.22, 0.35, 0.58, 0.49, 0.41, 0.37, 0.30, 0.25,
+                              0.18, 0.22, 0.41, 0.36, 0.28, 0.52, 0.47, 0.31, 0.29, 0.34]
         reading.gpu = 0.22
-        reading.gpuHistory = [0.05, 0.12, 0.30, 0.18, 0.10, 0.26, 0.40, 0.21, 0.15, 0.22]
+        reading.gpuHistory = [0.02, 0.04, 0.03, 0.08, 0.15, 0.12, 0.09, 0.11, 0.24, 0.20,
+                              0.14, 0.10, 0.08, 0.17, 0.35, 0.28, 0.22, 0.19, 0.14, 0.10,
+                              0.05, 0.12, 0.30, 0.18, 0.10, 0.26, 0.40, 0.21, 0.15, 0.22]
         reading.memory = 0.68
-        reading.memoryHistory = Array(repeating: 0.68, count: 10)
+        reading.memoryHistory = Array(repeating: 0.68, count: 30)
+        reading.disk = 0.58
+        reading.diskHistory = Array(repeating: 0.58, count: 30)
         reading.upload = 12 * 1024
         reading.download = 1.4 * 1024 * 1024
         reading.temperature = 52
@@ -55,6 +66,7 @@ struct MenuBarReading {
         case .cpu: (cpu, cpuHistory)
         case .gpu: (gpu, gpuHistory)
         case .memory: (memory, memoryHistory)
+        case .disk: (disk, diskHistory)
         default: (nil, [])
         }
     }
@@ -66,6 +78,7 @@ struct MenuBarReading {
             case .cpu: cpu.map { "CPU \(Format.percent($0))" }
             case .gpu: gpu.map { "GPU \(Format.percent($0))" }
             case .memory: memory.map { tr("内存 \(Format.percent($0))") }
+            case .disk: disk.map { tr("磁盘已用 \(Format.percent($0))") }
             case .network:
                 upload.flatMap { up in download.map { tr("上传 \(Format.menuBarRate(up)) · 下载 \(Format.menuBarRate($0))") } }
             case .temperature: temperature.map { tr("CPU 温度 \(Format.temperature($0, fahrenheit: fahrenheit))") }
@@ -96,6 +109,8 @@ enum MenuBarRenderer {
         static let historyCount = 10
         static let historyBarWidth: CGFloat = 2
         static let historyBarGap: CGFloat = 1
+        static let lineCount = 30
+        static let lineWidth: CGFloat = 30
         static let chartHeight: CGFloat = 13
         static let gaugeDiameter: CGFloat = 13
         static let ringWidth: CGFloat = 2
@@ -172,7 +187,7 @@ enum MenuBarRenderer {
     private static func segment(for item: MenuBarItem, reading: MenuBarReading, style: MenuBarStyle,
                                 networkStyle: NetworkMenuStyle, colorizeHighLoad: Bool, fahrenheit: Bool) -> Segment {
         switch item {
-        case .cpu, .gpu, .memory:
+        case .cpu, .gpu, .memory, .disk:
             let (value, history) = reading.percent(item)
             return percentSegment(item: item, value: value, history: history, style: style, colorizeHighLoad: colorizeHighLoad)
         case .network:
@@ -208,6 +223,8 @@ enum MenuBarRenderer {
             return combine([pie(fraction: fraction, alert: alert), stacked])
         case .history:
             return combine([historyBars(history, alert: alert), stacked])
+        case .line:
+            return combine([historyLine(history, alert: alert), stacked])
         case .meter:
             return combine([meter(fraction: fraction, alert: alert), stacked])
         case .dot:
@@ -332,6 +349,37 @@ enum MenuBarRenderer {
                 NSRect(x: x, y: bottom, width: Metrics.historyBarWidth,
                        height: max(1, Metrics.chartHeight * min(1, value))).fill()
             }
+        }
+    }
+
+    /// 最近 30 次采样的折线，最新的点在右边，线下填淡色；数据不足时从右往左只画已有的部分
+    private static func historyLine(_ history: [Double], alert: Bool) -> Segment {
+        let recent = Array(history.suffix(Metrics.lineCount))
+        return Segment(width: Metrics.lineWidth) { rect in
+            let bottom = rect.midY - Metrics.chartHeight / 2
+            NSColor.labelColor.withAlphaComponent(Metrics.trackAlpha).setFill()
+            NSRect(x: rect.minX, y: bottom, width: Metrics.lineWidth, height: 1).fill()
+            guard recent.count > 1 else { return }
+
+            let step = Metrics.lineWidth / CGFloat(Metrics.lineCount - 1)
+            let startX = rect.maxX - CGFloat(recent.count - 1) * step
+            let line = NSBezierPath()
+            for (index, value) in recent.enumerated() {
+                let point = NSPoint(x: startX + CGFloat(index) * step,
+                                    y: bottom + 1 + (Metrics.chartHeight - 2) * CGFloat(min(1, max(0, value))))
+                index == 0 ? line.move(to: point) : line.line(to: point)
+            }
+            let area = line.copy() as! NSBezierPath
+            area.line(to: NSPoint(x: rect.maxX, y: bottom))
+            area.line(to: NSPoint(x: startX, y: bottom))
+            area.close()
+            foreground(alert).withAlphaComponent(Metrics.trackAlpha).setFill()
+            area.fill()
+
+            line.lineWidth = 1
+            line.lineJoinStyle = .round
+            foreground(alert).setStroke()
+            line.stroke()
         }
     }
 

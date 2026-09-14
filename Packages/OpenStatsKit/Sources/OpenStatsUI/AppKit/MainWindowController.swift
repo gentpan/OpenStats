@@ -14,6 +14,8 @@ final class MainWindowController: NSObject, NSWindowDelegate {
     }
 
     var isVisible: Bool { window?.isVisible == true }
+    /// 登录窗口等系统面板挂靠用
+    var nsWindow: NSWindow? { window }
 
     func close() {
         window?.performClose(nil)
@@ -94,4 +96,5 @@ enum WindowChrome {
         window.toolbar = toolbar
         window.toolbarStyle = .unifiedCompact
     }
+
 }

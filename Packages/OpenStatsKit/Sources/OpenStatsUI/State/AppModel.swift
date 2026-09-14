@@ -25,6 +25,8 @@ public final class AppModel {
     public let uninstaller = UninstallerController()
     let startupItems = StartupItemsController()
     public let history: HistoryRecorder
+    public let sync: SyncController
+    let diskTools: DiskToolsController
     @ObservationIgnored public let hub = MetricsHub()
 
     public var isMainWindowVisible = false
@@ -54,6 +56,8 @@ public final class AppModel {
         updates = UpdateController(settings: settings)
         alerts = AlertController(settings: settings)
         history = HistoryRecorder(settings: settings, databaseURL: historyURL)
+        sync = SyncController(settings: settings)
+        diskTools = DiskToolsController(helper: helper)
     }
 
     /// 根据当前可见内容决定采集范围：主窗口看标签页，详情弹窗看是哪一项
@@ -72,10 +76,11 @@ public final class AppModel {
         demand.network = true
         let showing = { (page: PanelTab, item: MenuBarItem) in (window && tab == page) || popover == item }
         demand.gpu = (window && [.overview, .system].contains(tab)) || menu.contains(.gpu) || showing(.gpu, .gpu)
-        demand.disk = window && [.overview, .system, .cleaner, .disk].contains(tab)
-        demand.diskDetail = window && tab == .disk
+        demand.disk = (window && [.overview, .system, .cleaner, .disk].contains(tab)) || menu.contains(.disk) || popover == .disk
+        demand.diskDetail = showing(.disk, .disk)
         demand.battery = (window && [.overview, .system, .keepAwake].contains(tab)) || keepAwake.lidClosedActive
         demand.processes = (window && [.processes, .overview, .disk].contains(tab)) || showing(.cpu, .cpu) || showing(.memory, .memory)
+            || popover == .disk
         demand.systemProcesses = window && tab == .processes
 
         var groups = Set<TemperatureGroup>()
