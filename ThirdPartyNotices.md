@@ -10,8 +10,15 @@ This product includes GeoLite2 data created by MaxMind, available from https://w
 
 ## flag-icons
 
-`Packages/OpenStatsKit/Sources/OpenStatsUI/Resources/Flags/` 中的国旗 SVG 来自
+`Assets/flags-svg/` 中的国旗 SVG（应用内为 `Scripts/render_flags.sh` 渲染的 PNG）来自
 [lipis/flag-icons](https://github.com/lipis/flag-icons)，MIT License，Copyright (c) 2013 Panayiotis Lipiridis。
+
+## 登录按钮的品牌标志
+
+`Packages/OpenStatsKit/Sources/OpenStatsUI/Resources/Logos/github.svg` 来自
+[primer/octicons](https://github.com/primer/octicons) 的 mark-github，MIT License，Copyright (c) GitHub Inc.；
+`google.svg` 是 Google 的品牌标志，仅按其品牌规范用于“使用 Google 登录”按钮。Apple 标志使用系统 SF Symbols 的 `apple.logo`。
+GitHub、Google 与 Apple 的名称和标志均为各自公司的商标。
 
 ## exelban/stats
 

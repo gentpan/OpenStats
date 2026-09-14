@@ -1,7 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// 国旗：使用包内的 SVG（flag-icons，MIT），不使用 emoji
+/// 国旗：使用包内由 flag-icons（MIT）渲染好的 PNG，不使用 emoji。
+/// 不直接读 SVG：系统的 SVG 渲染器对嵌套 <use> 等写法支持不好，中国、乌兹别克斯坦等旗子会画错（见 Scripts/render_flags.sh）
 struct FlagImage: View {
     let countryCode: String
     var height: CGFloat = DS.Space.s3
@@ -31,7 +32,7 @@ final class FlagCache {
         guard code.count == 2, code.unicodeScalars.allSatisfy({ ("a"..."z").contains($0) }) else { return nil }
         if let image = images[code] { return image }
         guard !missing.contains(code) else { return nil }
-        guard let url = Bundle.module.url(forResource: code, withExtension: "svg", subdirectory: "Flags"),
+        guard let url = Bundle.module.url(forResource: code, withExtension: "png", subdirectory: "Flags"),
               let image = NSImage(contentsOf: url) else {
             missing.insert(code)
             return nil
