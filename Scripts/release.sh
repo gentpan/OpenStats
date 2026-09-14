@@ -37,7 +37,7 @@ echo "版本 ${VERSION} · 签名身份：${SIGN_ID}"
 
 # ---- 构建 --------------------------------------------------------------------
 
-make build CONFIG=Release SIGN_ID="$SIGN_ID"
+make build CONFIG=Release INSTALL=0 SIGN_ID="$SIGN_ID"
 
 codesign --verify --deep --strict --verbose=2 "$APP"
 for binary in "$APP" "$APP/Contents/MacOS/OpenStatsHelper" "$APP/Contents/PlugIns/OpenStatsWidget.appex"; do
@@ -121,6 +121,9 @@ cask "openstats" do
   ]
 end
 CASK
+
+# 本机只保留一份：把刚公证的发布版装到 /Applications，编译目录里不留副本
+./Scripts/install_local.sh "$APP"
 
 echo
 echo "✅ ${DIST}/${DMG_NAME}"

@@ -1,6 +1,7 @@
 PROJECT  := OpenStats.xcodeproj
 SCHEME   := OpenStats
-CONFIG   ?= Debug
+# 每次构建都会安装到 /Applications，默认用 Release
+CONFIG   ?= Release
 DERIVED  := build/DerivedData
 APP      := $(DERIVED)/Build/Products/$(CONFIG)/OpenStats.app
 LSREGISTER := /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
@@ -21,29 +22,19 @@ endif
 generate:
 	xcodegen generate --quiet
 
-## 编译 App（含辅助工具）；每次构建号加一，BUMP=0 时不加
+## 编译 App（含辅助工具）并安装：卸载旧版、装上新版、启动，本机始终只有 /Applications 一份。
+## 每次构建号加一（BUMP=0 不加）；INSTALL=0 只编译不安装（发布脚本使用）
 build:
 	@if [ "$(BUMP)" != "0" ]; then ./Scripts/version.sh build; fi
 	@$(MAKE) --no-print-directory compile
+	@if [ "$(INSTALL)" != "0" ]; then ./Scripts/install_local.sh $(APP); fi
 
 compile: generate
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -configuration $(CONFIG) \
 		-derivedDataPath $(DERIVED) -destination 'platform=macOS' -quiet $(SIGN_FLAGS) build
-	@# 编译产物不登记到启动服务，系统里只保留 /Applications 那一份（聚焦搜索、打开方式、小组件列表不重复）
-	@$(LSREGISTER) -u $(APP) >/dev/null 2>&1 || true
 
-## 编译并启动（会先结束正在运行的 OpenStats）
-run: build stop
-	open $(APP)
-
-## 以 Release 构建安装到 /Applications 并启动（覆盖旧版本，保留偏好设置）
-install:
-	$(MAKE) build CONFIG=Release
-	-pkill -x OpenStats
-	rm -rf /Applications/OpenStats.app
-	ditto $(DERIVED)/Build/Products/Release/OpenStats.app /Applications/OpenStats.app
-	$(LSREGISTER) -f /Applications/OpenStats.app
-	open /Applications/OpenStats.app
+## 与 build 相同，保留旧名字
+run install: build
 
 ## 发布：签名、公证、装订、打包 DMG，生成 Homebrew cask（见 Scripts/release.sh）
 release:
@@ -69,9 +60,9 @@ bump-major:
 test:
 	cd Packages/OpenStatsKit && swift test
 
-## 用本机实时数据渲染各页面截图到 build/snapshots
-snapshot: build
-	$(APP)/Contents/MacOS/OpenStats --snapshot build/snapshots
+## 用本机实时数据渲染各页面截图到 build/snapshots（使用已安装的应用，不重新构建）
+snapshot:
+	/Applications/OpenStats.app/Contents/MacOS/OpenStats --snapshot build/snapshots
 
 open: generate
 	open $(PROJECT)

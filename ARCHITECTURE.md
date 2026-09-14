@@ -32,17 +32,20 @@ hosting SwiftUI, no third-party dependencies. The Xcode project is generated fro
 
 ```bash
 brew install xcodegen
-make build            # Debug
-make install          # Release into /Applications
+make build            # Release build, then replace /Applications/OpenStats.app and relaunch
 make test             # swift test in the package
 ```
 
 Versions read `0.2.0 (0003)`: `MARKETING_VERSION` changes only when releasing
 (`make bump-patch` for small releases, `make bump-minor` for larger ones), and the four-digit
 `CURRENT_PROJECT_VERSION` goes up by one on every `make build` (`BUMP=0` skips it). Build numbers
-never reset, so every package has a larger `CFBundleVersion` than the one before. Build products are
-unregistered from Launch Services so only `/Applications/OpenStats.app` shows up in Spotlight and the
-widget gallery.
+never reset, so every package has a larger `CFBundleVersion` than the one before. Every `make build` runs
+`Scripts/install_local.sh`: it ends the running app (the helper restores fans and sleep when the
+connection drops), deletes the old `/Applications/OpenStats.app`, *moves* the new bundle there so no
+copy stays in the build folder, re-registers it with Launch Services, and relaunches. Only one
+OpenStats ever exists on the machine, so Spotlight and the widget gallery never show duplicates.
+`INSTALL=0` compiles without installing; `Scripts/release.sh` uses it and installs the notarized
+build at the end.
 
 `project.yml` defaults to ad-hoc signing so the project opens anywhere. The Makefile passes
 the first Developer ID Application identity from the keychain (and `--timestamp` for Release)
