@@ -158,9 +158,14 @@ is open and back to accessory when all are closed.
 - **Interface and addresses** — `SCDynamicStore` / `SCPreferences` for the primary and physical
   service, `getifaddrs` for addresses, CoreWLAN for signal and rate.
 - **Public IP** — Cloudflare trace (ipify as fallback) for the address only. Location, ASN, network
-  type, native / broadcast and the cleanliness score come from `cleanip.io`, queried directly from each
-  Mac by `PublicAddressLookup` (one request per address family; results are cached per IP for an hour
-  in memory and for a week on disk, and a 429 stops further calls until the next UTC day). Country
+  type, native / broadcast and the cleanliness score come from `cleanip.io/cli?json=1`, queried directly
+  from each Mac by `PublicAddressLookup`. The endpoint only reports the caller's own address, so
+  `AddressFamilyRequest` opens one Network.framework connection pinned to IPv4 and one pinned to IPv6
+  (URLSession cannot choose the family) and speaks plain HTTP/1.1 over TLS; when a pinned connection
+  cannot be set up it falls back to URLSession and keeps the answer only if it is for the same family.
+  If cleanip.io sees a different exit than Cloudflare (split-routing proxies), its address is shown.
+  Results are cached per IP for an hour in memory and for a week on disk (failed lookups are not
+  cached), and a 429 stops further calls until the next UTC day. Country
   codes are validated before being used as flag file names. `server/geoip/` still holds the systemd
   timer that syncs MaxMind GeoLite2 onto `getopenstats.com/geoip/` (account and key in
   `/etc/openstats/maxmind.env` on the server); the app no longer downloads those files, they are kept

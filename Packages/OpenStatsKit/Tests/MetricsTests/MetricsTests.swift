@@ -188,6 +188,23 @@ struct LiveSamplerTests {
         #expect(PublicAddressLookup.parseCleanIP(Data(#"{"ok":false,"error":"bad"}"#.utf8)) == nil)
     }
 
+    @Test func parsesHTTPResponses() throws {
+        let plain = Data("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 11\r\n\r\n{\"ok\":true}".utf8)
+        let (body, status) = AddressFamilyRequest.parse(plain)
+        #expect(status == 200 && body == Data("{\"ok\":true}".utf8))
+
+        let chunked = Data("HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n6;x=1\r\n world\r\n0\r\n\r\n".utf8)
+        #expect(AddressFamilyRequest.parse(chunked).0 == Data("hello world".utf8))
+
+        let limited = Data("HTTP/1.1 429 Too Many Requests\r\nContent-Length: 0\r\n\r\n".utf8)
+        #expect(AddressFamilyRequest.parse(limited).1 == 429)
+
+        // 读到一半断开：chunked 缺结尾、Content-Length 不够，都不能当成完整结果
+        #expect(AddressFamilyRequest.parse(Data("HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhel".utf8)).0 == nil)
+        #expect(AddressFamilyRequest.parse(Data("HTTP/1.1 200 OK\r\nContent-Length: 50\r\n\r\n{}".utf8)).0 == nil)
+        #expect(AddressFamilyRequest.parse(Data("garbage".utf8)).1 == 0)
+    }
+
     @Test func rejectsUnsafeCountryCode() {
         #expect(PublicAddressLookup.validCountryCode("cn") == "CN")
         #expect(PublicAddressLookup.validCountryCode("../x") == nil)

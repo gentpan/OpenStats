@@ -31,6 +31,9 @@ public struct PublicAddresses: Sendable, Equatable, Codable {
     public var purity: Purity?
     public var risk: Risk?
     public var reportURL: URL?
+    /// 查纯净度时 Cloudflare 给出的这一族地址。分流代理下 cleanip.io 看到的出口可能不同，
+    /// 界面显示 cleanip.io 看到的那个，缓存按这个比对“地址变没变”
+    public var queriedAddress: String?
 
     public struct Purity: Sendable, Equatable, Codable {
         public var score: Int
@@ -144,13 +147,13 @@ public enum PublicAddressLookup {
         public var purity: PublicAddresses.Purity?
         public var risk: PublicAddresses.Risk?
         public var reportURL: URL?
+        /// cleanip.io 看到的出口地址，也就是这份结果对应的地址
+        public var ip: String?
     }
 
-    static func cleanIPURL(for ip: String) -> URL? {
-        var components = URLComponents(string: "https://cleanip.io/cli")
-        components?.queryItems = [URLQueryItem(name: "ip", value: ip), URLQueryItem(name: "json", value: "1")]
-        return components?.url
-    }
+    /// 只查请求方自己的出口 IP：cleanip.io 的 /cli 自 2026-09-15 起不再接受 `ip` 参数（带了一律 400）。
+    /// cleanip.io 在 Cloudflare 后面，A 与 AAAA 都有，所以锁定地址族各连一次，就能分别查到本机的公网 IPv4 与 IPv6
+    static let cleanIPURL = URL(string: "https://cleanip.io/cli?json=1")!
 
     struct CleanIPResponse: Decodable {
         struct Geo: Decodable {
@@ -244,27 +247,36 @@ public enum PublicAddressLookup {
             if risk.isAbuser == true { flags.append("abuser") }
             info.risk = PublicAddresses.Risk(score: min(100, max(0, score)), label: risk.riskLabel.flatMap(nonEmpty), flags: flags)
         }
-        if let ip = response.ip, isAddress(ip) { info.reportURL = URL(string: "https://cleanip.io/\(ip)") }
+        if let ip = response.ip, isAddress(ip) {
+            info.ip = ip
+            info.reportURL = URL(string: "https://cleanip.io/\(ip)")
+        }
         return info
     }
 
     /// 按 IP 缓存一小时；收到 429 后到当天（UTC）结束都不再请求
     actor GeoCache {
         private static let lifetime: TimeInterval = 60 * 60
-        private var entries: [String: (info: GeoInfo?, date: Date)] = [:]
+        private var entries: [String: (info: GeoInfo, date: Date)] = [:]
         private var blockedUntil: Date?
 
+        /// `ip` 是 Cloudflare 给出的地址，决定锁定哪一族、按它缓存；查不到的不缓存，下次打开详情再试
         func lookup(_ ip: String) async -> GeoInfo? {
             if let entry = entries[ip], Date().timeIntervalSince(entry.date) < Self.lifetime { return entry.info }
             if let blockedUntil, Date() < blockedUntil { return nil }
-            guard let url = PublicAddressLookup.cleanIPURL(for: ip) else { return nil }
-            let (data, status) = await PublicAddressLookup.getWithStatus(url)
+            let ipv6 = ip.contains(":")
+            var (data, status) = await AddressFamilyRequest.get(PublicAddressLookup.cleanIPURL, ipv6: ipv6)
+            // 锁定地址族的连接建不起来（比如只认系统 HTTP 代理的网络）时，退回系统默认的请求方式
+            if status == 0 {
+                (data, status) = await PublicAddressLookup.getWithStatus(PublicAddressLookup.cleanIPURL)
+            }
             if status == 429 {
                 blockedUntil = Self.nextUTCMidnight()
                 return nil
             }
-            guard status == 200, let data else { return nil }
-            let info = PublicAddressLookup.parseCleanIP(data)
+            // 退回的请求走哪一族由系统决定，查到的不是要查的那一族就不能拿来用
+            guard status == 200, let data, let info = PublicAddressLookup.parseCleanIP(data),
+                  let seen = info.ip, seen.contains(":") == ipv6 else { return nil }
             entries[ip] = (info, Date())
             return info
         }

@@ -215,8 +215,9 @@ public final class NetworkController {
 
     // MARK: 公网 IP
 
-    /// 先只取公网地址（Cloudflare，便宜且不限额），再按地址族各向 cleanip.io 查一次：地址没变、结果不满 7 天
-    /// 的那一族沿用缓存，否则重新查并写回缓存。`force` 为真时（用户点了刷新）两族都重查
+    /// 先只取公网地址（Cloudflare，便宜且不限额），再按地址族各向 cleanip.io 查一次（锁定 IPv4 / IPv6 连接，
+    /// 因为它只查请求方自己）：地址没变、结果不满 7 天的那一族沿用缓存，否则重新查并写回缓存。
+    /// `force` 为真时（用户点了刷新）两族都重查
     func lookUpPublicAddresses(force: Bool = false) {
         guard settings.publicIPLookup, !isLookingUpPublic else { return }
         // 有缓存可显示时不转圈，后台悄悄核对
@@ -229,23 +230,24 @@ public final class NetworkController {
 
             @MainActor func resolve(_ family: IPFamily, ip: String?) async -> PublicAddresses? {
                 guard let ip else { return nil }
-                if !force, let cached,
-                   let old = cached.results[family.rawValue], (family == .v4 ? old.ipv4 : old.ipv6) == ip,
-                   let date = cached.geoDates[family.rawValue], now.timeIntervalSince(date) < Self.geoCacheLifetime {
-                    var kept = old
-                    kept.ipv4 = base.ipv4
-                    kept.ipv6 = base.ipv6
-                    return kept
+                let previous = cached?.results[family.rawValue]
+                let sameAddress = previous.map { ($0.queriedAddress ?? (family == .v4 ? $0.ipv4 : $0.ipv6)) == ip } ?? false
+                // 上次什么都没查到的不算缓存，这次重查
+                if !force, sameAddress, let previous, previous.hasLookupData,
+                   let date = cached?.geoDates[family.rawValue], now.timeIntervalSince(date) < Self.geoCacheLifetime {
+                    return previous
                 }
                 var result = base
+                result.queriedAddress = ip
                 if let info = await PublicAddressLookup.geo(for: ip) {
                     result.apply(info)
+                    // 分流代理下 cleanip.io 看到的出口可能与 Cloudflare 不同：纯净度是那个地址的，界面也显示那个地址
+                    if let seen = info.ip, seen != ip {
+                        if family == .v4 { result.ipv4 = seen } else { result.ipv6 = seen }
+                    }
                 }
-                guard result.asn != nil || result.city != nil || result.purity != nil else {
-                    // 这次没查到，地址又没变，先继续用旧的
-                    if let old = cached?.results[family.rawValue], (family == .v4 ? old.ipv4 : old.ipv6) == ip { return old }
-                    return result
-                }
+                // 这次没查到，地址又没变，先继续用旧的
+                if !result.hasLookupData, sameAddress, let previous, previous.hasLookupData { return previous }
                 return result
             }
 
@@ -254,9 +256,22 @@ public final class NetworkController {
             var results: [IPFamily: PublicAddresses] = [:]
             if let v4 = await v4 { results[.v4] = v4 }
             if let v6 = await v6 { results[.v6] = v6 }
+            // 两份结果都带着两族地址，各族以自己那份结果为准；缓存里留下的另一族旧地址不算
+            let ipv4 = results[.v4]?.ipv4 ?? base.ipv4
+            let ipv6 = results[.v6]?.ipv6 ?? base.ipv6
+            for family in Array(results.keys) {
+                results[family]?.ipv4 = ipv4
+                results[family]?.ipv6 = ipv6
+            }
 
-            var dates = cached?.geoDates ?? [:]
+            // 只留这次还有结果的那几族的时间
+            var dates = (cached?.geoDates ?? [:]).filter { key, _ in IPFamily(rawValue: key).map { results[$0] != nil } ?? false }
             for (family, result) in results {
+                // 没查到的不记时间，下次打开详情就会重查，而不是空着等 7 天
+                guard result.hasLookupData else {
+                    dates[family.rawValue] = nil
+                    continue
+                }
                 let previous = cached?.results[family.rawValue]
                 let sameAsCached = previous?.asn == result.asn && previous?.purity == result.purity && previous?.city == result.city
                 if force || !sameAsCached || dates[family.rawValue] == nil { dates[family.rawValue] = now }
@@ -360,6 +375,11 @@ extension NetworkController {
         processRanking.update(current)
         return processRanking.ranked(limit: 5).compactMap { byID[$0.id] }
     }
+}
+
+extension PublicAddresses {
+    /// cleanip.io 这次查到了东西（归属地、ASN 或纯净度之一）
+    var hasLookupData: Bool { asn != nil || city != nil || purity != nil }
 }
 
 /// 公网地址的地址族
