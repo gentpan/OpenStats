@@ -16,7 +16,9 @@
 
 OpenStats is a macOS menu-bar app that shows what your Mac is doing right now — per-core
 CPU load, GPU, memory pressure, network speed, disk, battery, temperatures and fans — and
-lets you act on it: spin the fans up, keep the Mac awake with the lid closed, clear caches.
+lets you act on it: spin the fans up, keep the Mac awake with the lid closed, clear caches, fully
+uninstall apps and disable startup items. Network details also check how clean your public IP is —
+whether it is flagged as a VPN, proxy, data center or for abuse.
 Everything is read on your own Mac, and there is no telemetry. An account is optional: sign in with GitHub, Google or Apple to sync your preferences to other Macs; the cloud keeps only your email, name and the settings document. Beyond that, the only network traffic is optional and on demand: a public-IP lookup when you open network details, and a ping probe to a target you choose.
 
 [Download](https://getopenstats.com/#download) ·
@@ -175,7 +177,8 @@ Choose which sections each popover shows in Settings. `Esc` closes it.
 - **Memory.** What is still available with a pressure timeline; a waterline bar; memory saved by compression and
   live swap I/O; usage summed by app.
 - **Network.** Traffic history; a connection-probe grid (latency, jitter, loss); interface,
-  Wi-Fi signal, VPN / proxy; local and public IPv4 / IPv6 with a flag, region and ASN; DNS flush
+  Wi-Fi signal, VPN / proxy; local and public IPv4 / IPv6 with a flag, region and ASN; an IP cleanliness score with an F to A+
+  grade and risk flags (VPN, proxy, Tor, data center, abuse); DNS flush
   and one-click switching to Cloudflare, Google, Tencent, Alibaba Cloud or manual servers;
   per-process traffic.
 - **GPU**, **Temperature & fans.** History, sensor groups, fan speeds and quick modes.

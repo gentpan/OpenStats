@@ -266,6 +266,8 @@ p { margin: 0; }
 
 @media (max-width: 900px) {
   .feature-grid { grid-template-columns: 1fr 1fr; }
+  /* 两列时卡片数为奇数，最后一张占满整行，不留半格空位 */
+  .feature:last-child:nth-child(odd) { grid-column: 1 / -1; }
   .split, .shots { grid-template-columns: 1fr; }
   .split--reverse .split__text { order: 0; }
 }

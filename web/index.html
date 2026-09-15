@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OpenStats — Mac 的状态，抬眼就看见</title>
-<meta name="description" content="OpenStats 把 CPU、GPU、内存、网络与温度放进 macOS 菜单栏，还能调风扇、防休眠、一键清理。数据在本机读取，没有账号与统计上报。">
+<meta name="description" content="OpenStats 把 CPU、GPU、内存、网络与温度放进 macOS 菜单栏，还能调风扇、防休眠、一键清理。数据在本机读取，没有统计上报。">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)">
 <link rel="canonical" href="https://getopenstats.com/">
@@ -15,9 +15,9 @@
 <meta property="og:site_name" content="OpenStats">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://getopenstats.com/assets/window-light.png">
-<link rel="icon" href="assets/favicon.ico?v=ca6e7cfe" sizes="48x48">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=ca6e7cfe">
-<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=ca6e7cfe">
+<link rel="icon" href="assets/favicon.ico?v=12fff597" sizes="48x48">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=12fff597">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=12fff597">
 <script>
   // 在样式生效前确定主题，避免深色模式下先闪一下白底
   try {
@@ -25,8 +25,8 @@
     document.documentElement.dataset.theme = saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
   } catch { document.documentElement.dataset.theme = "light"; }
 </script>
-<link rel="stylesheet" href="styles.css?v=ca6e7cfe">
-<link rel="stylesheet" href="replica.css?v=ca6e7cfe">
+<link rel="stylesheet" href="styles.css?v=12fff597">
+<link rel="stylesheet" href="replica.css?v=12fff597">
 </head>
 <body>
 
@@ -104,7 +104,7 @@
     </span>
     <span class="island__expanded" aria-hidden="true">
       <span class="island__row">
-        <span class="island__brand"><img src="assets/icon.png?v=ca6e7cfe" alt="" width="18" height="18">OpenStats</span>
+        <span class="island__brand"><img src="assets/icon.png?v=12fff597" alt="" width="18" height="18">OpenStats</span>
         <span class="island__health" data-bind="island-health">各项指标正常</span>
       </span>
       <span class="island__grid">
@@ -124,7 +124,7 @@
   <!-- 左侧桌面图标 -->
   <nav class="desk-icons" aria-label="快捷入口">
     <a class="desk-icon" href="#download">
-      <span class="desk-icon__art desk-icon__art--dmg" aria-hidden="true"><img src="assets/icon.png?v=ca6e7cfe" alt="" width="40" height="40"></span>
+      <span class="desk-icon__art desk-icon__art--dmg" aria-hidden="true"><img src="assets/icon.png?v=12fff597" alt="" width="40" height="40"></span>
       <span class="desk-icon__name">OpenStats.dmg</span>
     </a>
     <a class="desk-icon" href="#faq">
@@ -148,9 +148,9 @@
       <span class="window__title">欢迎使用 OpenStats</span>
     </div>
     <div class="window__body hero__body">
-      <img class="hero__icon" src="assets/icon.png?v=ca6e7cfe" alt="OpenStats 图标" width="72" height="72">
+      <img class="hero__icon" src="assets/icon.png?v=12fff597" alt="OpenStats 图标" width="72" height="72">
       <h1 class="hero__title" id="heroTitle">Mac 的状态，抬眼就看见</h1>
-      <p class="hero__lead">CPU、GPU、内存、网络与温度常驻菜单栏，还能调风扇、防休眠、一键清理。所有数据在本机读取，没有账号与统计上报。</p>
+      <p class="hero__lead">CPU、GPU、内存、网络与温度常驻菜单栏，还能调风扇、防休眠、一键清理、卸载应用，检测 IP 纯净度。所有数据在本机读取，没有统计上报。</p>
       <div class="hero__actions">
         <a class="btn btn--primary" href="#download">下载 for Mac</a>
         <a class="btn btn--secondary" href="#changelog">更新日志</a>
@@ -168,7 +168,7 @@
   <!-- 程序坞 -->
   <nav class="dock" aria-label="程序坞">
     <a class="dock__item" href="#features" title="访达"><span class="dock__art dock__art--finder" aria-hidden="true"></span></a>
-    <button class="dock__item" id="dockOpenStats" type="button" title="打开 OpenStats"><img class="dock__art" src="assets/icon.png?v=ca6e7cfe" alt="OpenStats"></button>
+    <button class="dock__item" id="dockOpenStats" type="button" title="打开 OpenStats"><img class="dock__art" src="assets/icon.png?v=12fff597" alt="OpenStats"></button>
     <a class="dock__item" href="#thermal" title="风扇与防休眠"><span class="dock__art dock__art--fan" aria-hidden="true"></span></a>
     <a class="dock__item" href="#cleanup" title="清理"><span class="dock__art dock__art--clean" aria-hidden="true"></span></a>
     <a class="dock__item" href="#install" title="Homebrew 安装"><span class="dock__art dock__art--terminal" aria-hidden="true"></span></a>
@@ -193,11 +193,15 @@
         </li>
         <li class="feature">
           <h3>单项详情，按需显示</h3>
-          <p>CPU、内存、网络、GPU、温度各有一个窄弹窗，显示哪些区块由你勾选；另有侧边栏主窗口看全部。</p>
+          <p>CPU、内存、网络、GPU、磁盘、电池、温度各有一个窄弹窗，显示哪些区块由你勾选；另有侧边栏主窗口看全部。</p>
         </li>
         <li class="feature">
           <h3>网络详情与 DNS</h3>
           <p>本地与公网 IPv4 / IPv6、归属地与 ASN、连接探测格子，一键刷新 DNS 或切换 Cloudflare、Google、腾讯、阿里云。</p>
+        </li>
+        <li class="feature">
+          <h3>IP 纯净度检测</h3>
+          <p>CleanIP.io 纯净度评分与 F 到 A+ 等级，一眼看出出口 IP 是否被标记为 VPN、代理、Tor、机房或有滥用记录；IPv4 / IPv6 分别检测。</p>
         </li>
         <li class="feature">
           <h3>风扇调速与防休眠</h3>
@@ -208,8 +212,16 @@
           <p>缓存、日志、浏览器与开发者缓存先扫描预览再清理，钥匙串、Cookie 与历史记录一律不碰。</p>
         </li>
         <li class="feature">
+          <h3>卸载应用与启动项</h3>
+          <p>卸载时找出应用留下的缓存、偏好设置、容器与登录项，连同应用移到废纸篓可放回；LaunchAgents 与 LaunchDaemons 一览，自己的启动项一键停用。</p>
+        </li>
+        <li class="feature">
+          <h3>磁盘与电池</h3>
+          <p>空间占用分析、文件系统只读检查、本地快照与外置磁盘；电池 24 小时电量曲线、功耗、健康度与蓝牙设备电量。</p>
+        </li>
+        <li class="feature">
           <h3>数据留在本机</h3>
-          <p>指标来自本机内核、IOKit 与 SMC，没有账号、没有统计上报；公网 IP 查询与连接探测都可关闭。</p>
+          <p>指标来自本机内核、IOKit 与 SMC，没有统计上报；账号可选，只用来同步设置；公网 IP 查询与连接探测都可关闭。</p>
         </li>
       </ul>
     </div>
@@ -238,15 +250,16 @@
           <li>上下镜像的流量历史，上传绿、下载蓝</li>
           <li>连接探测格子：每 1 / 2 / 5 秒 ping 一次，延迟、抖动、丢包一目了然</li>
           <li>本地与公网 IPv4 / IPv6、路由器、Wi‑Fi 信号，点一下就拷贝</li>
-          <li>归属地显示国旗、城市、ASN 与网络运营方</li>
+          <li>归属地显示国旗、城市、ASN 与网络运营方，原生 / 广播、住宅 / 机房直接标出</li>
+          <li>IP 纯净度：CleanIP.io 评分与 F 到 A+ 等级色带，列出 VPN、代理、Tor、机房、滥用记录等风险标记</li>
           <li>一键刷新 DNS 缓存，一键切换 Cloudflare、Google、腾讯 DNSPod、阿里云，或手动填写</li>
           <li>各进程的上传与下载速率</li>
         </ul>
         <p class="note">公网 IP 查询与连接探测都可以在设置里关闭。修改 DNS 需要管理员权限。</p>
       </div>
       <figure class="shot shot--popover split__media">
-        <img class="shot--light" src="assets/popover-network-light.png?v=ca6e7cfe" alt="OpenStats 网络详情弹窗" loading="lazy">
-        <img class="shot--dark" src="assets/popover-network-dark.png?v=ca6e7cfe" alt="OpenStats 网络详情弹窗，深色" loading="lazy">
+        <img class="shot--light" src="assets/popover-network-light.png?v=12fff597" alt="OpenStats 网络详情弹窗" loading="lazy">
+        <img class="shot--dark" src="assets/popover-network-dark.png?v=12fff597" alt="OpenStats 网络详情弹窗，深色" loading="lazy">
       </figure>
     </div>
   </section>
@@ -258,8 +271,8 @@
         <p>主窗口、设置和弹窗共用同一底色，侧边栏与标题栏不分栏着色；窗口宽高都能拖动调整。</p>
       </div>
       <div class="shots">
-        <figure class="shot"><img src="assets/window-light.png?v=ca6e7cfe" alt="OpenStats 主窗口仪表盘，浅色" loading="lazy"><figcaption>浅色</figcaption></figure>
-        <figure class="shot"><img src="assets/window-dark.png?v=ca6e7cfe" alt="OpenStats 主窗口仪表盘，深色" loading="lazy"><figcaption>深色</figcaption></figure>
+        <figure class="shot"><img src="assets/window-light.png?v=12fff597" alt="OpenStats 主窗口仪表盘，浅色" loading="lazy"><figcaption>浅色</figcaption></figure>
+        <figure class="shot"><img src="assets/window-dark.png?v=12fff597" alt="OpenStats 主窗口仪表盘，深色" loading="lazy"><figcaption>深色</figcaption></figure>
       </div>
     </div>
   </section>
@@ -280,7 +293,7 @@
         <p>合盖后继续运行适合下载、渲染和远程连接。使用电池且电量低于下限时会自动关闭，避免在包里过热。</p>
         <p class="note">风扇与合盖运行需要安装一次辅助工具。它只提供固定的几个操作，不执行任意命令，应用退出时自动恢复设置。</p>
       </div>
-      <figure class="shot split__media"><img src="assets/thermal.png?v=ca6e7cfe" alt="OpenStats 散热页面" loading="lazy"></figure>
+      <figure class="shot split__media"><img src="assets/thermal.png?v=12fff597" alt="OpenStats 散热页面" loading="lazy"></figure>
     </div>
   </section>
 
@@ -297,7 +310,7 @@
         </ul>
         <p>只处理白名单目录；正在运行的应用会跳过，浏览器需先退出；删除前每一项再校验一次，所有操作写入日志。</p>
       </div>
-      <figure class="shot split__media"><img src="assets/cleaner.png?v=ca6e7cfe" alt="OpenStats 清理页面" loading="lazy"></figure>
+      <figure class="shot split__media"><img src="assets/cleaner.png?v=12fff597" alt="OpenStats 清理页面" loading="lazy"></figure>
     </div>
   </section>
 
@@ -321,7 +334,7 @@
 
   <section class="band band--alt" id="download">
     <div class="shell narrow download">
-      <img src="assets/icon.png?v=ca6e7cfe" alt="" width="96" height="96">
+      <img src="assets/icon.png?v=12fff597" alt="" width="96" height="96">
       <h2>下载 OpenStats</h2>
       <p>使用 Developer ID 签名并经过 Apple 公证，打开时不会遇到安全拦截。</p>
       <div class="hero__actions">
@@ -496,7 +509,7 @@
       </details>
       <details class="faq">
         <summary>会联网吗？</summary>
-        <p>只有几项可关闭的功能会：打开网络详情时向 Cloudflare 查询一次公网地址（10 分钟内不重复）；连接探测按你设定的间隔 ping 你选择的目标；每 3 天从本站检查 IP 归属地数据库的更新。归属地与 ASN 在本机查询。没有账号，没有统计上报。</p>
+        <p>只有几项可关闭的功能会：打开网络详情时向 Cloudflare 查询一次公网地址（10 分钟内不重复）；连接探测按你设定的间隔 ping 你选择的目标；归属地、ASN 与纯净度评分由这台 Mac 直接向 cleanip.io 查询，只发送公网地址；每天从本站检查一次新版本。账号可选，只用来同步设置；没有统计上报。</p>
       </details>
       <details class="faq">
         <summary>为什么不上 App Store？</summary>
@@ -524,13 +537,13 @@
 
 <footer class="footer">
   <div class="shell footer__inner">
-    <span class="footer__brand"><img src="assets/icon.png?v=ca6e7cfe" alt="" width="20" height="20">OpenStats</span>
+    <span class="footer__brand"><img src="assets/icon.png?v=12fff597" alt="" width="20" height="20">OpenStats</span>
     <span class="footer__fine">© 2026 GiantAccel, LLC</span>
     <span class="footer__fine">OpenStats 是独立的第三方应用，与 Apple 没有隶属关系。</span>
   </div>
 </footer>
 
-<script src="app.js?v=ca6e7cfe" defer></script>
-<script src="replica.js?v=ca6e7cfe" defer></script>
+<script src="app.js?v=12fff597" defer></script>
+<script src="replica.js?v=12fff597" defer></script>
 </body>
 </html>
