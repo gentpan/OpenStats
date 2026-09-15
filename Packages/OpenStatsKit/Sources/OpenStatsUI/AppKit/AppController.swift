@@ -144,7 +144,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// 启动 10 秒后检查一次，之后每小时看一眼是否已满一天
+    /// 启动 10 秒后检查一次，之后每小时看一眼是否已满一天（上次失败则直接重试）
     private func startUpdateChecks() {
         model.updates.onPrompt = { [weak self] in
             self?.menuBar.dismissPopovers()

@@ -19,7 +19,6 @@ NOTARY_PROFILE="${NOTARY_PROFILE:-QuotaBar}"
 SIGN_ID="${SIGN_ID:-$(security find-identity -v -p codesigning 2>/dev/null \
   | grep 'Developer ID Application' | head -1 | sed -E 's/.*"(.*)".*/\1/' || true)}"
 VERSION="$(sed -nE 's/^ *MARKETING_VERSION: *"?([0-9.]+)"?.*/\1/p' project.yml | head -1)"
-BUILD="$(sed -nE 's/^ *CURRENT_PROJECT_VERSION: *"?([0-9]+)"?.*/\1/p' project.yml | head -1)"
 APP="build/DerivedData/Build/Products/Release/OpenStats.app"
 DMG_NAME="OpenStats-${VERSION}.dmg"
 ZIP_NAME="OpenStats-${VERSION}.zip"
@@ -38,6 +37,8 @@ echo "版本 ${VERSION} · 签名身份：${SIGN_ID}"
 # ---- 构建 --------------------------------------------------------------------
 
 make build CONFIG=Release INSTALL=0 SIGN_ID="$SIGN_ID"
+# make build 会把构建号加一，构建完再读，版本清单里的 build 才与安装包一致
+BUILD="$(sed -nE 's/^ *CURRENT_PROJECT_VERSION: *"?([0-9]+)"?.*/\1/p' project.yml | head -1)"
 
 codesign --verify --deep --strict --verbose=2 "$APP"
 for binary in "$APP" "$APP/Contents/MacOS/OpenStatsHelper" "$APP/Contents/PlugIns/OpenStatsWidget.appex"; do
