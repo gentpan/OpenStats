@@ -79,10 +79,12 @@ public final class UpdateController {
         task = Task {
             let result = await Self.fetch()
             switch result {
-            case .success(let latest):
+            case .success(let feed):
                 // 只有拿到清单才算检查过：登录时网络常常还没连上，失败后由每小时的定时器重试，而不是等一整天
                 lastChecked = Date()
-                guard UpdateFeed.isNewer(latest.version, than: currentVersion) else {
+                // 清单里没有这台 Mac 芯片的安装包时当作没有新版本
+                guard let latest = UpdateFeed.release(feed, for: .current),
+                      UpdateFeed.isNewer(latest.version, than: currentVersion) else {
                     release = nil
                     phase = .upToDate
                     return

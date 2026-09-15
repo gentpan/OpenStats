@@ -6,12 +6,12 @@
 
 **Your Mac at a glance — CPU, GPU, memory, network and temperatures in the menu bar, with fan control, keep-awake, one-click cleanup, an app uninstaller and an IP cleanliness check.**
 
-[![Release](https://img.shields.io/badge/release-0.3.0-6ee02b)](https://getopenstats.com/#download)
+[![Release](https://img.shields.io/badge/release-0.3.1-6ee02b)](https://getopenstats.com/#download)
 [![Stars](https://img.shields.io/github/stars/gentpan/OpenStats?style=flat&color=f5c518&label=stars)](https://github.com/gentpan/OpenStats/stargazers)
 [![Last commit](https://img.shields.io/github/last-commit/gentpan/OpenStats?color=black&label=last%20commit)](https://github.com/gentpan/OpenStats/commits/main)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/gentpan/OpenStats?color=black&label=commits)](https://github.com/gentpan/OpenStats/graphs/commit-activity)
 [![CI](https://github.com/gentpan/OpenStats/actions/workflows/ci.yml/badge.svg)](https://github.com/gentpan/OpenStats/actions/workflows/ci.yml)
-[![macOS](https://img.shields.io/badge/macOS-14%2B-black)](https://getopenstats.com/#download)
+[![macOS](https://img.shields.io/badge/macOS-14%2B%20%C2%B7%20Apple%20silicon%20%2F%20Intel-black)](https://getopenstats.com/#download)
 [![License](https://img.shields.io/badge/license-MIT-black)](LICENSE)
 
 OpenStats is a macOS menu-bar app that shows what your Mac is doing right now — per-core
@@ -34,15 +34,24 @@ Everything is read on your own Mac, and there is no telemetry. An account is opt
 
 ## Install
 
-Download [OpenStats 0.3.0](https://getopenstats.com/download/OpenStats-0.3.0.dmg) from the website
-(signed with a Developer ID certificate and notarized by Apple), or install it with Homebrew:
+Download OpenStats 0.3.1 from the website (signed with a Developer ID certificate and notarized by Apple) —
+pick the build for your Mac's chip:
+
+| Chip | Download |
+|---|---|
+| Apple silicon (M1, M2, M3, M4, M5) | [OpenStats-0.3.1-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.3.1-AppleSilicon.dmg) |
+| Intel | [OpenStats-0.3.1-Intel.dmg](https://getopenstats.com/download/OpenStats-0.3.1-Intel.dmg) |
+
+Not sure? Apple menu › About This Mac says "Chip Apple M…" on Apple silicon and "Processor Intel…" on Intel.
+Homebrew picks the right build for you:
 
 ```bash
 brew install --cask gentpan/tap/openstats
 ```
 
-Requires macOS 14 (Sonoma) or later.
-Developed and tested on Apple Silicon. The interface is in English and Simplified Chinese, following the
+Requires macOS 14 (Sonoma) or later. Developed and tested mainly on Apple silicon; on Intel Macs, Apple
+Intelligence process explanations are unavailable, CPU cores are not split into performance and efficiency
+groups, and some power and frequency readings may be missing. The interface is in English and Simplified Chinese, following the
 system language by default; switch it in Settings → General → Language.
 
 ## Recent updates
@@ -50,9 +59,19 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.3.0** (2026-09-15) · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.3.1** (2026-09-15) · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
+<summary><b>2026-09-15</b> · 0.3.1 · 2 added</summary>
+
+**Added**
+
+- 支持 Intel 芯片的 Mac：分别发布 Apple 芯片版与 Intel 版安装包，官网与 Homebrew 按芯片提供下载（Homebrew 自动选择）。Intel 机型需要 macOS 14 Sonoma 或更高版本；用 Apple 智能解释进程只能在 Apple 芯片上使用，Intel 机型的 CPU 不分性能核与能效核，部分功耗与频率读数可能不显示。
+- 在线升级按芯片下载对应的安装包，并在安装前核对安装包支持这台 Mac 的芯片；在 Apple 芯片上经 Rosetta 运行的 Intel 版会升级为 Apple 芯片版。
+
+</details>
+
+<details>
 <summary><b>2026-09-15</b> · 0.3.0 · 8 added · 14 changed · 3 fixed</summary>
 
 **Added**
@@ -107,34 +126,6 @@ Latest release **0.3.0** (2026-09-15) · [full changelog](CHANGELOG.md) (kept in
 
 - CPU 详情重新整理：顶部直接显示 CPU 温度（下方附离 100°C 的余量，不再把余量当主数值），走势线下标出最近 60 秒的峰值；核心热力图右侧加一根粗条画此刻各核心的占用；核心分工标出芯片型号，频率跟在占用后面用次要颜色显示；按应用汇总注明“以单核满载为 100%”，解释各应用相加为什么会超过顶部的总占用。
 - 主窗口的 CPU 页：走势线加高并带 25% / 50% / 75% 参考线，核心分工与排队程度并排显示，不再整页单列拉长。
-
-</details>
-
-<details>
-<summary><b>2026-09-13</b> · 0.3.0 · 13 added · 4 changed</summary>
-
-**Added**
-
-- 在线升级：启动时和之后每天检查官网版本清单，发现新版本时弹出版本号与更新摘要，可一键安装、以后再说或跳过此版本；下载后依次核对 sha256、包名与版本、开发者签名团队和 Apple 公证，任何一项不通过都放弃安装；旧版先备份再原地替换，失败自动还原，装完自动重启到新版。「设置 · 关于」与应用菜单里可以手动检查更新。
-- 辅助工具版本检查：启动时核对正在运行的辅助工具版本；旧进程还在运行时先断开让它退出，由系统启动新版本，仍然旧时在风扇、合盖运行和辅助工具设置里提示“重新安装”，侧边栏对应项目显示提醒圆点；有新版本时“关于”旁同样显示圆点。
-- 导出诊断信息（设置 · 关于）：把版本、系统与辅助工具状态、主要设置、最近 3 天的运行日志、清理记录和最近的崩溃报告打包成 zip，反馈问题时附上；自动去掉用户目录名、IP 与硬件地址，不含序列号。应用与辅助工具的关键操作和错误写入系统日志。
-- 系统通知（设置 · 通知）：CPU 过热（持续 1 分钟高于设定温度）、内存压力严重（持续 30 秒）、磁盘空间不足（低于 10% 或 10 GB）、网络断开超过 20 秒（恢复后再提示）、电池最大容量低于 80%，逐项开关，默认关闭；同一状况持续期间只提醒一次并有冷却时间，点通知打开对应页面；可发送测试通知，通知被关闭时提示去系统设置打开。
-- 功耗与频率：“温度与风扇”页和温度详情新增功耗，显示整机功耗走势、电源输入、电池充放电功率和 GPU 功耗（读 SMC 与系统能耗统计，不需要辅助工具）；CPU 详情的核心分工显示各类核心工作时的平均频率。读取能耗统计有一定开销，只在这些界面打开时每 2 秒读一次。
-- 磁盘页（主窗口侧边栏“磁盘”）：启动磁盘容量、所有磁盘合计的实时读写速度与 60 秒走势、SSD 健康（通过系统自带的 NVMe SMART 接口读取剩余寿命、累计读写量、备用空间、温度、通电时间与次数、异常断电和介质错误，出现警告时提示备份）、读写磁盘最多的应用；磁盘空间不足的通知改为打开磁盘页。
-- 卸载应用（主窗口工具分组）：列出“应用程序”里的第三方应用及其体积，选中或把应用拖进来后找出它留下的应用数据、缓存、偏好设置、沙盒容器、窗口状态、日志、网页数据和登录启动项，可逐项取消勾选；确认后连同应用一起移到废纸篓（可放回），并从程序坞移除图标。只匹配应用包名与同名目录，系统自带和 Apple 的应用不列出，正在运行时提示先退出。
-- 启动项（主窗口工具分组）：列出当前用户、所有用户的 LaunchAgents 和系统 LaunchDaemons，显示所属应用、可执行文件、是否登录时运行 / 保持运行，以及运行中（PID）、已加载、已停用状态；当前用户的启动项可以直接停用或重新启用（写入 launchd 停用记录并卸载，不删除文件），其余只读并提供登录项设置入口。
-- 历史（主窗口监控分组）：每分钟把 CPU 平均与峰值、内存与内存压力、网络上下行、GPU、CPU 最高温度和整机功耗写入本机 SQLite 数据库，保留 7 天；可回看最近 1 小时 / 24 小时 / 7 天，睡眠等没有记录的时段线条断开，内存压力严重的时段标红，鼠标移到图上查看那一刻的数值；可关闭记录或清除历史，数据不上传。
-- 蓝牙设备电量：本机信息页列出已连接的键盘、鼠标、触控板和耳机的电量（AirPods 分左耳、右耳、充电盒），低于 20% 标红；通知里新增“蓝牙设备电量低”（低于 15%）。
-- 全局快捷键（设置 · 通用）：可为显示 / 隐藏主窗口、打开进程页、开关防休眠、释放内存录制快捷键，在任何应用中都能用，不需要辅助功能权限；被其他应用占用时提示更换。
-- 桌面小组件“系统概览”：小号显示 CPU、内存圆环与磁盘用量，中号显示 CPU、内存、磁盘、电池四个圆环和磁盘可用空间；在自己的沙盒进程里读取数据，主应用没开也能显示，刷新间隔由系统决定（几分钟一次）。
-- 英文界面（设置 · 通用 · 语言）：跟随系统、简体中文、English 三选一，系统首选语言不是中文时默认显示英文；约 880 条界面文案、通知、错误提示和 Apple 智能解释的回答都有英文版本，日期按英文格式显示；切换后界面、菜单与菜单栏立即换成新语言，显示器、应用名称等由系统提供的文字在下次启动时切换。
-
-**Changed**
-
-- 连接探测更省电：打开网络详情时按设置的间隔探测；详情关闭、只在菜单栏显示网速时改为每 10 秒低频探测，并允许系统合并唤醒，也可以在设置里关闭后台探测。
-- 进程页每 2 秒刷新一次（读取全系统进程需要启动 ps），其他页面仍为每秒。
-- 菜单栏图标用 ⌘ 拖动调整的顺序会被记住，重启应用或切换显示项目后保持不变。
-- 本机信息的电池卡片提供“电池设置”入口，用 macOS 自带的充电上限（80%–100%）；新款机型不再开放第三方写入 SMC 充电控制键，因此不另做一套充电限制。
 
 </details>
 

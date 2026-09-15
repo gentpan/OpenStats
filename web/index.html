@@ -155,7 +155,7 @@
         <a class="btn btn--primary" href="#download">下载 for Mac</a>
         <a class="btn btn--secondary" href="#changelog">更新日志</a>
       </div>
-      <p class="hero__meta">macOS 14 及以上 · Apple Silicon · 已签名并经 Apple 公证</p>
+      <p class="hero__meta">macOS 14 及以上 · Apple 芯片与 Intel 芯片 · 已签名并经 Apple 公证</p>
       <p class="hero__hint">点右上角菜单栏里的 CPU、内存或网速，看看每一项的详情 ↗</p>
       <button class="hero__link" id="heroOpenWindow" type="button">或者打开 OpenStats 主窗口</button>
     </div>
@@ -337,11 +337,20 @@
       <img src="assets/icon.png?v=de171dd3" alt="" width="96" height="96">
       <h2>下载 OpenStats</h2>
       <p>使用 Developer ID 签名并经过 Apple 公证，打开时不会遇到安全拦截。</p>
-      <div class="hero__actions">
-        <a class="btn btn--primary" href="download/OpenStats-0.3.0.dmg">下载 OpenStats 0.3.0</a>
-        <a class="btn btn--secondary" href="#changelog">这个版本更新了什么</a>
-      </div>
-      <p class="hero__meta">macOS 14 Sonoma 及以上 · 简体中文界面</p>
+      <ul class="download__options">
+        <li class="download__option">
+          <h3>Apple 芯片</h3>
+          <p>M1、M2、M3、M4、M5 系列的 Mac</p>
+          <a class="btn btn--primary" href="download/OpenStats-0.3.1-AppleSilicon.dmg">下载 Apple 芯片版</a>
+        </li>
+        <li class="download__option">
+          <h3>Intel 芯片</h3>
+          <p>能升级到 macOS 14 的 Intel Mac（大多为 2018 年及以后的机型）</p>
+          <a class="btn btn--primary" href="download/OpenStats-0.3.1-Intel.dmg">下载 Intel 版</a>
+        </li>
+      </ul>
+      <p class="download__hint">不确定是哪种？打开苹果菜单 › 关于本机，看“芯片”或“处理器”那一行。</p>
+      <p class="hero__meta">版本 0.3.1 · macOS 14 Sonoma 及以上 · 简体中文与 English 界面 · <a href="#changelog">这个版本更新了什么</a></p>
       <p class="download__brew">也可以用 Homebrew 安装：<code>brew install --cask gentpan/tap/openstats</code></p>
     </div>
   </section>
@@ -355,6 +364,14 @@
       <!-- changelog:start -->
       <!-- 由 Scripts/sync_changelog.py 从 CHANGELOG.md 生成，请勿手改。 -->
       <div class="log">
+        <article class="log__day">
+          <div class="log__head"><time datetime="2026-09-15">2026-09-15</time><span class="log__tag">0.3.1</span></div>
+          <p class="log__counts">新增 2</p>
+          <ul class="log__list">
+            <li><span class="log__kind">新增</span>支持 Intel 芯片的 Mac：分别发布 Apple 芯片版与 Intel 版安装包，官网与 Homebrew 按芯片提供下载（Homebrew 自动选择）。Intel 机型需要 macOS 14 Sonoma 或更高版本；用 Apple 智能解释进程只能在 Apple 芯片上使用，Intel 机型的 CPU 不分性能核与能效核，部分功耗与频率读数可能不显示。</li>
+            <li><span class="log__kind">新增</span>在线升级按芯片下载对应的安装包，并在安装前核对安装包支持这台 Mac 的芯片；在 Apple 芯片上经 Rosetta 运行的 Intel 版会升级为 Apple 芯片版。</li>
+          </ul>
+        </article>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-09-15">2026-09-15</time><span class="log__tag">0.3.0</span></div>
           <p class="log__counts">新增 8 · 调整 14 · 修复 3</p>
@@ -401,6 +418,8 @@
             <li><span class="log__kind">调整</span>主窗口的 CPU 页：走势线加高并带 25% / 50% / 75% 参考线，核心分工与排队程度并排显示，不再整页单列拉长。</li>
           </ul>
         </article>
+        <details class="log__older">
+          <summary>更早的更新（2 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-09-13">2026-09-13</time><span class="log__tag">0.3.0</span></div>
           <p class="log__counts">新增 13 · 调整 4</p>
@@ -429,8 +448,6 @@
             </ul>
           </details>
         </article>
-        <details class="log__older">
-          <summary>更早的更新（1 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-09-13">2026-09-13</time><span class="log__tag">0.2.0</span></div>
           <p class="log__counts">新增 30 · 样式 12 · 修复 6</p>
@@ -529,7 +546,7 @@
       </details>
       <details class="faq">
         <summary>支持 Intel Mac 吗？</summary>
-        <p>目前在 Apple Silicon 上开发和测试，Intel 机型的风扇与温度读取尚未验证。</p>
+        <p>支持，在上方下载 Intel 版即可，需要 macOS 14 Sonoma 或更高版本。用 Apple 智能解释进程只能在 Apple 芯片上使用；Intel 机型的 CPU 不分性能核与能效核，部分功耗与频率读数也可能不显示。开发主要在 Apple 芯片上进行，Intel 机型遇到风扇或温度读数不对，欢迎到 GitHub 反馈。</p>
       </details>
     </div>
   </section>

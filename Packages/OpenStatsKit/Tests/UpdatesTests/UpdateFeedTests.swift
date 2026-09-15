@@ -27,6 +27,21 @@ import Testing
         let badHash = good.replacingOccurrences(of: String(repeating: "a", count: 64), with: "abc")
         #expect(UpdateFeed.parse(Data(badHash.utf8)) == nil)
     }
+
+    @Test func picksInstallerForChip() throws {
+        let hash = String(repeating: "a", count: 64), intelHash = String(repeating: "b", count: 64)
+        let base = #"{"version":"0.3.1","build":"51","date":"2026-09-16","minimumSystem":"14.0","url":"https://getopenstats.com/download/OpenStats-0.3.1-AppleSilicon.zip","sha256":"\#(hash)","size":1,"dmg":null,"notes":[],"changelog":null"#
+        // 0.3.0 那样只有 Apple 芯片版的清单：Intel 上不提供升级
+        let appleOnly = try #require(UpdateFeed.parse(Data((base + "}").utf8)))
+        #expect(UpdateFeed.release(appleOnly, for: .appleSilicon) == appleOnly)
+        #expect(UpdateFeed.release(appleOnly, for: .intel) == nil)
+
+        let both = try #require(UpdateFeed.parse(Data((base + #","intel":{"url":"https://getopenstats.com/download/OpenStats-0.3.1-Intel.zip","sha256":"\#(intelHash)","size":2,"dmg":"https://getopenstats.com/download/OpenStats-0.3.1-Intel.dmg"}}"#).utf8)))
+        #expect(UpdateFeed.release(both, for: .appleSilicon)?.sha256 == hash)
+        let intel = try #require(UpdateFeed.release(both, for: .intel))
+        #expect(intel.url.lastPathComponent == "OpenStats-0.3.1-Intel.zip")
+        #expect(intel.sha256 == intelHash && intel.size == 2 && intel.version == "0.3.1")
+    }
 }
 
 @Suite struct UpdateInstallerTests {

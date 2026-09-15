@@ -2,7 +2,9 @@ PROJECT  := OpenStats.xcodeproj
 SCHEME   := OpenStats
 # 每次构建都会安装到 /Applications，默认用 Release
 CONFIG   ?= Release
-DERIVED  := build/DerivedData
+# ARCH=arm64 或 ARCH=x86_64 只编译一种芯片（发布脚本分别打 Apple 芯片版与 Intel 版）；不设时只编译本机芯片
+ARCH     ?=
+DERIVED  := build/DerivedData$(if $(ARCH),-$(ARCH))
 APP      := $(DERIVED)/Build/Products/$(CONFIG)/OpenStats.app
 LSREGISTER := /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
 
@@ -31,7 +33,8 @@ build:
 
 compile: generate
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -configuration $(CONFIG) \
-		-derivedDataPath $(DERIVED) -destination 'platform=macOS' -quiet $(SIGN_FLAGS) build
+		-derivedDataPath $(DERIVED) $(if $(ARCH),-destination 'generic/platform=macOS' ARCHS=$(ARCH) ONLY_ACTIVE_ARCH=NO,-destination 'platform=macOS') \
+		-quiet $(SIGN_FLAGS) build
 
 ## 与 build 相同，保留旧名字
 run install: build

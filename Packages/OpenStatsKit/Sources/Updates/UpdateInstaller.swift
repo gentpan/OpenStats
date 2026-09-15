@@ -64,7 +64,8 @@ public enum UpdateInstaller {
     // MARK: 校验
 
     /// 包名、版本号、签名团队必须与预期一致，并通过严格签名校验与 Gatekeeper（公证）检查
-    public static func verify(_ app: URL, bundleIdentifier: String, version: String, teamIdentifier: String) throws {
+    public static func verify(_ app: URL, bundleIdentifier: String, version: String, teamIdentifier: String,
+                              architecture: UpdateArchitecture = .current) throws {
         guard let bundle = Bundle(url: app) else { throw UpdateError.invalidBundle(tr("无法读取")) }
         guard bundle.bundleIdentifier == bundleIdentifier else {
             throw UpdateError.invalidBundle(tr("包名是 \(bundle.bundleIdentifier ?? tr("空"))"))
@@ -72,6 +73,10 @@ public enum UpdateInstaller {
         let bundleVersion = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
         guard bundleVersion == version else {
             throw UpdateError.invalidBundle(tr("版本是 \(bundleVersion ?? tr("空"))，清单写的是 \(version)"))
+        }
+        // Apple 芯片版与 Intel 版分开发布，装错了应用根本打不开
+        guard bundle.executableArchitectures?.contains(where: { $0.intValue == architecture.executableArchitecture }) == true else {
+            throw UpdateError.invalidBundle(tr("安装包不支持这台 Mac 的芯片"))
         }
 
         var staticCode: SecStaticCode?

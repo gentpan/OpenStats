@@ -1,5 +1,5 @@
 #!/bin/bash
-# 发布已公证的版本：DMG 与在线升级包上传到官网 /download/，最后更新版本清单 appcast.json（已安装的应用据此提示升级），
+# 发布已公证的版本：Apple 芯片版与 Intel 版的 DMG、在线升级包上传到官网 /download/，最后更新版本清单 appcast.json（已安装的应用据此提示升级），
 # cask 提交到 gentpan/homebrew-tap，并校验线上文件。
 #
 #   ./Scripts/release.sh          # 先打包、公证
@@ -12,25 +12,35 @@ KEY="${SITE_KEY:-$HOME/.ssh/gentpan.pem}"
 ROOT="${SITE_ROOT:-/var/www/getopenstats.com}"
 TAP="${TAP:-gentpan/homebrew-tap}"
 VERSION="$(sed -nE 's/^ *MARKETING_VERSION: *"?([0-9.]+)"?.*/\1/p' project.yml | head -1)"
-DMG="dist/OpenStats-${VERSION}.dmg"
-ZIP="dist/OpenStats-${VERSION}.zip"
+CHIPS=(AppleSilicon Intel)
 APPCAST="dist/appcast.json"
 CASK="dist/openstats.rb"
 SSH=(ssh -i "$KEY" -o BatchMode=yes "$HOST")
 
-for file in "$DMG" "$ZIP" "$APPCAST" "$CASK"; do
+for chip in "${CHIPS[@]}"; do
+  for ext in dmg zip; do
+    file="dist/OpenStats-${VERSION}-${chip}.${ext}"
+    [ -f "$file" ] || { echo "缺少 $file，先运行 ./Scripts/release.sh" >&2; exit 1; }
+  done
+done
+for file in "$APPCAST" "$CASK"; do
   [ -f "$file" ] || { echo "缺少 $file，先运行 ./Scripts/release.sh" >&2; exit 1; }
 done
-python3 - "$APPCAST" "$VERSION" "$ZIP" <<'PY' || { echo "$APPCAST 与 $ZIP 不一致" >&2; exit 1; }
+python3 - "$APPCAST" "$VERSION" "dist/OpenStats-${VERSION}-AppleSilicon.zip" "dist/OpenStats-${VERSION}-Intel.zip" <<'PY' \
+  || { echo "$APPCAST 与升级包不一致" >&2; exit 1; }
 import hashlib, json, sys
 feed = json.load(open(sys.argv[1]))
-digest = hashlib.sha256(open(sys.argv[3], "rb").read()).hexdigest()
-assert feed["version"] == sys.argv[2] and feed["sha256"] == digest and feed["notes"], feed
+digest = lambda path: hashlib.sha256(open(path, "rb").read()).hexdigest()
+assert feed["version"] == sys.argv[2] and feed["notes"], feed
+assert feed["sha256"] == digest(sys.argv[3]) and feed["url"].endswith("-AppleSilicon.zip"), feed
+assert feed["intel"]["sha256"] == digest(sys.argv[4]) and feed["intel"]["url"].endswith("-Intel.zip"), feed
 PY
 grep -q "version \"${VERSION}\"" "$CASK" || { echo "$CASK 的版本不是 ${VERSION}" >&2; exit 1; }
-xcrun stapler validate "$DMG" >/dev/null || { echo "$DMG 没有装订公证票据" >&2; exit 1; }
-SHA="$(shasum -a 256 "$DMG" | cut -d' ' -f1)"
-grep -q "$SHA" "$CASK" || { echo "$CASK 里的 sha256 与 DMG 不一致" >&2; exit 1; }
+for chip in "${CHIPS[@]}"; do
+  dmg="dist/OpenStats-${VERSION}-${chip}.dmg"
+  xcrun stapler validate "$dmg" >/dev/null || { echo "$dmg 没有装订公证票据" >&2; exit 1; }
+  grep -q "$(shasum -a 256 "$dmg" | cut -d' ' -f1)" "$CASK" || { echo "$CASK 里的 sha256 与 $dmg 不一致" >&2; exit 1; }
+done
 
 # 上传：先传临时名再改名，下载中途不会拿到半个文件
 "${SSH[@]}" "sudo install -d -o \$(id -un) -m 755 $ROOT/download"
@@ -44,8 +54,10 @@ upload() {
   [ "$online" = "$(shasum -a 256 "$1" | cut -d' ' -f1)" ] || { echo "线上 ${name} 校验不一致：$online" >&2; exit 1; }
   echo "✅ https://getopenstats.com/download/${name}"
 }
-upload "$DMG"
-upload "$ZIP"
+for chip in "${CHIPS[@]}"; do
+  upload "dist/OpenStats-${VERSION}-${chip}.dmg"
+  upload "dist/OpenStats-${VERSION}-${chip}.zip"
+done
 # 版本清单最后发布：安装包都已就位后，已安装的应用才会看到新版本
 upload "$APPCAST"
 

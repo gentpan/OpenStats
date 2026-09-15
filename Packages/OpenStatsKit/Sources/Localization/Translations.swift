@@ -389,6 +389,7 @@ npm 缓存	npm Cache
 安全温度	Safety Temperature
 安装	Install
 安装包	Installers
+安装包不支持这台 Mac 的芯片	This update doesn't support this Mac's chip
 安装包内容不正确：{}	The update package is invalid: {}
 安装包校验值与版本清单不一致，已放弃安装	The update's checksum doesn't match the manifest; installation stopped
 安装失败：{}	Install failed: {}

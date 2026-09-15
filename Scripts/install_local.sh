@@ -28,8 +28,8 @@ fi
 mv "$SOURCE" "$TARGET"
 "$LSREGISTER" -f "$TARGET"
 
-# 编译目录里残留的旧产物（Debug / Release 另一种配置）也清掉
-for stale in build/DerivedData/Build/Products/*/OpenStats.app; do
+# 编译目录里残留的旧产物（Debug / Release 另一种配置、发布时另一种芯片的版本）也清掉
+for stale in build/DerivedData*/Build/Products/*/OpenStats.app; do
   [ -d "$stale" ] || continue
   "$LSREGISTER" -u "$stale" >/dev/null 2>&1 || true
   rm -rf "$stale"
