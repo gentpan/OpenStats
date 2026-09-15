@@ -6,7 +6,7 @@
 
 **Your Mac at a glance — CPU, GPU, memory, network and temperatures in the menu bar, with fan control, keep-awake, one-click cleanup, an app uninstaller and an IP cleanliness check.**
 
-[![Release](https://img.shields.io/badge/release-0.3.1-6ee02b)](https://getopenstats.com/#download)
+[![Release](https://img.shields.io/badge/release-0.3.2-6ee02b)](https://getopenstats.com/#download)
 [![Stars](https://img.shields.io/github/stars/gentpan/OpenStats?style=flat&color=f5c518&label=stars)](https://github.com/gentpan/OpenStats/stargazers)
 [![Last commit](https://img.shields.io/github/last-commit/gentpan/OpenStats?color=black&label=last%20commit)](https://github.com/gentpan/OpenStats/commits/main)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/gentpan/OpenStats?color=black&label=commits)](https://github.com/gentpan/OpenStats/graphs/commit-activity)
@@ -34,13 +34,13 @@ Everything is read on your own Mac, and there is no telemetry. An account is opt
 
 ## Install
 
-Download OpenStats 0.3.1 from the website (signed with a Developer ID certificate and notarized by Apple) —
+Download OpenStats 0.3.2 from the website (signed with a Developer ID certificate and notarized by Apple) —
 pick the build for your Mac's chip:
 
 | Chip | Download |
 |---|---|
-| Apple silicon (M1, M2, M3, M4, M5) | [OpenStats-0.3.1-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.3.1-AppleSilicon.dmg) |
-| Intel | [OpenStats-0.3.1-Intel.dmg](https://getopenstats.com/download/OpenStats-0.3.1-Intel.dmg) |
+| Apple silicon (M1, M2, M3, M4, M5) | [OpenStats-0.3.2-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.3.2-AppleSilicon.dmg) |
+| Intel | [OpenStats-0.3.2-Intel.dmg](https://getopenstats.com/download/OpenStats-0.3.2-Intel.dmg) |
 
 Not sure? Apple menu › About This Mac says "Chip Apple M…" on Apple silicon and "Processor Intel…" on Intel.
 Homebrew picks the right build for you:
@@ -59,15 +59,15 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.3.1** (2026-09-15) · **2** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.3.2** (2026-09-16) · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-09-16</b> · Unreleased · 2 fixed</summary>
+<summary><b>2026-09-16</b> · 0.3.2 · 2 fixed</summary>
 
 **Fixed**
 
-- 网络详情的 IP 纯净度一直显示“正在查询”、IP 地址区块只剩国家：cleanip.io 不再接受查询指定 IP，改为只查请求方自己的出口。现在分别锁定 IPv4 与 IPv6 连接各查一次，两族仍然各有自己的归属地与纯净度；锁定地址族的连接建不起来时退回系统默认的请求方式。用了分流代理、cleanip.io 看到的出口与 Cloudflare 看到的不同时，以 cleanip.io 看到的地址显示，纯净度与地址对得上。
-- 查询失败时的空结果不再被当成有效结果保存 7 天：没查到的下次打开网络详情就会重查，服务恢复后纯净度不会一直空着。
+- 修复网络详情里 IP 纯净度查不到的问题：之前一直显示“正在查询”、IP 地址区块只剩国家，因为 cleanip.io 不再接受查询指定 IP，改为只查请求方自己的出口。现在分别锁定 IPv4 与 IPv6 连接各查一次，两族仍然各有自己的归属地与纯净度；锁定地址族的连接建不起来时退回系统默认的请求方式。用了分流代理、cleanip.io 看到的出口与 Cloudflare 看到的不同时，以 cleanip.io 看到的地址显示，纯净度与地址对得上。
+- 修复查询失败后纯净度长时间空着：空结果不再被当成有效结果保存 7 天，没查到的下次打开网络详情就会重查，服务恢复后纯净度不会一直空着。
 
 </details>
 

@@ -341,16 +341,16 @@
         <li class="download__option">
           <h3>Apple 芯片</h3>
           <p>M1、M2、M3、M4、M5 系列的 Mac</p>
-          <a class="btn btn--primary" href="download/OpenStats-0.3.1-AppleSilicon.dmg">下载 Apple 芯片版</a>
+          <a class="btn btn--primary" href="download/OpenStats-0.3.2-AppleSilicon.dmg">下载 Apple 芯片版</a>
         </li>
         <li class="download__option">
           <h3>Intel 芯片</h3>
           <p>能升级到 macOS 14 的 Intel Mac（大多为 2018 年及以后的机型）</p>
-          <a class="btn btn--primary" href="download/OpenStats-0.3.1-Intel.dmg">下载 Intel 版</a>
+          <a class="btn btn--primary" href="download/OpenStats-0.3.2-Intel.dmg">下载 Intel 版</a>
         </li>
       </ul>
       <p class="download__hint">不确定是哪种？打开苹果菜单 › 关于本机，看“芯片”或“处理器”那一行。</p>
-      <p class="hero__meta">版本 0.3.1 · macOS 14 Sonoma 及以上 · 简体中文与 English 界面 · <a href="#changelog">这个版本更新了什么</a></p>
+      <p class="hero__meta">版本 0.3.2 · macOS 14 Sonoma 及以上 · 简体中文与 English 界面 · <a href="#changelog">这个版本更新了什么</a></p>
       <p class="download__brew">也可以用 Homebrew 安装：<code>brew install --cask gentpan/tap/openstats</code></p>
     </div>
   </section>
@@ -364,6 +364,14 @@
       <!-- changelog:start -->
       <!-- 由 Scripts/sync_changelog.py 从 CHANGELOG.md 生成，请勿手改。 -->
       <div class="log">
+        <article class="log__day">
+          <div class="log__head"><time datetime="2026-09-16">2026-09-16</time><span class="log__tag">0.3.2</span></div>
+          <p class="log__counts">修复 2</p>
+          <ul class="log__list">
+            <li><span class="log__kind">修复</span>修复网络详情里 IP 纯净度查不到的问题：之前一直显示“正在查询”、IP 地址区块只剩国家，因为 cleanip.io 不再接受查询指定 IP，改为只查请求方自己的出口。现在分别锁定 IPv4 与 IPv6 连接各查一次，两族仍然各有自己的归属地与纯净度；锁定地址族的连接建不起来时退回系统默认的请求方式。用了分流代理、cleanip.io 看到的出口与 Cloudflare 看到的不同时，以 cleanip.io 看到的地址显示，纯净度与地址对得上。</li>
+            <li><span class="log__kind">修复</span>修复查询失败后纯净度长时间空着：空结果不再被当成有效结果保存 7 天，没查到的下次打开网络详情就会重查，服务恢复后纯净度不会一直空着。</li>
+          </ul>
+        </article>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-09-15">2026-09-15</time><span class="log__tag">0.3.1</span></div>
           <p class="log__counts">新增 2</p>
@@ -408,6 +416,8 @@
             </ul>
           </details>
         </article>
+        <details class="log__older">
+          <summary>更早的更新（3 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-09-14">2026-09-14</time><span class="log__tag">0.3.0</span></div>
           <p class="log__counts">新增 2 · 调整 2</p>
@@ -418,8 +428,6 @@
             <li><span class="log__kind">调整</span>主窗口的 CPU 页：走势线加高并带 25% / 50% / 75% 参考线，核心分工与排队程度并排显示，不再整页单列拉长。</li>
           </ul>
         </article>
-        <details class="log__older">
-          <summary>更早的更新（2 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-09-13">2026-09-13</time><span class="log__tag">0.3.0</span></div>
           <p class="log__counts">新增 13 · 调整 4</p>

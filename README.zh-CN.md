@@ -6,7 +6,7 @@
 
 **Mac 的状态，抬眼就看见——CPU、GPU、内存、网络与温度常驻菜单栏，还能调风扇、防休眠、一键清理、卸载应用，检测 IP 纯净度。**
 
-[![Release](https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.3.1-6ee02b)](https://getopenstats.com/#download)
+[![Release](https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.3.2-6ee02b)](https://getopenstats.com/#download)
 [![Stars](https://img.shields.io/github/stars/gentpan/OpenStats?style=flat&color=f5c518&label=%E6%98%9F%E6%A0%87)](https://github.com/gentpan/OpenStats/stargazers)
 [![Last commit](https://img.shields.io/github/last-commit/gentpan/OpenStats?color=black&label=%E6%9C%80%E8%BF%91%E6%8F%90%E4%BA%A4)](https://github.com/gentpan/OpenStats/commits/main)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/gentpan/OpenStats?color=black&label=%E6%8F%90%E4%BA%A4)](https://github.com/gentpan/OpenStats/graphs/commit-activity)
@@ -32,12 +32,12 @@ OpenStats 是一款 macOS 菜单栏应用，实时显示 Mac 正在做什么：�
 
 ## 安装
 
-从官网下载 OpenStats 0.3.1（Developer ID 签名、经过 Apple 公证），按 Mac 的芯片选择：
+从官网下载 OpenStats 0.3.2（Developer ID 签名、经过 Apple 公证），按 Mac 的芯片选择：
 
 | 芯片 | 下载 |
 |---|---|
-| Apple 芯片（M1、M2、M3、M4、M5 系列） | [OpenStats-0.3.1-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.3.1-AppleSilicon.dmg) |
-| Intel 芯片 | [OpenStats-0.3.1-Intel.dmg](https://getopenstats.com/download/OpenStats-0.3.1-Intel.dmg) |
+| Apple 芯片（M1、M2、M3、M4、M5 系列） | [OpenStats-0.3.2-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.3.2-AppleSilicon.dmg) |
+| Intel 芯片 | [OpenStats-0.3.2-Intel.dmg](https://getopenstats.com/download/OpenStats-0.3.2-Intel.dmg) |
 
 不确定是哪种，看苹果菜单 › 关于本机：写着“芯片 Apple M…”是 Apple 芯片，写着“处理器 Intel…”是 Intel。
 也可以用 Homebrew 安装，会自动选对版本：
@@ -55,15 +55,15 @@ CPU 不分性能核与能效核，部分功耗与频率读数可能不显示。
 <!-- changelog:start -->
 <!-- 由 Scripts/sync_changelog.py 从 CHANGELOG.md 生成，请勿手改。 -->
 
-最新版本 **0.3.1**（2026-09-15） · 开发中 **2** 项改动尚未发布 · [完整更新日志](CHANGELOG.md)
+最新版本 **0.3.2**（2026-09-16） · [完整更新日志](CHANGELOG.md)
 
 <details open>
-<summary><b>2026-09-16</b> · 未发布 · 修复 2</summary>
+<summary><b>2026-09-16</b> · 0.3.2 · 修复 2</summary>
 
 **修复**
 
-- 网络详情的 IP 纯净度一直显示“正在查询”、IP 地址区块只剩国家：cleanip.io 不再接受查询指定 IP，改为只查请求方自己的出口。现在分别锁定 IPv4 与 IPv6 连接各查一次，两族仍然各有自己的归属地与纯净度；锁定地址族的连接建不起来时退回系统默认的请求方式。用了分流代理、cleanip.io 看到的出口与 Cloudflare 看到的不同时，以 cleanip.io 看到的地址显示，纯净度与地址对得上。
-- 查询失败时的空结果不再被当成有效结果保存 7 天：没查到的下次打开网络详情就会重查，服务恢复后纯净度不会一直空着。
+- 修复网络详情里 IP 纯净度查不到的问题：之前一直显示“正在查询”、IP 地址区块只剩国家，因为 cleanip.io 不再接受查询指定 IP，改为只查请求方自己的出口。现在分别锁定 IPv4 与 IPv6 连接各查一次，两族仍然各有自己的归属地与纯净度；锁定地址族的连接建不起来时退回系统默认的请求方式。用了分流代理、cleanip.io 看到的出口与 Cloudflare 看到的不同时，以 cleanip.io 看到的地址显示，纯净度与地址对得上。
+- 修复查询失败后纯净度长时间空着：空结果不再被当成有效结果保存 7 天，没查到的下次打开网络详情就会重查，服务恢复后纯净度不会一直空着。
 
 </details>
 
