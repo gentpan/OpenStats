@@ -4,7 +4,7 @@
 
 # OpenStats
 
-**Your Mac at a glance — CPU, GPU, memory, network and temperatures in the menu bar, with fan control, keep-awake and one-click cleanup.**
+**Your Mac at a glance — CPU, GPU, memory, network and temperatures in the menu bar, with fan control, keep-awake, one-click cleanup, an app uninstaller and an IP cleanliness check.**
 
 [![Release](https://img.shields.io/badge/release-0.3.0-6ee02b)](https://getopenstats.com/#download)
 [![Stars](https://img.shields.io/github/stars/gentpan/OpenStats?style=flat&color=f5c518&label=stars)](https://github.com/gentpan/OpenStats/stargazers)
@@ -19,7 +19,7 @@ CPU load, GPU, memory pressure, network speed, disk, battery, temperatures and f
 lets you act on it: spin the fans up, keep the Mac awake with the lid closed, clear caches, fully
 uninstall apps and disable startup items. Network details also check how clean your public IP is —
 whether it is flagged as a VPN, proxy, data center or for abuse.
-Everything is read on your own Mac, and there is no telemetry. An account is optional: sign in with GitHub, Google or Apple to sync your preferences to other Macs; the cloud keeps only your email, name and the settings document. Beyond that, the only network traffic is optional and on demand: a public-IP lookup when you open network details, and a ping probe to a target you choose.
+Everything is read on your own Mac, and there is no telemetry. An account is optional: sign in with GitHub, Google or Apple to sync your preferences to other Macs; the cloud keeps only your email, name and the settings document. Beyond that, the only network traffic comes from features you can turn off: a public-IP and cleanliness lookup when you open network details, a ping probe to a target you choose, and a daily check for a new version.
 
 [Download](https://getopenstats.com/#download) ·
 [Website](https://getopenstats.com) ·
@@ -42,7 +42,8 @@ brew install --cask gentpan/tap/openstats
 ```
 
 Requires macOS 14 (Sonoma) or later.
-Developed and tested on Apple Silicon. The interface is in Simplified Chinese.
+Developed and tested on Apple Silicon. The interface is in English and Simplified Chinese, following the
+system language by default; switch it in Settings → General → Language.
 
 ## Recent updates
 
@@ -58,7 +59,11 @@ Latest release **0.3.0** (2026-09-15) · [full changelog](CHANGELOG.md) (kept in
 
 - 菜单栏新增“电池”项目：电量按九种风格显示（电量条、圆环、饼图、数字等），充电中带闪电，电量低于 20% 按“高负载时着色”变红。点击弹出电池详情：电量与剩余 / 充满时间、适配器功率、电池温度、最近 24 小时电量曲线、功耗、健康度与循环次数、已连接蓝牙设备的电量（AirPods 左右耳与充电盒、妙控键盘 / 鼠标 / 触控板），可跳到系统电池设置；主窗口也有对应的“电池”页，历史页多了电池电量曲线。没有电池的 Mac（mini、Studio、iMac）上这个项目改为显示电量最低的蓝牙设备，弹窗只列蓝牙设备。「设置 · 菜单栏」新增“蓝牙设备电量低时提示”：某个设备低于 20% 时在电池项目旁显示它的图标与电量。
 - 网络详情“接口”区块右上角新增重置按钮：把开机后下载 / 上传归零、从现在起重新累计，标题旁标出起算时间，两行改叫“重置后下载 / 上传”；重启后自动回到开机后累计，右键按钮可随时改回。
-- 磁盘页从展示页变成能动手的磁盘工具，新增四张卡片：- 空间占用：统计家目录里每个文件夹占多少，并列出最大的 20 个文件（应用、照片图库等按整体算一个）；可在访达中显示，家目录里、Library 之外的文件可以直接移到废纸篓。只读扫描，文件多时需要几十秒，可随时停止。- 文件系统检查：调用系统的 diskutil 对启动盘做一次只读检查，相当于“磁盘工具”的急救但不修改任何东西；记住上次检查的时间与结果，发现问题时提示去磁盘工具修复。- 本地快照：列出 Time Machine 留在本机的快照（它们计入“可清除”空间），可一键全部删除；辅助工具够新时由它执行，否则请求一次管理员授权。辅助工具协议升到第 4 版，已安装的旧版会提示重新安装。- 其他磁盘：列出外置硬盘、U 盘、镜像与网络共享的容量，可在访达中显示或直接推出；接入、拔出时自动刷新。
+- 磁盘页从展示页变成能动手的磁盘工具，新增四张卡片：
+  - 空间占用：统计家目录里每个文件夹占多少，并列出最大的 20 个文件（应用、照片图库等按整体算一个）；可在访达中显示，家目录里、Library 之外的文件可以直接移到废纸篓。只读扫描，文件多时需要几十秒，可随时停止。
+  - 文件系统检查：调用系统的 diskutil 对启动盘做一次只读检查，相当于“磁盘工具”的急救但不修改任何东西；记住上次检查的时间与结果，发现问题时提示去磁盘工具修复。
+  - 本地快照：列出 Time Machine 留在本机的快照（它们计入“可清除”空间），可一键全部删除；辅助工具够新时由它执行，否则请求一次管理员授权。辅助工具协议升到第 4 版，已安装的旧版会提示重新安装。
+  - 其他磁盘：列出外置硬盘、U 盘、镜像与网络共享的容量，可在访达中显示或直接推出；接入、拔出时自动刷新。
 - 网络详情新增「IP 纯净度」区块：CleanIP.io 的纯净度评分与等级画成占满整行的 F 到 A+ 六段色带，分数在色带上方、得分处有标记，同一行右侧是 cleanip.io 字标，点了打开这个 IP 的完整报告；下面列出风险评分、命中的风险标记（VPN、代理、Tor、机房、滥用记录等）与一句评价。IP 地址区块用 cleanip.io 样式的徽章标出原生 / 广播、住宅 / 机房与运营商类型（ISP 等），徽章样式作为通用组件收进设计系统。
 - 账号与设置同步（设置 · 账号与同步）：用 GitHub、Google 或 Apple 登录后，菜单栏项目与风格、刷新频率、外观与语言、详情弹窗的区块、连接探测、通知、快捷键、风扇安全温度、合盖电量下限会保存到 getopenstats.com，换一台 Mac 登录即自动恢复。设置改动 2 秒后上传，启动、唤醒与每 15 分钟检查一次云端；第一次登录时本机与云端都有内容且不同，会让你选用哪一份，之后以最后写入为准。登录走系统的授权窗口，令牌存在钥匙串，云端只保存邮箱、姓名与设置文档，可随时退出或删除云端数据。不登录时应用行为不变。
 - CPU 走势时长可选 1 / 3 / 5 分钟：走势线上方一行小字切换，弹窗与主窗口共用；曲线按真实采样时间定位，最新一次采样固定在右边缘，睡眠等超过 10 秒没有采样的地方线条断开。
@@ -181,13 +186,25 @@ Choose which sections each popover shows in Settings. `Esc` closes it.
   grade and risk flags (VPN, proxy, Tor, data center, abuse); DNS flush
   and one-click switching to Cloudflare, Google, Tencent, Alibaba Cloud or manual servers;
   per-process traffic.
+- **Disk.** Startup disk capacity as a segmented bar (used, purgeable, available); read / write speed with a
+  60-second history; SSD health; the apps reading and writing the most.
 - **GPU**, **Temperature & fans.** History, sensor groups, fan speeds and quick modes.
 - **Battery.** Charge level, time remaining, adapter wattage and battery temperature; a 24-hour charge curve; power draw; health and cycle count; the batteries of connected Bluetooth devices (AirPods, Magic Keyboard / Mouse / Trackpad). Macs without a battery show the Bluetooth devices only.
 
 <p align="center">
   <img src="Assets/readme/popover-cpu-light.png" width="32%" alt="CPU popover">
-  <img src="Assets/readme/popover-network-light.png" width="32%" alt="Network popover">
+  <img src="Assets/readme/popover-disk-light.png" width="32%" alt="Disk popover">
   <img src="Assets/readme/popover-memory-dark.png" width="32%" alt="Memory popover, dark">
+</p>
+
+**IP cleanliness check** — see at a glance whether your public IP is clean: the CleanIP.io score with an F to A+ grade
+band, a risk score and the risk flags it hits (VPN, proxy, Tor, data center, abuse history and more); the IP address
+block marks native vs. broadcast and residential vs. data center with badges. IPv4 and IPv6 are checked separately,
+and results are cached on the Mac for 7 days unless the address changes or you refresh.
+
+<p align="center">
+  <img src="Assets/readme/ip-purity-light.png" width="40%" alt="IP address and IP cleanliness, light">
+  <img src="Assets/readme/ip-purity-dark.png" width="40%" alt="IP address and IP cleanliness, dark">
 </p>
 
 **Main window** — a sidebar with Dashboard, This Mac, History, CPU, GPU, Memory, Disk, Network, Temperature & fans,
@@ -262,8 +279,8 @@ Metrics come from the kernel (`host_processor_info`, `host_statistics64`, `sysct
 SMC on your own Mac. Preferences live in the app's user defaults and contain nothing personal.
 There is no analytics and no telemetry.
 
-OpenStats only touches the network for two optional features, both of which can be turned off in
-Settings → Network:
+Every feature that touches the network can be turned off — the first two in Settings → Network, the update
+check in Settings → About:
 
 - **Public IP**: when you open network details, one request to Cloudflare `1.1.1.1` (ipify as fallback)
   for your public address, cached for 10 minutes. Location, ASN, network type and the cleanliness score
@@ -272,6 +289,10 @@ Settings → Network:
 - **Connection probe**: an ICMP ping to the target you pick (Cloudflare, Google, Alibaba Cloud,
   Tencent or your router) every 1, 2 or 5 seconds, only while the network item is in the menu bar
   or network details are open.
+- **Update check**: at launch and once a day, the app reads a version manifest from getopenstats.com — the
+  manifest only. When a new version is out it asks; nothing installs without your click.
+
+An account is optional and only syncs preferences after you sign in; it never carries monitoring data.
 
 Process explanations run entirely on device through Apple Intelligence; process details never leave the Mac.
 
@@ -295,7 +316,7 @@ live data instead:
 build/DerivedData/Build/Products/Debug/OpenStats.app/Contents/MacOS/OpenStats --snapshot ./snapshots
 ```
 
-Glass and vibrancy exist only on screen. To measure the panel while it is open, launch with
+To measure the panel while it is open, launch with
 `--show-panel`, which opens the panel and pins it.
 
 After editing `CHANGELOG.md`, run `python3 Scripts/sync_changelog.py` to refresh the recent

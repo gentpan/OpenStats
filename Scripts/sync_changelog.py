@@ -71,7 +71,9 @@ def parse(text):
         elif line.startswith("- ") and group is not None:
             group["items"].append(line[2:].strip())
         elif line.startswith("  ") and line.strip() and group is not None and group["items"]:
-            group["items"][-1] += line.strip()
+            text = line.strip()
+            # 缩进的 “- ” 是子条目，保留成嵌套列表；其余是折行，直接接上（中文折行不加空格）
+            group["items"][-1] += f"\n  - {text[2:].strip()}" if text.startswith("- ") else text
     for release in releases:
         release["days"] = [d for d in release["days"] if any(g["items"] for g in d["groups"])]
     return [r for r in releases if r["days"]]
@@ -169,6 +171,15 @@ def inline_html(text):
     return out
 
 
+def item_html(item):
+    """条目正文，子条目画成嵌套列表。"""
+    head, *subs = item.split("\n  - ")
+    out = inline_html(head)
+    if subs:
+        out += '<ul class="log__sub">' + "".join(f"<li>{inline_html(sub)}</li>" for sub in subs) + "</ul>"
+    return out
+
+
 def web_day(release, day, lines):
     items = [(g["kind"], item) for g in day["groups"] for item in g["items"]]
     lines.append('  <article class="log__day">')
@@ -177,7 +188,7 @@ def web_day(release, day, lines):
     lines.append(f'    <p class="log__counts">{html.escape(counts(day, False))}</p>')
 
     def item_lines(chunk, indent):
-        return [f'{indent}<li><span class="log__kind">{html.escape(kind)}</span>{inline_html(item)}</li>'
+        return [f'{indent}<li><span class="log__kind">{html.escape(kind)}</span>{item_html(item)}</li>'
                 for kind, item in chunk]
 
     lines.append('    <ul class="log__list">')
