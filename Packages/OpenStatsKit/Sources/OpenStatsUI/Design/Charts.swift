@@ -464,13 +464,12 @@ struct MirroredRateChart: View {
     }
 }
 
-/// 连接探测格子：按时间从左到右、从上到下排列，最新的一格在末尾。
-/// 绿色正常，橙色延迟偏高，红色超时，灰色尚无数据
+/// 连接探测格子：一格一次探测，从左上到右下按时间排，最新的在最后一格。
+/// 只表示通不通：通了是绿色，超时或不可达是红色，还没探测到的是灰色
 struct ProbeGrid: View {
     let samples: [ProbeSample]
     var columns = 20
     var rows = 3
-    var slowThreshold: Double = 200
 
     var body: some View {
         let capacity = columns * rows
@@ -487,8 +486,8 @@ struct ProbeGrid: View {
                 let color: Color
                 if index < offset {
                     color = DS.Palette.track
-                } else if let latency = recent[index - offset].latency {
-                    color = latency >= slowThreshold ? DS.Palette.warning : DS.Palette.success
+                } else if recent[index - offset].latency != nil {
+                    color = DS.Palette.success
                 } else {
                     color = DS.Palette.error
                 }

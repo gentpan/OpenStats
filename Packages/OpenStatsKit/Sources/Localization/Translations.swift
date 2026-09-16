@@ -89,7 +89,7 @@ npm 缓存	npm Cache
 {} {} 英寸	{} {}-inch
 {} · {} 个	{} · {}
 {} · {} 核	{} · {} cores
-{} · 每 {} 秒	{} · every {}s
+{} · 每秒一次	{} · every second
 {} · 约 {}	{} · about {}
 {} · 负载 {}/{}	{} · load {}/{}
 {} 个	{}
@@ -123,8 +123,8 @@ npm 缓存	npm Cache
 {}后充满	Full in {}
 {}电量低	{} battery low
 {}（{}）	{} ({})
-{}，{} 秒，后台{}	{}, {}s, background {}
 {}，{}，健康 {}	{}, {}, health {}
+{}，后台{}	{}, background {}
 {}：{}	{}: {}
 ~/.npm/_cacache，安装依赖时自动重新下载	~/.npm/_cacache; downloaded again when installing dependencies
 ~/Library/Caches 中各应用的缓存，删除后会按需重建	App caches in ~/Library/Caches; rebuilt as needed
@@ -157,7 +157,6 @@ npm 缓存	npm Cache
 不限	No limit
 不限时	Indefinitely
 与 30 秒前持平	Same as 30s ago
-丢包	Loss
 严重	Critical
 中等负载	Moderate load
 中等风险	Medium risk
@@ -470,7 +469,6 @@ npm 缓存	npm Cache
 应用缓存	App Caches
 应用退出或断开连接时，自动恢复风扇与睡眠设置	Restores fan and sleep settings when the app quits or disconnects
 废纸篓	Trash
-延迟	Latency
 开	On
 开关防休眠	Toggle Keep Awake
 开发构建不支持在线升级	Development builds can't update online
@@ -523,7 +521,6 @@ npm 缓存	npm Cache
 打开 OpenStats 主窗口	Open the OpenStats Window
 打开 SMC 失败 ({})	Failed to open SMC ({})
 打开登录项设置	Open Login Items Settings
-打开网络详情时使用	Used while network details are open
 打开网络详情时向 Cloudflare（1.1.1.1）或 ipify 查询一次公网地址，10 分钟内不重复请求；归属地、ASN、网络类型与纯净度由这台 Mac 直接向 cleanip.io 查询，只发送公网地址	When network details open, asks Cloudflare (1.1.1.1) or ipify for your public address, at most once every 10 minutes; location, ASN, network type and cleanliness are looked up by this Mac directly at cleanip.io, sending only the public address
 打开进程页	Show Processes
 打开通知设置	Open Notification Settings
@@ -532,7 +529,6 @@ npm 缓存	npm Cache
 扫描中	Scanning
 扫描中…	Scanning…
 扫描于 	Scanned 
-抖动	Jitter
 折线历史	Line History
 折线是最近 30 次采样（约 1 分钟）的走势	The line shows the last 30 samples (about a minute)
 拷贝	Copy
@@ -550,7 +546,6 @@ npm 缓存	npm Cache
 掌托	Palm rest
 排队程度	Run Queue
 探测目标	Probe Target
-探测间隔	Probe Interval
 接口	Interface
 接通电源	Plugged in
 推出	Eject
@@ -762,7 +757,6 @@ npm 缓存	npm Cache
 现在	Now
 现在没有本地快照	No local snapshots right now
 用 Apple 智能解释	Explain with Apple Intelligence
-用 ping 测量延迟与丢包，在网络详情里以格子显示	Measures latency and loss with ping, shown as a grid in network details
 用户	User
 用户 {}	User {}
 用户资源库	User Library
@@ -867,6 +861,7 @@ npm 缓存	npm Cache
 网络已恢复	Network Restored
 网络断开	Network Down
 网络类型	Network type
+网络详情打开时每秒 ping 一次，通了是绿格、不通是红格，显示最近 60 次	Pings once a second while network details are open: green when reachable, red when not, showing the last 60
 网络运营方	Network operator
 网络连接中断超过 20 秒，恢复后再提示一次	Network has been down for over 20 seconds; notifies again when it's back
 网络连接已中断超过 20 秒。可以打开网络详情查看接口与路由器状态。	The network has been down for over 20 seconds. Open network details to check the interface and router.

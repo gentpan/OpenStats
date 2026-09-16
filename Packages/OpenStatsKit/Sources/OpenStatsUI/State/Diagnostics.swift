@@ -110,7 +110,7 @@ final class DiagnosticsExporter {
         row(tr("菜单栏风格"), settings.menuBarStyle.rawValue)
         row(tr("刷新间隔"), tr("\(settings.refreshSeconds) 秒"))
         row(tr("外观"), settings.appearance.rawValue)
-        row(tr("连接探测"), settings.probeEnabled ? tr("\(settings.probeTarget.rawValue)，\(settings.probeSeconds) 秒，后台\(settings.probeInBackground ? tr("开启") : tr("关闭"))") : tr("关闭"))
+        row(tr("连接探测"), settings.probeEnabled ? tr("\(settings.probeTarget.rawValue)，后台\(settings.probeInBackground ? tr("开启") : tr("关闭"))") : tr("关闭"))
         row(tr("公网 IP 查询"), settings.publicIPLookup ? tr("开启") : tr("关闭"))
         row(tr("风扇安全温度"), "\(settings.fanSafetyTemperature)°C")
         row(tr("合盖电量下限"), "\(settings.lidModeBatteryFloor)%")

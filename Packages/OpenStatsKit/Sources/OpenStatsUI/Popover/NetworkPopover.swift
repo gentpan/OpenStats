@@ -100,17 +100,13 @@ private struct ProbeSection: View {
 
         SectionCard(title: PopoverSection.networkProbe.title, trailing: {
             if settings.probeEnabled {
-                Text(verbatim: tr("\(network.probeAddress ?? "—") · 每 \(settings.probeSeconds) 秒"))
+                Text(verbatim: tr("\(network.probeAddress ?? "—") · 每秒一次"))
             }
         }) {
             if settings.probeEnabled {
-                ProbeGrid(samples: network.probes.elements, columns: isDetailPage ? 40 : 20, rows: 3)
-                HStack(spacing: DS.Space.s3) {
-                    stat(tr("延迟"), network.latency.map(milliseconds) ?? "—")
-                    stat(tr("抖动"), network.jitter.map(milliseconds) ?? "—")
-                    stat(tr("丢包"), network.lossRate.map { Format.percent($0) } ?? "—",
-                         tone: (network.lossRate ?? 0) > 0.05 ? .error : .neutral)
-                }
+                // 只用来看网络通不通：60 格是最近 60 次探测，主窗口里更宽，排成两行
+                let columns = isDetailPage ? 30 : 20
+                ProbeGrid(samples: network.probes.elements, columns: columns, rows: NetworkController.probeCapacity / columns)
             } else {
                 HStack {
                     Text(tr("定时 ping 一个地址，记录网络是否通畅")).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
@@ -120,21 +116,6 @@ private struct ProbeSection: View {
                 }
             }
         }
-    }
-
-    private func milliseconds(_ value: Double) -> String {
-        value < 10 ? "\(value.formatted(.number.precision(.fractionLength(1)))) ms" : "\(Int(value.rounded())) ms"
-    }
-
-    private func stat(_ label: String, _ value: String, tone: Tone = .neutral) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(label).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
-            Text(verbatim: value)
-                .dsFont(.sm, weight: .semibold)
-                .monospacedDigit()
-                .foregroundStyle(tone == .neutral ? DS.Palette.textPrimary : tone.color)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

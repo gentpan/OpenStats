@@ -552,18 +552,10 @@ struct NetworkSettings: View {
 
         SettingsGroup(caption: tr("连接探测")) {
             GroupRow(showsDivider: false) {
-                SettingRow(title: tr("定时探测网络"), subtitle: tr("用 ping 测量延迟与丢包，在网络详情里以格子显示")) {
+                SettingRow(title: tr("定时探测网络"), subtitle: tr("网络详情打开时每秒 ping 一次，通了是绿格、不通是红格，显示最近 60 次")) {
                     DSToggle(isOn: $settings.probeEnabled, label: tr("定时探测网络"))
                 }
             }
-            GroupRow {
-                SettingRow(title: tr("探测间隔"), subtitle: tr("打开网络详情时使用")) {
-                    SegmentedControl(selection: $settings.probeSeconds,
-                                     options: AppSettings.probeOptions.map { ($0, tr("\($0) 秒")) })
-                        .frame(width: DS.Size.sidebarWidth)
-                }
-            }
-            .disabled(!settings.probeEnabled)
             GroupRow {
                 SettingRow(title: tr("探测目标"), subtitle: tr("国内网络建议选阿里云或腾讯；选路由器只检测本地连接")) {
                     Picker(tr("探测目标"), selection: $settings.probeTarget) {

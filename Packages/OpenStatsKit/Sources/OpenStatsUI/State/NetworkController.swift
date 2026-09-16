@@ -12,8 +12,8 @@ public struct ProbeSample: Sendable, Equatable {
 @MainActor
 @Observable
 public final class NetworkController {
-    /// 主窗口显示 120 次，弹窗显示最近 60 次
-    public static let probeCapacity = 120
+    /// 探测格子显示最近 60 次；前台每秒一次，也就是最近 60 秒
+    public static let probeCapacity = 60
 
     public private(set) var details: NetworkDetails?
     /// 公网 IP 信息按地址族各存一份：两份都含 IPv4 与 IPv6 地址，归属地、纯净度等是各自那个地址的
@@ -50,7 +50,8 @@ public final class NetworkController {
     /// 正在运行的探测是否为前台频率；前后台切换时重启循环，不必等完后台的长间隔
     @ObservationIgnored private var probingForeground: Bool?
 
-    /// 详情关闭、只在菜单栏显示网速时的低频探测间隔
+    /// 网络详情打开时每秒探测一次；详情关闭、只在菜单栏显示网速时低频探测
+    static let foregroundProbeSeconds = 1
     static let backgroundProbeSeconds = 10
 
     /// 上次查到的公网 IP 信息：点开弹窗时先显示它，只有超过 7 天或公网 IP 变了才重新查归属地
@@ -113,24 +114,7 @@ public final class NetworkController {
                 rate.totalUploaded >= baseline.upload ? rate.totalUploaded - baseline.upload : 0)
     }
 
-    // MARK: 统计
-
-    /// 最近一次成功探测的延迟
-    var latency: Double? { probes.elements.last?.latency }
-
-    /// 抖动：相邻两次成功探测的延迟差的平均值
-    var jitter: Double? {
-        let values = probes.elements.suffix(20).compactMap(\.latency)
-        guard values.count > 2 else { return nil }
-        let differences = zip(values.dropFirst(), values).map { abs($0 - $1) }
-        return differences.reduce(0, +) / Double(differences.count)
-    }
-
-    var lossRate: Double? {
-        let recent = probes.elements
-        guard !recent.isEmpty else { return nil }
-        return Double(recent.filter { $0.latency == nil }.count) / Double(recent.count)
-    }
+    // MARK: 探测目标
 
     var probeAddress: String? {
         settings.probeTarget.address(router: details?.physical?.router)
@@ -316,7 +300,7 @@ public final class NetworkController {
             let clock = ContinuousClock()
             while !Task.isCancelled {
                 guard let self else { return }
-                let interval = Double(foreground ? self.settings.probeSeconds : Self.backgroundProbeSeconds)
+                let interval = Double(foreground ? Self.foregroundProbeSeconds : Self.backgroundProbeSeconds)
                 if self.details == nil { await self.refreshDetails() }
                 let started = clock.now
                 guard let address = self.probeAddress else {

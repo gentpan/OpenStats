@@ -21,7 +21,6 @@ public struct SettingsDocument: Codable, Equatable, Sendable {
     public var hiddenPopoverSections: [String]?
     public var probeEnabled: Bool?
     public var probeInBackground: Bool?
-    public var probeSeconds: Int?
     public var probeTarget: String?
     public var publicIPLookup: Bool?
     public var enabledAlerts: [String]?
@@ -55,7 +54,6 @@ extension AppSettings {
         doc.hiddenPopoverSections = hiddenPopoverSections.map(\.rawValue).sorted()
         doc.probeEnabled = probeEnabled
         doc.probeInBackground = probeInBackground
-        doc.probeSeconds = probeSeconds
         doc.probeTarget = probeTarget.rawValue
         doc.publicIPLookup = publicIPLookup
         doc.enabledAlerts = enabledAlerts.map(\.rawValue).sorted()
@@ -99,7 +97,6 @@ extension AppSettings {
         assign(\.hiddenPopoverSections, doc.hiddenPopoverSections.map { Set($0.compactMap(PopoverSection.init(rawValue:))) })
         assign(\.probeEnabled, doc.probeEnabled)
         assign(\.probeInBackground, doc.probeInBackground)
-        assign(\.probeSeconds, option(doc.probeSeconds, in: Self.probeOptions))
         assign(\.probeTarget, doc.probeTarget.flatMap(ProbeTarget.init(rawValue:)))
         assign(\.publicIPLookup, doc.publicIPLookup)
         assign(\.enabledAlerts, doc.enabledAlerts.map { Set($0.compactMap(AlertKind.init(rawValue:))) })

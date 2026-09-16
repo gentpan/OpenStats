@@ -435,9 +435,6 @@ public final class AppSettings {
     public var probeInBackground: Bool {
         didSet { defaults.set(probeInBackground, forKey: Keys.probeInBackground) }
     }
-    public var probeSeconds: Int {
-        didSet { defaults.set(probeSeconds, forKey: Keys.probeSeconds) }
-    }
     public var probeTarget: ProbeTarget {
         didSet { defaults.set(probeTarget.rawValue, forKey: Keys.probeTarget) }
     }
@@ -491,7 +488,6 @@ public final class AppSettings {
     }
 
     public static let refreshOptions = [1, 2, 3, 5]
-    public static let probeOptions = [1, 2, 5]
     public static let batteryFloorOptions = [10, 20, 30, 40]
     public static let fanSafetyOptions = [85, 90, 95, 100]
     public static let alertTemperatureOptions = [85, 90, 95, 100]
@@ -526,8 +522,6 @@ public final class AppSettings {
             .map { Set($0.compactMap(PopoverSection.init(rawValue:))) } ?? PopoverSection.hiddenByDefault
         probeEnabled = defaults.object(forKey: Keys.probeEnabled) as? Bool ?? true
         probeInBackground = defaults.object(forKey: Keys.probeInBackground) as? Bool ?? true
-        probeSeconds = Self.probeOptions.contains(defaults.integer(forKey: Keys.probeSeconds))
-            ? defaults.integer(forKey: Keys.probeSeconds) : 2
         probeTarget = defaults.string(forKey: Keys.probeTarget).flatMap(ProbeTarget.init(rawValue:)) ?? .cloudflare
         publicIPLookup = defaults.object(forKey: Keys.publicIPLookup) as? Bool ?? true
         autoCheckUpdates = defaults.object(forKey: Keys.autoCheckUpdates) as? Bool ?? true
@@ -589,7 +583,6 @@ public final class AppSettings {
         static let menuBarLayout = "menuBarLayout"
         static let hiddenPopoverSections = "hiddenPopoverSections"
         static let probeEnabled = "probeEnabled"
-        static let probeSeconds = "probeSeconds"
         static let probeInBackground = "probeInBackground"
         static let probeTarget = "probeTarget"
         static let publicIPLookup = "publicIPLookup"

@@ -206,11 +206,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// 探测目标、间隔变化时清空历史重新探测；关闭公网 IP 查询时清除已显示的结果
+    /// 探测目标变化时清空历史重新探测；关闭公网 IP 查询时清除已显示的结果
     private func observeProbeSettings() {
         withObservationTracking {
             _ = model.settings.probeTarget
-            _ = model.settings.probeSeconds
             _ = model.settings.publicIPLookup
         } onChange: { [weak self] in
             Task { @MainActor in
