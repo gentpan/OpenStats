@@ -24,6 +24,22 @@ public enum Format {
 
     private static let units = ["B", "KB", "MB", "GB", "TB", "PB"]
 
+    /// 逻辑核心数（性能核与能效核合计），进程 CPU 换算成整机占比时用
+    public static let logicalCores = max(1, ProcessInfo.processInfo.activeProcessorCount)
+
+    /// 进程 CPU 按单核满载为 100% 的写法（活动监视器、top 的算法），多线程进程可以超过 100%。例：99.5%
+    public static func coreShare(_ value: Double) -> String {
+        "\((max(0, value) * 100).formatted(.number.precision(.fractionLength(1))))%"
+    }
+
+    /// 进程 CPU 占整机的比例：全部核心跑满为 100%，和系统总占用是同一把尺子。`value` 是单核口径。
+    /// 小于 0.1% 但不为 0 时写 “<0.1%”，不把正在跑的进程显示成 0
+    public static func machineShare(_ value: Double) -> String {
+        let share = max(0, value) / Double(logicalCores) * 100
+        if share > 0, share < 0.05 { return "<0.1%" }
+        return "\(share.formatted(.number.precision(.fractionLength(1))))%"
+    }
+
     public static func bytes(_ value: UInt64, base: ByteBase = .binary) -> String {
         bytes(Double(value), base: base)
     }

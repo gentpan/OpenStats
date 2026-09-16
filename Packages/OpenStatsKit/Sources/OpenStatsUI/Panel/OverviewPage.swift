@@ -425,6 +425,7 @@ private struct TopProcessesCard: View {
                 Text(tr("高占用进程")).dsFont(.xs, weight: .semibold)
                 Spacer()
                 Text("CPU").dsFont(.xs, weight: .medium).frame(width: DS.Size.valueColumn, alignment: .trailing)
+                    .help(tr("占整机 CPU 的比例：\(Format.logicalCores) 个核心全部跑满为 100%"))
                 Text(tr("内存")).dsFont(.xs, weight: .medium).frame(width: DS.Size.valueColumn, alignment: .trailing)
                 Color.clear.frame(width: DS.Size.iconInline)
             }
@@ -445,9 +446,10 @@ private struct TopProcessesCard: View {
                         .foregroundStyle(DS.Palette.textPrimary)
                         .lineLimit(1)
                     Spacer(minLength: DS.Space.s2)
-                    Text(verbatim: cpuText(process.cpu))
+                    Text(verbatim: Format.machineShare(process.cpu))
                         .dsFont(.sm, weight: .medium)
                         .foregroundStyle(cpuTone(process.cpu).color)
+                        .help(tr("按单核满载为 100% 计：\(Format.coreShare(process.cpu))"))
                         .frame(width: DS.Size.valueColumn, alignment: .trailing)
                     Text(verbatim: Format.bytes(process.memory))
                         .dsFont(.sm)
@@ -493,12 +495,10 @@ private struct TopProcessesCard: View {
         }
     }
 
-    private func cpuText(_ value: Double) -> String {
-        "\((value * 100).formatted(.number.precision(.fractionLength(1))))%"
-    }
-
+    /// 按占整机的比例着色：一个进程吃掉整机一半算很高，四分之一算偏高（`value` 是单核口径）
     private func cpuTone(_ value: Double) -> Tone {
-        value >= 0.8 ? .error : value >= 0.5 ? .warning : .neutral
+        let share = value / Double(Format.logicalCores)
+        return share >= 0.5 ? .error : share >= 0.25 ? .warning : .neutral
     }
 }
 

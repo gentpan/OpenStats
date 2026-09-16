@@ -59,14 +59,18 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.3.2** (2026-09-16) · **7** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.3.2** (2026-09-16) · **8** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-09-16</b> · Unreleased · 1 fixed · 5 style · 1 added</summary>
+<summary><b>2026-09-16</b> · Unreleased · 1 fixed · 1 changed · 5 style · 1 added</summary>
 
 **Fixed**
 
 - 网络弹窗偶尔差一点放不下、露出一小截滚动条：弹窗打开时按当时的内容算高度，之后公网 IP、归属地等数据陆续到达，内容变高了窗口却不跟着变。现在内容一变高或变矮，窗口高度随之调整到正好放下，只有屏幕放不下时才出现滚动条；展开、收起区块时同样适用。
+
+**Changed**
+
+- CPU 弹窗与主窗口 CPU 页的“按应用汇总”、仪表盘的“高占用进程”，CPU 改为占整机的比例：全部核心跑满为 100%，和顶部的总占用是同一把尺子。以前按单核满载为 100% 计（活动监视器的算法），多核 Mac 上一个应用动不动显示 99%、75%，容易误以为很吃 CPU；鼠标悬停在数值上仍可看到单核口径的数值。进程页保持单核口径，与活动监视器一致。
 
 **Style**
 

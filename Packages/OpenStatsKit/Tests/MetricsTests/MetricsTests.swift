@@ -52,6 +52,18 @@ struct FormatTests {
         #expect(Format.bytes(UInt64(412_000_000_000), base: .decimal) == "412 GB")
     }
 
+    @Test func formatsProcessCPU() {
+        // 单核口径：一个核跑满是 100%，多线程可以超过
+        #expect(Format.coreShare(0.995) == "99.5%")
+        #expect(Format.coreShare(2.5) == "250.0%")
+        // 整机口径：全部核心跑满是 100%
+        let cores = Double(Format.logicalCores)
+        #expect(Format.machineShare(cores) == "100.0%")
+        #expect(Format.machineShare(cores / 2) == "50.0%")
+        #expect(Format.machineShare(0) == "0.0%")
+        #expect(Format.machineShare(0.0001) == "<0.1%")
+    }
+
     @Test func menuBarRate() {
         #expect(Format.menuBarRate(0) == "0 B/s")
         #expect(Format.menuBarRate(512) == "512 B/s")

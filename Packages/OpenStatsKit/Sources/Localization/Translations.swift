@@ -274,6 +274,7 @@ npm 缓存	npm Cache
 协议版本	Protocol version
 单行	Inline
 单行文字	Inline Text
+占整机 CPU 的比例：{} 个核心全部跑满为 100%	Share of total CPU: all {} cores fully busy is 100%
 占用	Usage
 占用超过 85% 时数值与图形显示为红色	Show values and graphs in red above 85%
 占用超过 85%（电池电量低于 20%）时数值与图形显示为红色	Values and graphics turn red above 85% usage (below 20% battery)
@@ -537,6 +538,7 @@ npm 缓存	npm Cache
 拷贝 PID {}	Copy PID {}
 持续时间	Duration
 按下快捷键…	Press shortcut…
+按单核满载为 100% 计：{}	Per core (one full core = 100%): {}
 按应用	By App
 按应用汇总	By App
 按文件夹	By folder
@@ -700,7 +702,7 @@ npm 缓存	npm Cache
 正常	Normal
 此刻各核心的占用；超过 60% 变橙色、85% 变红色	Current load of each core; orange above 60%, red above 85%
 此设备没有可调节的风扇	This Mac has no adjustable fans
-每个应用按一个核心满载为 100% 计算，与活动监视器一致，所以各应用相加可以超过顶部的总占用	Each app is measured with one full core as 100%, like Activity Monitor, so the apps can add up to more than the total above
+每个应用占整机 CPU 的比例：{} 个核心全部跑满为 100%，与顶部的总占用是同一把尺子。鼠标悬停在数值上可以看按单核计的占用（活动监视器的算法）	Each app's share of total CPU: all {} cores fully busy is 100%, the same scale as the total above. Hover a value to see it per core (the Activity Monitor way)
 每个指标一个图标，点击弹出该项详情	One icon per metric; click for its details
 每分钟把主要指标的平均值与峰值写入本机数据库，保留 7 天，不上传	Writes averages and peaks of key metrics to a local database every minute. Kept for 7 days, never uploaded.
 每核 {}	{} per core
