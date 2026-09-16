@@ -90,11 +90,11 @@ enum WindowChrome {
         window.titlebarAppearsTransparent = true
         window.titlebarSeparatorStyle = .none
         window.backgroundColor = .dsBackground
-        // 空的紧凑工具栏让标题栏与顶栏同高（40pt），红绿灯按钮与页面标题对齐
+        // 空的标准工具栏让标题栏与顶栏同高（52pt），红绿灯按钮与页面标题、右上角按钮对齐
         let toolbar = NSToolbar(identifier: "OpenStats.\(window.title)")
         toolbar.showsBaselineSeparator = false
         window.toolbar = toolbar
-        window.toolbarStyle = .unifiedCompact
+        window.toolbarStyle = .unified
     }
 
 }

@@ -166,8 +166,8 @@ extension DS {
         static let popoverWidth: CGFloat = 320
         static let panelMinHeight: CGFloat = 320
         static let panelGap: CGFloat = 4
-        /// 窗口顶栏高度，与紧凑工具栏的标题栏同高，红绿灯按钮与页面标题在同一水平线上
-        static let windowHeader: CGFloat = 40
+        /// 窗口顶栏高度：标准工具栏的标题栏（52pt），红绿灯、页面标题与右上角 32pt 的按钮在同一条水平线上，按钮上下各留 10pt
+        static let windowHeader: CGFloat = DS.Space.s12 + DS.Space.s1
         /// 主窗口首次打开的最小高度（屏幕放得下时）
         static let windowDefaultHeight: CGFloat = 720
         /// 主窗口默认内容区宽度（侧边栏另计）

@@ -862,7 +862,6 @@ struct PageScroll<Content: View>: View {
         // 弹窗里区块之间靠分隔线隔开，不再额外留间距
         let stack = VStack(alignment: .leading, spacing: isPopover ? 0 : DS.Space.s3) { content }
             .padding(.horizontal, DS.Space.s3)
-            .padding(.top, isPopover ? 0 : DS.Space.s3)
             .padding(.bottom, isPopover ? DS.Space.s1 : DS.Space.s3)
         if isSnapshot {
             stack

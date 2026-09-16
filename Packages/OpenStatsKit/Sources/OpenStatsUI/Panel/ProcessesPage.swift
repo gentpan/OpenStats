@@ -88,7 +88,8 @@ struct ProcessesPage: View {
             }
             summary(count: rows.count)
         }
-        .padding(DS.Space.s3)
+        // 顶部不留边距：主窗口顶栏已经在按钮上下留了对称的空
+        .padding([.horizontal, .bottom], DS.Space.s3)
         .frame(maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
         .confirmationDialog(pendingQuit.map { tr("结束“\($0.title)”？") } ?? "", isPresented: Binding(get: { pendingQuit != nil }, set: { if !$0 { pendingQuit = nil } }),
                             titleVisibility: .visible, presenting: pendingQuit) { row in

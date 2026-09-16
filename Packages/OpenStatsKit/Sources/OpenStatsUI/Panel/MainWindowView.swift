@@ -99,10 +99,14 @@ private struct SidebarPanel: ViewModifier {
 
     func body(content: Content) -> some View {
         if DS.Glass.isAvailable, !isSnapshot {
+            // 红绿灯在面板外：面板从标题栏下方开始，标题栏那一条是窗口底色，按住可以拖动窗口
             content
                 .environment(\.isInsideGlass, true)
                 .dsGlass(in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-                .padding(DS.Space.s2)
+                .padding(.horizontal, DS.Space.s2)
+                .padding(.bottom, DS.Space.s2)
+                .padding(.top, DS.Size.windowHeader)
+                .background(alignment: .top) { WindowDragArea().frame(height: DS.Size.windowHeader) }
         } else {
             content
         }
@@ -143,12 +147,16 @@ private struct MainSidebar: View {
         }
         .padding(.leading, DS.Space.s1)
         .padding(.trailing, DS.Space.s3)
-        // 顶部留出窗口红绿灯按钮的位置；玻璃面板本身离窗口顶边已有一圈边距
-        .padding(.top, DS.Size.windowHeader + (usesGlassPanel ? 0 : DS.Space.s2))
+        .padding(.top, sidebarTopPadding)
         .padding(.bottom, DS.Space.s3)
     }
 
     private var usesGlassPanel: Bool { DS.Glass.isAvailable && !isSnapshot }
+
+    /// 侧边栏内容离自身顶边的距离：玻璃面板在标题栏下方，只留一点边距；没有面板时给红绿灯留出标题栏的高度
+    private var sidebarTopPadding: CGFloat {
+        usesGlassPanel ? DS.Space.s3 : DS.Size.windowHeader + DS.Space.s2
+    }
 
     private var navigation: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
@@ -206,7 +214,16 @@ private struct PageHeader: View {
             .background(WindowDragArea())
 
             if model.keepAwake.isActive {
-                Chip(text: tr("防休眠已开启"), icon: "cup.and.saucer.fill", tone: .primary)
+                // 与右边的按钮同高，顶栏里的控件高度一致
+                HStack(spacing: DS.Space.s1) {
+                    Image(systemName: "cup.and.saucer.fill")
+                    Text(tr("防休眠已开启")).lineLimit(1).fixedSize()
+                }
+                .dsFont(.xs, weight: .medium)
+                .foregroundStyle(DS.Palette.primary)
+                .padding(.horizontal, DS.Space.s3)
+                .frame(height: DS.Size.controlHeight)
+                .dsGlass(in: Capsule(), fallback: DS.Palette.primary.opacity(0.12))
             }
             if tab == .memory { PurgeMemoryButton() }
             // 每个监控页都能在这里开关自己的菜单栏项目；温度与风扇页有两项，各带一个小标签
@@ -228,6 +245,7 @@ private struct PageHeader: View {
             }
         }
         .padding(.horizontal, DS.Space.s3 + DS.Space.s1)
+        // 52pt 高的顶栏里，32pt 的按钮与开关组上下各留 10pt
         .frame(height: DS.Size.windowHeader)
     }
 }
