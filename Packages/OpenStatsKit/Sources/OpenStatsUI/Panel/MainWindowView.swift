@@ -3,8 +3,9 @@ import Localization
 import Metrics
 import SwiftUI
 
-/// 主窗口：侧边栏、标题栏与页面在同一张底色上，不分栏着色，也不画分隔线。
-/// 左侧切换页面，右侧是仪表盘、各指标详情与工具页；窗口宽高都可调整
+/// 主窗口。左侧切换页面，右侧是仪表盘、各指标详情与工具页；窗口宽高都可调整。
+/// macOS 26 起侧边栏是一块浮在窗口里的液态玻璃面板，顶栏控件是玻璃胶囊；
+/// 更早的系统上侧边栏、标题栏与页面在同一张底色上，不分栏着色，也不画分隔线
 public struct MainWindowView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.isSnapshot) private var isSnapshot
@@ -19,54 +20,92 @@ public struct MainWindowView: View {
                 .background(alignment: .top) {
                     WindowDragArea().frame(height: DS.Size.windowHeader)
                 }
+                .modifier(SidebarPanel())
 
-            VStack(spacing: 0) {
-                // 页面的滚动视图会自动向上延伸到标题栏下面，与顶栏重叠；顶栏必须在它之上，否则开关收不到点击
-                PageHeader()
-                    .zIndex(1)
-                Group {
-                    switch model.settings.panelTab {
-                    case .overview: OverviewPage()
-                    case .system: SystemInfoPage()
-                    case .history: HistoryPage()
-                    case .cpu: DetailPage { CPUPopover() }
-                    case .gpu: DetailPage { GPUPopover() }
-                    case .memory: DetailPage { MemoryPopover() }
-                    case .disk: DiskPage()
-                    case .network:
-                        DetailPage {
-                            NetworkPopover()
-                            NetworkSettings()
-                        }
-                    case .thermal: ThermalPage()
-                    case .battery: DetailPage { BatteryPopover() }
-                    case .processes: ProcessesPage()
-                    case .keepAwake: KeepAwakePage()
-                    case .cleaner: CleanerPage()
-                    case .uninstaller: UninstallerPage()
-                    case .startupItems: StartupItemsPage()
-                    case .settingsGeneral: SettingsTabPage { GeneralSettings() }
-                    case .settingsMenuBar: SettingsTabPage { MenuBarSettings() }
-                    case .settingsNotifications: SettingsTabPage { NotificationSettings() }
-                    case .settingsAccount: SettingsTabPage { AccountSettings() }
-                    case .settingsHelper: SettingsTabPage { HelperSettings() }
-                    case .settingsAbout: SettingsTabPage { AboutSettings() }
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
-                // 截图时页面取自身高度：侧边栏更高时，多出的高度不能分给页面里可伸展的卡片
-                .fixedSize(horizontal: false, vertical: isSnapshot)
-            }
-            .frame(minWidth: DS.Size.panelWidth, maxWidth: .infinity)
-            .frame(maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
+            content
+                .frame(minWidth: DS.Size.panelWidth, maxWidth: .infinity)
+                .frame(maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
         }
         .frame(width: isSnapshot ? DS.Size.sidebarWidth + DS.Size.panelWidth : nil)
         .fixedSize(horizontal: false, vertical: isSnapshot)
         .background(DS.Palette.background)
+        // 需要等待的任务进行中，整个窗口压暗并显示加载框
+        .loadingHUD(isSnapshot ? nil : busyMessage)
         // 内容延伸到透明标题栏下方，由顶栏高度留出红绿灯按钮的位置
         .ignoresSafeArea()
         // 文案在各视图计算时翻译好，切换语言后整棵视图重建
         .id(model.settings.language)
+    }
+
+    /// 顶栏在上、页面在下。没有用 macOS 26 的 safeAreaBar 让页面从顶栏下面滚过：
+    /// 它在 macOS 上会在交界处画一条分隔线，滚动边缘样式设成柔和或隐藏都去不掉
+    private var content: some View {
+        VStack(spacing: 0) {
+            // 页面的滚动视图会自动向上延伸到标题栏下面，与顶栏重叠；顶栏必须在它之上，否则开关收不到点击
+            PageHeader()
+                .zIndex(1)
+            page
+        }
+    }
+
+    /// 需要等待、期间不宜继续操作的任务
+    private var busyMessage: String? {
+        if model.cleaner.phase == .cleaning { return tr("正在清理…") }
+        if model.uninstaller.isRemoving { return tr("正在移除…") }
+        if model.diagnostics.phase == .collecting { return tr("正在导出诊断信息…") }
+        if model.maintenance.isApplyingDNS { return tr("正在修改 DNS…") }
+        return nil
+    }
+
+    private var page: some View {
+        Group {
+            switch model.settings.panelTab {
+            case .overview: OverviewPage()
+            case .system: SystemInfoPage()
+            case .history: HistoryPage()
+            case .cpu: DetailPage { CPUPopover() }
+            case .gpu: DetailPage { GPUPopover() }
+            case .memory: DetailPage { MemoryPopover() }
+            case .disk: DiskPage()
+            case .network:
+                DetailPage {
+                    NetworkPopover()
+                    NetworkSettings()
+                }
+            case .thermal: ThermalPage()
+            case .battery: DetailPage { BatteryPopover() }
+            case .processes: ProcessesPage()
+            case .keepAwake: KeepAwakePage()
+            case .cleaner: CleanerPage()
+            case .uninstaller: UninstallerPage()
+            case .startupItems: StartupItemsPage()
+            case .settingsGeneral: SettingsTabPage { GeneralSettings() }
+            case .settingsMenuBar: SettingsTabPage { MenuBarSettings() }
+            case .settingsNotifications: SettingsTabPage { NotificationSettings() }
+            case .settingsAccount: SettingsTabPage { AccountSettings() }
+            case .settingsHelper: SettingsTabPage { HelperSettings() }
+            case .settingsAbout: SettingsTabPage { AboutSettings() }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
+        // 截图时页面取自身高度：侧边栏更高时，多出的高度不能分给页面里可伸展的卡片
+        .fixedSize(horizontal: false, vertical: isSnapshot)
+    }
+}
+
+/// macOS 26：侧边栏浮在窗口里，四周留一圈边距，整块是液态玻璃，红绿灯按钮落在面板里
+private struct SidebarPanel: ViewModifier {
+    @Environment(\.isSnapshot) private var isSnapshot
+
+    func body(content: Content) -> some View {
+        if DS.Glass.isAvailable, !isSnapshot {
+            content
+                .environment(\.isInsideGlass, true)
+                .dsGlass(in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+                .padding(DS.Space.s2)
+        } else {
+            content
+        }
     }
 }
 
@@ -104,10 +143,12 @@ private struct MainSidebar: View {
         }
         .padding(.leading, DS.Space.s1)
         .padding(.trailing, DS.Space.s3)
-        // 顶部留出窗口红绿灯按钮的位置
-        .padding(.top, DS.Size.windowHeader + DS.Space.s2)
+        // 顶部留出窗口红绿灯按钮的位置；玻璃面板本身离窗口顶边已有一圈边距
+        .padding(.top, DS.Size.windowHeader + (usesGlassPanel ? 0 : DS.Space.s2))
         .padding(.bottom, DS.Space.s3)
     }
+
+    private var usesGlassPanel: Bool { DS.Glass.isAvailable && !isSnapshot }
 
     private var navigation: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
@@ -171,19 +212,38 @@ private struct PageHeader: View {
             // 每个监控页都能在这里开关自己的菜单栏项目；温度与风扇页有两项，各带一个小标签
             let items = tab.menuBarItems
             if !items.isEmpty {
-                Text(tr("在菜单栏显示")).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
-                ForEach(items) { item in
-                    if items.count > 1 {
-                        Text(item.popoverTitle).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+                // macOS 26 上这一组是一颗玻璃胶囊，与访达工具栏的分组一致
+                HStack(spacing: DS.Space.s3) {
+                    Text(tr("在菜单栏显示")).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
+                    ForEach(items) { item in
+                        if items.count > 1 {
+                            Text(item.popoverTitle).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+                        }
+                        DSToggle(isOn: Binding(get: { settings.isEnabled(item) }, set: { settings.setEnabled(item, $0) }),
+                                 label: tr("在菜单栏显示\(item.title)"))
+                            .help(tr("开启后图标出现在菜单栏；按住 ⌘ 键拖动图标可以调整位置"))
                     }
-                    DSToggle(isOn: Binding(get: { settings.isEnabled(item) }, set: { settings.setEnabled(item, $0) }),
-                             label: tr("在菜单栏显示\(item.title)"))
-                        .help(tr("开启后图标出现在菜单栏；按住 ⌘ 键拖动图标可以调整位置"))
                 }
+                .modifier(HeaderControlGroup())
             }
         }
         .padding(.horizontal, DS.Space.s3 + DS.Space.s1)
         .frame(height: DS.Size.windowHeader)
+    }
+}
+
+/// 顶栏右侧的一组控件：macOS 26 上收进一颗玻璃胶囊，更早的系统直接排开
+private struct HeaderControlGroup: ViewModifier {
+    func body(content: Content) -> some View {
+        if DS.Glass.isAvailable {
+            content
+                .padding(.leading, DS.Space.s4)
+                .padding(.trailing, DS.Space.s2)
+                .frame(height: DS.Size.controlHeight)
+                .dsGlass(in: Capsule())
+        } else {
+            content
+        }
     }
 }
 

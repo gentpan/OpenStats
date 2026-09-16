@@ -187,13 +187,26 @@ struct MiniIconButton: View {
                 .font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
                 .foregroundStyle(hovering ? DS.Palette.textPrimary : DS.Palette.textSecondary)
                 .frame(width: DS.Size.segmentHeight, height: DS.Size.segmentHeight)
-                .background(hovering ? DS.Palette.surfaceHover : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
-                .contentShape(Rectangle())
+                .modifier(MiniIconSurface(hovering: hovering))
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
         .help(help)
         .accessibilityLabel(help)
+    }
+}
+
+/// macOS 26 上是一颗小玻璃圆钮，更早的系统只有悬停底色
+private struct MiniIconSurface: ViewModifier {
+    let hovering: Bool
+
+    func body(content: Content) -> some View {
+        if DS.Glass.isAvailable {
+            content.dsGlass(in: Circle(), interactive: true)
+        } else {
+            content.background(hovering ? DS.Palette.surfaceHover : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+        }
     }
 }
 

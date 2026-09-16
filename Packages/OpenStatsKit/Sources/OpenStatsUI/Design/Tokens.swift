@@ -38,6 +38,10 @@ extension DS {
         static let neutral500 = Color.dynamic(light: 0x6B7280, dark: 0x4B5563)
         /// 浅一档的品牌蓝，用来区分同一图表里的第二类数据（如性能核）
         static let primarySoft = Color.dynamic(light: 0x93C5FD, dark: 0x60A5FA)
+        /// 侧边栏选中项的淡蓝底
+        static let sidebarSelected = Color.dynamic(light: 0x2563EB, lightAlpha: 0.12, dark: 0x3B82F6, darkAlpha: 0.22)
+        /// 全局加载时压暗整个窗口
+        static let scrim = Color.dynamic(light: 0x000000, lightAlpha: 0.12, dark: 0x000000, darkAlpha: 0.40)
 
         /// 核心类型配色：最高性能档为品牌蓝，其次浅蓝，能效核灰色
         static func cluster(_ id: Int) -> Color {
@@ -184,6 +188,7 @@ extension DS {
         }
 
         static let level1 = Level(color: .black.opacity(0.08), radius: 3, y: 1)
+        static let level2 = Level(color: .black.opacity(0.10), radius: 12, y: 4)
     }
 
     enum Motion {

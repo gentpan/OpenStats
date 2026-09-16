@@ -331,8 +331,31 @@ private struct DSButtonBody: View {
     let kind: DSButtonStyle.Kind
     @State private var hovering = false
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.isInsideGlass) private var isInsideGlass
 
     var body: some View {
+        if DS.Glass.isAvailable {
+            glassBody
+        } else {
+            solidBody
+        }
+    }
+
+    /// macOS 26：胶囊形玻璃按钮。主按钮是蓝色玻璃，次要按钮是透明玻璃，文字按钮不加玻璃
+    private var glassBody: some View {
+        configuration.label
+            .dsFont(.sm, weight: .medium)
+            .foregroundStyle(foreground)
+            .padding(.horizontal, DS.Space.s4)
+            .frame(height: DS.Size.controlHeight)
+            .contentShape(Capsule())
+            .modifier(GlassButtonSurface(kind: kind, active: active, isInsideGlass: isInsideGlass))
+            .opacity(isEnabled ? 1 : 0.5)
+            .onHover { hovering = $0 }
+            .animation(DS.Motion.quick, value: hovering)
+    }
+
+    private var solidBody: some View {
         configuration.label
             .dsFont(.sm, weight: .medium)
             .foregroundStyle(foreground)
@@ -374,20 +397,56 @@ struct IconButton: View {
     let help: String
     let action: () -> Void
     @State private var hovering = false
+    @Environment(\.isInsideGlass) private var isInsideGlass
 
     var body: some View {
+        // macOS 26 上是圆形玻璃按钮（与系统设置的前进后退一致）；已经在玻璃面板里时只有悬停底色
+        let glass = DS.Glass.isAvailable && !isInsideGlass
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: DS.TextSize.sm.rawValue, weight: .medium))
-                .foregroundStyle(hovering ? DS.Palette.primary : DS.Palette.textSecondary)
+                .foregroundStyle(hovering ? DS.Palette.primary : glass ? DS.Palette.textPrimary : DS.Palette.textSecondary)
                 .frame(width: DS.Size.controlHeight, height: DS.Size.controlHeight)
-                .background(hovering ? DS.Palette.surfaceHover : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.md))
-                .contentShape(Rectangle())
+                .modifier(IconButtonSurface(hovering: hovering, glass: glass))
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
         .help(help)
         .accessibilityLabel(help)
+    }
+}
+
+/// 玻璃按钮的底：主按钮蓝色玻璃，次要按钮透明玻璃；文字按钮、或已在玻璃面板里的次要按钮只有悬停底色
+private struct GlassButtonSurface: ViewModifier {
+    let kind: DSButtonStyle.Kind
+    let active: Bool
+    let isInsideGlass: Bool
+
+    func body(content: Content) -> some View {
+        switch kind {
+        case .primary:
+            content.dsGlass(in: Capsule(), tint: DS.Palette.primary, interactive: true)
+        case .secondary where !isInsideGlass:
+            content.dsGlass(in: Capsule(), interactive: true)
+        default:
+            content.background(active ? DS.Palette.surfaceHover : .clear, in: Capsule())
+        }
+    }
+}
+
+private struct IconButtonSurface: ViewModifier {
+    let hovering: Bool
+    let glass: Bool
+
+    func body(content: Content) -> some View {
+        if glass {
+            content.dsGlass(in: Circle(), interactive: true)
+        } else if DS.Glass.isAvailable {
+            content.background(hovering ? DS.Palette.surfaceHover : .clear, in: Circle())
+        } else {
+            content.background(hovering ? DS.Palette.surfaceHover : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+        }
     }
 }
 
@@ -442,15 +501,32 @@ struct SidebarRowsKey: PreferenceKey {
 }
 
 extension View {
-    /// 放在包含 SidebarButton 的容器上：左侧一条两端渐隐的细线，选中项位置有一段发光的蓝色光条，
-    /// 切换时带回弹地滑过去，光条右侧拖出一片渐淡的蓝色高亮
+    /// 放在包含 SidebarButton 的容器上，画出选中态。
+    /// macOS 26：选中项垫一块淡蓝色圆角底，切换时滑过去（侧边栏本身是玻璃面板，里面不再叠玻璃）；
+    /// 更早的系统：左侧一条两端渐隐的细线，选中项位置有一段发光的蓝色光条，带回弹地滑过去
+    @ViewBuilder
     func sidebarGlider() -> some View {
-        overlayPreferenceValue(SidebarRowsKey.self) { rows in
-            GeometryReader { proxy in
-                SidebarGlider(frames: rows.map { proxy[$0.bounds] },
-                              selected: rows.first(where: \.isSelected).map { proxy[$0.bounds] })
+        if DS.Glass.isAvailable {
+            backgroundPreferenceValue(SidebarRowsKey.self) { rows in
+                GeometryReader { proxy in
+                    if let selected = rows.first(where: \.isSelected).map({ proxy[$0.bounds] }) {
+                        RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                            .fill(DS.Palette.sidebarSelected)
+                            .frame(width: selected.width, height: selected.height)
+                            .offset(x: selected.minX, y: selected.minY)
+                            .animation(.spring(response: 0.35, dampingFraction: 0.8), value: selected)
+                    }
+                }
+                .allowsHitTesting(false)
             }
-            .allowsHitTesting(false)
+        } else {
+            overlayPreferenceValue(SidebarRowsKey.self) { rows in
+                GeometryReader { proxy in
+                    SidebarGlider(frames: rows.map { proxy[$0.bounds] },
+                                  selected: rows.first(where: \.isSelected).map { proxy[$0.bounds] })
+                }
+                .allowsHitTesting(false)
+            }
         }
     }
 }
@@ -497,9 +573,14 @@ private struct SidebarGlider: View {
 
 // MARK: - 分段控件
 
+/// 分段切换（苹果标准样式，与系统设置一致）：一条灰色圆角底槽，各段等宽铺满，
+/// 选中的一段是实心品牌蓝、白字，切换时蓝块滑过去
 struct SegmentedControl<Value: Hashable>: View {
     @Binding var selection: Value
     let options: [(value: Value, title: String)]
+    @Namespace private var namespace
+
+    private static var radius: CGFloat { DS.Radius.md - DS.Space.s1 / 2 }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -509,16 +590,17 @@ struct SegmentedControl<Value: Hashable>: View {
                     selection = option.value
                 } label: {
                     Text(option.title)
-                        .dsFont(.sm, weight: selected ? .semibold : .regular)
-                        .foregroundStyle(selected ? DS.Palette.textPrimary : DS.Palette.textSecondary)
+                        .dsFont(.sm)
+                        .foregroundStyle(selected ? DS.Palette.onPrimary : DS.Palette.textPrimary)
                         .lineLimit(1)
+                        .padding(.horizontal, DS.Space.s2)
                         .frame(maxWidth: .infinity)
-                        .frame(height: DS.Size.segmentHeight)
+                        .frame(height: DS.Size.segmentHeight + DS.Space.s1)
                         .background {
                             if selected {
-                                RoundedRectangle(cornerRadius: DS.Radius.md - DS.Space.s1)
-                                    .fill(DS.Palette.elevated)
-                                    .dsShadow(DS.Shadow.level1)
+                                RoundedRectangle(cornerRadius: Self.radius, style: .continuous)
+                                    .fill(DS.Palette.primary)
+                                    .matchedGeometryEffect(id: "selection", in: namespace)
                             }
                         }
                         .contentShape(Rectangle())
@@ -527,9 +609,8 @@ struct SegmentedControl<Value: Hashable>: View {
                 .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
-        .padding(DS.Space.s1)
-        .background(DS.Palette.track, in: RoundedRectangle(cornerRadius: DS.Radius.md))
-        .animation(DS.Motion.quick, value: selection)
+        .background(DS.Palette.track, in: RoundedRectangle(cornerRadius: Self.radius, style: .continuous))
+        .animation(.spring(response: 0.3, dampingFraction: 0.85), value: selection)
     }
 }
 
@@ -538,8 +619,22 @@ struct SegmentedControl<Value: Hashable>: View {
 struct DSToggle: View {
     @Binding var isOn: Bool
     var label: String = ""
+    @Environment(\.isSnapshot) private var isSnapshot
 
     var body: some View {
+        // 离屏截图时窗口不在前台，系统开关会画成灰色，截图里用自绘的蓝色开关
+        if DS.Glass.isAvailable, !isSnapshot {
+            // macOS 26 的系统开关自带液态玻璃（拖动时滑块变成玻璃），颜色沿用品牌蓝
+            Toggle(isOn: $isOn) { Text(label) }
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .tint(DS.Palette.primary)
+        } else {
+            solidBody
+        }
+    }
+
+    private var solidBody: some View {
         Button {
             isOn.toggle()
         } label: {
@@ -785,6 +880,27 @@ struct ChipButton: View {
     @State private var hovering = false
 
     var body: some View {
+        if DS.Glass.isAvailable {
+            // macOS 26：每个选项是一颗玻璃胶囊，选中的是蓝色玻璃
+            Button(action: action) {
+                Text(title)
+                    .dsFont(.xs, weight: isSelected ? .semibold : .medium)
+                    .foregroundStyle(isSelected ? DS.Palette.onPrimary : DS.Palette.textPrimary)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: DS.Size.segmentHeight)
+                    .contentShape(Capsule())
+                    .dsGlass(in: Capsule(), tint: isSelected ? DS.Palette.primary : nil, interactive: true)
+            }
+            .buttonStyle(.plain)
+            .animation(DS.Motion.quick, value: isSelected)
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
+        } else {
+            solidBody
+        }
+    }
+
+    private var solidBody: some View {
         Button(action: action) {
             Text(title)
                 .dsFont(.xs, weight: isSelected ? .semibold : .medium)
