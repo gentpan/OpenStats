@@ -75,7 +75,7 @@ private struct TrafficHistorySection: View {
             .monospacedDigit()
         }) {
             MirroredRateChart(upload: upload, download: download,
-                              height: isDetailPage ? DS.Size.chartHeight * 3 : DS.Size.chartHeight + DS.Space.s6)
+                              height: isDetailPage ? DS.Size.chartHeight * 3 : DS.Size.chartHeight + DS.Space.s2)
         }
     }
 
@@ -104,9 +104,8 @@ private struct ProbeSection: View {
             }
         }) {
             if settings.probeEnabled {
-                // 只用来看网络通不通：60 格是最近 60 次探测，主窗口里更宽，排成两行
-                let columns = isDetailPage ? 30 : 20
-                ProbeGrid(samples: network.probes.elements, columns: columns, rows: NetworkController.probeCapacity / columns)
+                // 只用来看网络通不通：60 格是最近 60 次探测，排成两行细格
+                ProbeGrid(samples: network.probes.elements, columns: NetworkController.probeCapacity / 2, rows: 2)
             } else {
                 HStack {
                     Text(tr("定时 ping 一个地址，记录网络是否通畅")).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
@@ -335,11 +334,35 @@ private struct AddressSection: View {
 /// cleanip.io 给出的纯净度评分与风险标记
 private struct PuritySection: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.isPopover) private var isPopover
 
     /// 标题行里“查看完整报告”链接的三种长度
     enum ReportStyle { case full, short, icon }
 
     var body: some View {
+        // 菜单栏弹窗里默认收起成一行，只显示分数与等级
+        if isPopover, !model.settings.isExpanded(.networkPurity) {
+            let summary = collapsedSummary
+            CollapsedSection(title: PopoverSection.networkPurity.title, summary: summary.text, summaryColor: summary.color) {
+                withAnimation(DS.Motion.quick) { model.settings.setExpanded(.networkPurity, true) }
+            }
+        } else {
+            card
+        }
+    }
+
+    private var collapsedSummary: (text: String, color: Color) {
+        let network = model.network
+        if let purity = network.publicAddresses?.purity {
+            return ("\(purity.score) \(purity.grade)", DS.Grade.color(for: purity.score))
+        }
+        if !model.settings.publicIPLookup { return (tr("查询已关闭"), DS.Palette.textTertiary) }
+        if network.isLookingUpPublic { return (tr("正在查询…"), DS.Palette.textTertiary) }
+        return ("—", DS.Palette.textTertiary)
+    }
+
+    @ViewBuilder
+    private var card: some View {
         let settings = model.settings
         let network = model.network
         let addresses = network.publicAddresses
@@ -419,8 +442,15 @@ private struct PuritySection: View {
                 ReportLink(url: url, style: report).padding(.leading, DS.Space.s1)
             }
             Spacer(minLength: 0)
-            RefreshButton(loading: network.isLookingUpPublic, help: tr("强制刷新：忽略缓存，立即重新查询公网 IP 与归属地")) {
-                network.lookUpPublicAddresses(force: true)
+            if isPopover {
+                RefreshButton(loading: network.isLookingUpPublic, help: tr("强制刷新：忽略缓存，立即重新查询公网 IP 与归属地")) {
+                    network.lookUpPublicAddresses(force: true)
+                }
+                .collapseButton(.networkPurity, settings: model.settings)
+            } else {
+                RefreshButton(loading: network.isLookingUpPublic, help: tr("强制刷新：忽略缓存，立即重新查询公网 IP 与归属地")) {
+                    network.lookUpPublicAddresses(force: true)
+                }
             }
         }
     }
@@ -461,10 +491,25 @@ private struct PuritySection: View {
 
 private struct DNSSection: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.isPopover) private var isPopover
     @State private var editingManual = false
     @State private var manualText = ""
 
     var body: some View {
+        // 菜单栏弹窗里默认收起成一行，只显示正在使用的 DNS
+        if isPopover, !model.settings.isExpanded(.networkDNS) {
+            let servers = model.network.details?.dnsServers ?? []
+            CollapsedSection(title: PopoverSection.networkDNS.title,
+                             summary: servers.first.map { servers.count > 1 ? "\($0) +\(servers.count - 1)" : $0 } ?? "—") {
+                withAnimation(DS.Motion.quick) { model.settings.setExpanded(.networkDNS, true) }
+            }
+        } else {
+            card
+        }
+    }
+
+    @ViewBuilder
+    private var card: some View {
         let network = model.network
         let maintenance = model.maintenance
         let physical = network.details?.physical
@@ -472,7 +517,11 @@ private struct DNSSection: View {
         let matched = DNSPreset.matching(manual)
 
         SectionCard(title: PopoverSection.networkDNS.title, trailing: {
-            if let physical { Text(verbatim: physical.serviceName) }
+            if isPopover {
+                Text(verbatim: physical?.serviceName ?? "").collapseButton(.networkDNS, settings: model.settings)
+            } else if let physical {
+                Text(verbatim: physical.serviceName)
+            }
         }) {
             InfoRow(label: tr("正在使用")) {
                 Text(verbatim: network.details.map { $0.dnsServers.isEmpty ? "—" : $0.dnsServers.joined(separator: "\n") } ?? "—")

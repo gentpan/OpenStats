@@ -183,6 +183,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             _ = model.settings.colorizeHighLoad
             _ = model.settings.useFahrenheit
             _ = model.settings.hiddenPopoverSections
+            _ = model.settings.expandedPopoverSections
             _ = model.keepAwake.isActive
             _ = model.settings.appearance
             _ = model.isNetworkDetailVisible

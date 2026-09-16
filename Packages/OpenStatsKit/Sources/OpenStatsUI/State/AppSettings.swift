@@ -428,6 +428,10 @@ public final class AppSettings {
     public var hiddenPopoverSections: Set<PopoverSection> {
         didSet { defaults.set(hiddenPopoverSections.map(\.rawValue).sorted(), forKey: Keys.hiddenPopoverSections) }
     }
+    /// 弹窗里默认收起、被用户展开的区块（IP 纯净度、DNS）；只影响菜单栏弹窗，主窗口始终完整显示
+    public var expandedPopoverSections: Set<PopoverSection> {
+        didSet { defaults.set(expandedPopoverSections.map(\.rawValue).sorted(), forKey: Keys.expandedPopoverSections) }
+    }
     public var probeEnabled: Bool {
         didSet { defaults.set(probeEnabled, forKey: Keys.probeEnabled) }
     }
@@ -518,6 +522,7 @@ public final class AppSettings {
         appearance = defaults.string(forKey: Keys.appearance).flatMap(AppearanceMode.init(rawValue:)) ?? .system
         cleanPrefersTrash = defaults.bool(forKey: Keys.cleanPrefersTrash)
         menuBarLayout = defaults.string(forKey: Keys.menuBarLayout).flatMap(MenuBarLayout.init(rawValue:)) ?? .separate
+        expandedPopoverSections = Set((defaults.stringArray(forKey: Keys.expandedPopoverSections) ?? []).compactMap(PopoverSection.init(rawValue:)))
         hiddenPopoverSections = defaults.stringArray(forKey: Keys.hiddenPopoverSections)
             .map { Set($0.compactMap(PopoverSection.init(rawValue:))) } ?? PopoverSection.hiddenByDefault
         probeEnabled = defaults.object(forKey: Keys.probeEnabled) as? Bool ?? true
@@ -558,6 +563,12 @@ public final class AppSettings {
 
     func isVisible(_ section: PopoverSection) -> Bool { !hiddenPopoverSections.contains(section) }
 
+    func isExpanded(_ section: PopoverSection) -> Bool { expandedPopoverSections.contains(section) }
+
+    func setExpanded(_ section: PopoverSection, _ expanded: Bool) {
+        if expanded { expandedPopoverSections.insert(section) } else { expandedPopoverSections.remove(section) }
+    }
+
     func setVisible(_ section: PopoverSection, _ visible: Bool) {
         if visible { hiddenPopoverSections.remove(section) } else { hiddenPopoverSections.insert(section) }
     }
@@ -582,6 +593,7 @@ public final class AppSettings {
         static let cleanPrefersTrash = "cleanPrefersTrash"
         static let menuBarLayout = "menuBarLayout"
         static let hiddenPopoverSections = "hiddenPopoverSections"
+        static let expandedPopoverSections = "expandedPopoverSections"
         static let probeEnabled = "probeEnabled"
         static let probeInBackground = "probeInBackground"
         static let probeTarget = "probeTarget"

@@ -27,6 +27,7 @@ struct PopoverRootView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
+            .environment(\.isPopover, true)
         }
         .frame(width: DS.Size.popoverWidth)
         .frame(maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
@@ -55,8 +56,8 @@ private struct PopoverHeader: View {
             if item == .memory { PurgeMemoryButton() }
             // 左边的按钮用该指标自己的图标，点进主窗口里它的页面；右边的齿轮进总设置
             let page = PanelTab(item: item)
-            IconButton(systemName: page.symbol, help: tr("在主窗口打开“\(page.title)”")) { model.openMainWindow(page) }
-            IconButton(systemName: "gearshape", help: tr("设置")) { model.openSettings() }
+            MiniIconButton(systemName: page.symbol, help: tr("在主窗口打开“\(page.title)”")) { model.openMainWindow(page) }
+            MiniIconButton(systemName: "gearshape", help: tr("设置")) { model.openSettings() }
         }
     }
 }
@@ -114,6 +115,54 @@ extension View {
     @ViewBuilder
     func help(optional text: String?) -> some View {
         if let text { help(text) } else { self }
+    }
+}
+
+/// 弹窗里默认收起的区块：只占一行，左边标题、右边摘要，点一下展开
+struct CollapsedSection: View {
+    let title: String
+    let summary: String
+    var summaryColor: Color = DS.Palette.textPrimary
+    let expand: () -> Void
+
+    var body: some View {
+        Card {
+            Button(action: expand) {
+                HStack(spacing: DS.Space.s2) {
+                    Text(title)
+                        .dsFont(.xs, weight: .semibold)
+                        .foregroundStyle(DS.Palette.textSecondary)
+                        .lineLimit(1)
+                        .fixedSize()
+                    Spacer(minLength: DS.Space.s2)
+                    Text(verbatim: summary)
+                        .dsFont(.xs, weight: .medium)
+                        .foregroundStyle(summaryColor)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
+                        .foregroundStyle(DS.Palette.textTertiary)
+                }
+                .frame(height: DS.Size.segmentHeight)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(tr("展开\(title)"))
+        }
+    }
+}
+
+extension View {
+    /// 弹窗里可收起区块的收起按钮，放在标题栏最右边
+    func collapseButton(_ section: PopoverSection, settings: AppSettings) -> some View {
+        HStack(spacing: DS.Space.s1) {
+            self
+            MiniIconButton(systemName: "chevron.up", help: tr("收起")) {
+                withAnimation(DS.Motion.quick) { settings.setExpanded(section, false) }
+            }
+        }
     }
 }
 

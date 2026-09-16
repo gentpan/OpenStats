@@ -412,6 +412,7 @@ npm 缓存	npm Cache
 屏幕保持常亮	Keep display on
 屏幕可按设置关闭，下载、编译等后台任务继续运行	The display can turn off as usual while downloads and builds keep running
 屏幕和系统都不会因闲置而关闭或休眠	Neither the display nor the system sleeps when idle
+展开{}	Expand {}
 峰值	Peak
 峰值 {}	Peak {}
 工具	Tools
@@ -553,6 +554,7 @@ npm 缓存	npm Cache
 搜索名称、PID 或用户	Search name, PID or user
 搜索应用	Search apps
 撤销	Undo
+收起	Collapse
 改回开机后累计	Back to since-boot totals
 政府	Government
 教育网	Education

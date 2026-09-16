@@ -7,6 +7,8 @@ extension EnvironmentValues {
     @Entry var isSnapshot = false
     /// 在主窗口里显示指标详情：显示全部区块，图表更高
     @Entry var isDetailPage = false
+    /// 菜单栏弹窗：区块去掉卡片底色，用细分隔线隔开，排得更紧凑
+    @Entry var isPopover = false
 }
 
 // MARK: - 卡片
@@ -15,8 +17,23 @@ struct Card<Content: View>: View {
     var padding: CGFloat = DS.Space.s4
     var spacing: CGFloat = DS.Space.s3
     @ViewBuilder var content: Content
+    @Environment(\.isPopover) private var isPopover
 
     var body: some View {
+        if isPopover {
+            // 菜单栏弹窗：不画卡片，区块顶上一条细分隔线，上下各留一点空，行距收紧
+            VStack(alignment: .leading, spacing: min(spacing, DS.Space.s1 + DS.Space.s1 / 2)) {
+                content
+            }
+            .padding(.vertical, DS.Space.s2)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .overlay(alignment: .top) { HairlineDivider() }
+        } else {
+            cardBody
+        }
+    }
+
+    private var cardBody: some View {
         VStack(alignment: .leading, spacing: spacing) {
             content
         }
@@ -833,11 +850,15 @@ struct DSSlider: View {
 
 struct PageScroll<Content: View>: View {
     @Environment(\.isSnapshot) private var isSnapshot
+    @Environment(\.isPopover) private var isPopover
     @ViewBuilder var content: Content
 
     var body: some View {
-        let stack = VStack(alignment: .leading, spacing: DS.Space.s3) { content }
-            .padding(DS.Space.s3)
+        // 弹窗里区块之间靠分隔线隔开，不再额外留间距
+        let stack = VStack(alignment: .leading, spacing: isPopover ? 0 : DS.Space.s3) { content }
+            .padding(.horizontal, DS.Space.s3)
+            .padding(.top, isPopover ? 0 : DS.Space.s3)
+            .padding(.bottom, isPopover ? DS.Space.s1 : DS.Space.s3)
         if isSnapshot {
             stack
         } else {
