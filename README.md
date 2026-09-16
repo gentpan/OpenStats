@@ -6,7 +6,7 @@
 
 **Your Mac at a glance — CPU, GPU, memory, network and temperatures in the menu bar, with fan control, keep-awake, one-click cleanup, an app uninstaller and an IP cleanliness check.**
 
-[![Release](https://img.shields.io/badge/release-0.3.2-6ee02b)](https://getopenstats.com/#download)
+[![Release](https://img.shields.io/badge/release-0.4.0-6ee02b)](https://getopenstats.com/#download)
 [![Stars](https://img.shields.io/github/stars/gentpan/OpenStats?style=flat&color=f5c518&label=stars)](https://github.com/gentpan/OpenStats/stargazers)
 [![Last commit](https://img.shields.io/github/last-commit/gentpan/OpenStats?color=black&label=last%20commit)](https://github.com/gentpan/OpenStats/commits/main)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/gentpan/OpenStats?color=black&label=commits)](https://github.com/gentpan/OpenStats/graphs/commit-activity)
@@ -34,13 +34,13 @@ Everything is read on your own Mac, and there is no telemetry. An account is opt
 
 ## Install
 
-Download OpenStats 0.3.2 from the website (signed with a Developer ID certificate and notarized by Apple) —
+Download OpenStats 0.4.0 from the website (signed with a Developer ID certificate and notarized by Apple) —
 pick the build for your Mac's chip:
 
 | Chip | Download |
 |---|---|
-| Apple silicon (M1, M2, M3, M4, M5) | [OpenStats-0.3.2-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.3.2-AppleSilicon.dmg) |
-| Intel | [OpenStats-0.3.2-Intel.dmg](https://getopenstats.com/download/OpenStats-0.3.2-Intel.dmg) |
+| Apple silicon (M1, M2, M3, M4, M5) | [OpenStats-0.4.0-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.4.0-AppleSilicon.dmg) |
+| Intel | [OpenStats-0.4.0-Intel.dmg](https://getopenstats.com/download/OpenStats-0.4.0-Intel.dmg) |
 
 Not sure? Apple menu › About This Mac says "Chip Apple M…" on Apple silicon and "Processor Intel…" on Intel.
 Homebrew picks the right build for you:
@@ -59,31 +59,32 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.3.2** (2026-09-16) · **9** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.4.0** (2026-09-16) · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-09-16</b> · Unreleased · 1 fixed · 2 changed · 5 style · 1 added</summary>
+<summary><b>2026-09-16</b> · 0.4.0 · 1 fixed · 2 changed · 6 style · 1 added</summary>
 
 **Fixed**
 
-- 网络弹窗偶尔差一点放不下、露出一小截滚动条：弹窗打开时按当时的内容算高度，之后公网 IP、归属地等数据陆续到达，内容变高了窗口却不跟着变。现在内容一变高或变矮，窗口高度随之调整到正好放下，只有屏幕放不下时才出现滚动条；展开、收起区块时同样适用。
+- 修复网络弹窗偶尔露出一小截滚动条：以前弹窗打开时按当时的内容算高度，之后公网 IP、归属地等数据陆续到达，内容变高了窗口却不跟着变。现在内容一变高或变矮，窗口高度随之调整到正好放下，只有屏幕放不下时才出现滚动条；展开、收起区块时同样适用。
 
 **Changed**
 
-- 网络详情的 IP 地址区块：菜单栏弹窗里只显示公网地址，本地 IPv4、本地 IPv6 与路由器只在主窗口的网络页显示；没有 IPv6 时不再显示“—”占一行，网卡没有 IPv6 地址就不显示“本地 IPv6”，拿不到公网 IPv6（网络或代理不支持）就不显示“公网 IPv6”。
-- CPU 弹窗与主窗口 CPU 页的“按应用汇总”、仪表盘的“高占用进程”，CPU 改为占整机的比例：全部核心跑满为 100%，和顶部的总占用是同一把尺子。以前按单核满载为 100% 计（活动监视器的算法），多核 Mac 上一个应用动不动显示 99%、75%，容易误以为很吃 CPU；鼠标悬停在数值上仍可看到单核口径的数值。进程页保持单核口径，与活动监视器一致。
+- 网络弹窗只显示公网 IP，没有 IPv6 时不占行：本地 IPv4、本地 IPv6 与路由器只在主窗口的网络页显示；没有 IPv6 时不再显示“—”占一行，网卡没有 IPv6 地址就不显示“本地 IPv6”，拿不到公网 IPv6（网络或代理不支持）就不显示“公网 IPv6”。
+- 应用的 CPU 占用改为占整机的比例：CPU 弹窗与主窗口 CPU 页的“按应用汇总”、仪表盘的“高占用进程”，全部核心跑满为 100%，和顶部的总占用是同一把尺子。以前按单核满载为 100% 计（活动监视器的算法），多核 Mac 上一个应用动不动显示 99%、75%，容易误以为很吃 CPU；鼠标悬停在数值上仍可看到单核口径的数值。进程页保持单核口径，与活动监视器一致。
 
 **Style**
 
-- 主窗口在 macOS 26 上改用液态玻璃：侧边栏是一块浮在窗口里的玻璃面板，红绿灯按钮落在面板里，选中项垫一块淡蓝色圆角底并随切换滑动；顶栏右侧“在菜单栏显示”一组收进玻璃胶囊。主按钮是蓝色玻璃胶囊、次要按钮与图标按钮是透明玻璃，风扇模式等快捷切换是玻璃胶囊，开关换成系统开关（拖动时滑块变成玻璃）。设置分组与数据卡片保持实色，与系统设置一致。macOS 14、15 上保持原来的样式。
+- 主窗口在 macOS 26 上改用液态玻璃：侧边栏是一块浮在窗口里的玻璃面板，选中项垫一块淡蓝色圆角底并随切换滑动；顶栏右侧“在菜单栏显示”一组收进玻璃胶囊。主按钮是蓝色玻璃胶囊、次要按钮与图标按钮是透明玻璃，风扇模式等快捷切换是玻璃胶囊，开关换成系统开关（拖动时滑块变成玻璃）。设置分组与数据卡片保持实色，与系统设置一致。macOS 14、15 上保持原来的样式。
 - 菜单栏弹窗改为紧凑排版，参照 Stats：区块不再是灰底卡片，改成一条细分隔线隔开，行距收紧，顶栏按钮缩小；网络弹窗的 IP 纯净度与 DNS 默认收起成一行（纯净度显示分数与等级，DNS 显示正在使用的地址），点一下展开、标题栏右侧的箭头收起，状态会记住；流量图变矮，连接探测改为两行细格。网络弹窗从约 1520pt 降到约 950pt，其他弹窗矮了一到两成。主窗口的详情页保持原样，照常完整显示。
 - IP 纯净度的标题行重新排版：置信度不再是带框的绿色徽章，改成标题旁一行浅灰小字，百分比按高低着色；“查看完整报告”文字链接换成外链图标，与刷新、收起并成一组按钮，macOS 26 上合成一颗玻璃胶囊。分数右侧的 cleanip.io 字标照旧可以打开完整报告。
 - 连接探测只用来看网络通不通：格子通了是绿色、不通是红色（不再用橙色表示延迟偏高），固定 60 格，弹窗排成 3 行、主窗口排成 2 行；去掉格子下面的延迟、抖动、丢包三项，标题右侧也不再写探测地址与频率。打开网络详情时固定每秒探测一次，「设置 · 网络」里的“探测间隔”选项随之去掉，后台低频探测仍是每 10 秒。
+- 主窗口顶栏加高，右上角按钮高度统一：顶栏改为标准高度（52pt，原来 40pt），右上角的按钮、“在菜单栏显示”开关组与“防休眠已开启”标记统一为 32pt 高，上下各留 10pt，各页高度一致，不再偏上。macOS 26 上红绿灯按钮留在侧边栏玻璃面板之外，面板从顶栏下方开始、与右侧内容卡片顶边对齐，顶栏那一条可以按住拖动窗口。
 - 分段切换改为苹果标准样式：灰色圆角底槽，各段等宽铺满，选中的一段是实心蓝色、白字，切换时蓝块滑过去；网络详情的 IPv4 / IPv6 切换同样是灰底蓝选中。
 
 **Added**
 
-- 全局加载框：清理、卸载应用、导出诊断信息、修改 DNS 进行中，整个主窗口压暗，中间浮一块加载框写明正在做什么（macOS 26 上是液态玻璃），期间不能误点其他操作，完成后自动消失。
+- 清理、卸载等耗时操作进行中显示全局加载框：清理、卸载应用、导出诊断信息、修改 DNS 进行中，整个主窗口压暗，中间浮一块加载框写明正在做什么（macOS 26 上是液态玻璃），期间不能误点其他操作，完成后自动消失。
 
 </details>
 
