@@ -178,6 +178,7 @@ private struct InterfaceSection: View {
 
 private struct AddressSection: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.isPopover) private var isPopover
 
     var body: some View {
         let network = model.network
@@ -187,12 +188,20 @@ private struct AddressSection: View {
 
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
             header
-            InfoRow(label: tr("本地 IPv4")) { CopyableText(text: physical?.ipv4.first ?? "—") }
-            InfoRow(label: tr("本地 IPv6")) { CopyableText(text: physical?.ipv6.first ?? "—") }
-            InfoRow(label: tr("路由器")) { CopyableText(text: physical?.router ?? "—") }
+            // 本地地址与路由器只在主窗口的网络页显示，菜单栏弹窗里只看公网
+            if !isPopover {
+                InfoRow(label: tr("本地 IPv4")) { CopyableText(text: physical?.ipv4.first ?? "—") }
+                // 没有 IPv6 就不占行：网卡没有 IPv6 地址时不显示本地 IPv6，拿不到公网 IPv6 时不显示公网 IPv6
+                if let localIPv6 = physical?.ipv6.first {
+                    InfoRow(label: tr("本地 IPv6")) { CopyableText(text: localIPv6) }
+                }
+                InfoRow(label: tr("路由器")) { CopyableText(text: physical?.router ?? "—") }
+            }
             if lookup {
                 InfoRow(label: tr("公网 IPv4")) { publicValue(publicAddresses?.ipv4, loading: network.isLookingUpPublic) }
-                InfoRow(label: tr("公网 IPv6")) { publicValue(publicAddresses?.ipv6, loading: network.isLookingUpPublic) }
+                if let publicIPv6 = publicAddresses?.ipv6 {
+                    InfoRow(label: tr("公网 IPv6")) { CopyableText(text: publicIPv6) }
+                }
                 if let publicAddresses, let code = publicAddresses.countryCode {
                     InfoRow(label: tr("归属地")) {
                         HStack(spacing: DS.Space.s2) {

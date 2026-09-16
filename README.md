@@ -59,10 +59,10 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.3.2** (2026-09-16) · **8** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.3.2** (2026-09-16) · **9** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-09-16</b> · Unreleased · 1 fixed · 1 changed · 5 style · 1 added</summary>
+<summary><b>2026-09-16</b> · Unreleased · 1 fixed · 2 changed · 5 style · 1 added</summary>
 
 **Fixed**
 
@@ -70,6 +70,7 @@ Latest release **0.3.2** (2026-09-16) · **8** changes in development · [full c
 
 **Changed**
 
+- 网络详情的 IP 地址区块：菜单栏弹窗里只显示公网地址，本地 IPv4、本地 IPv6 与路由器只在主窗口的网络页显示；没有 IPv6 时不再显示“—”占一行，网卡没有 IPv6 地址就不显示“本地 IPv6”，拿不到公网 IPv6（网络或代理不支持）就不显示“公网 IPv6”。
 - CPU 弹窗与主窗口 CPU 页的“按应用汇总”、仪表盘的“高占用进程”，CPU 改为占整机的比例：全部核心跑满为 100%，和顶部的总占用是同一把尺子。以前按单核满载为 100% 计（活动监视器的算法），多核 Mac 上一个应用动不动显示 99%、75%，容易误以为很吃 CPU；鼠标悬停在数值上仍可看到单核口径的数值。进程页保持单核口径，与活动监视器一致。
 
 **Style**
