@@ -98,11 +98,8 @@ private struct ProbeSection: View {
         @Bindable var settings = model.settings
         let network = model.network
 
-        SectionCard(title: PopoverSection.networkProbe.title, trailing: {
-            if settings.probeEnabled {
-                Text(verbatim: tr("\(network.probeAddress ?? "—") · 每秒一次"))
-            }
-        }) {
+        // 只看通不通，标题右侧不再写探测地址与频率
+        SectionCard(title: PopoverSection.networkProbe.title) {
             if settings.probeEnabled {
                 // 只用来看网络通不通：60 格是最近 60 次探测，排成两行细格
                 ProbeGrid(samples: network.probes.elements, columns: NetworkController.probeCapacity / 2, rows: 2)

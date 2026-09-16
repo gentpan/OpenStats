@@ -13,7 +13,7 @@ settings:
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: "0.3.2"
     # 构建号四位数字，每次 make build 加一；营销版本只在发布时用 Scripts/version.sh patch / minor 修改
-    CURRENT_PROJECT_VERSION: "0082"
+    CURRENT_PROJECT_VERSION: "0083"
     MACOSX_DEPLOYMENT_TARGET: "14.0"
     # 本地开发使用 ad-hoc 签名；发布时改为 Developer ID（见 docs/PLAN.md）
     CODE_SIGN_STYLE: Manual
