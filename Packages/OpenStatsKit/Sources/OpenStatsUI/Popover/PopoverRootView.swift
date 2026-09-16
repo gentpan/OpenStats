@@ -246,16 +246,32 @@ struct MiniIconButton: View {
     }
 }
 
-/// macOS 26 上是一颗小玻璃圆钮，更早的系统只有悬停底色
+/// macOS 26 上是一颗小玻璃圆钮，更早的系统、或已经在一组玻璃按钮里时只有悬停底色
 private struct MiniIconSurface: ViewModifier {
     let hovering: Bool
+    @Environment(\.isInsideGlass) private var isInsideGlass
 
     func body(content: Content) -> some View {
-        if DS.Glass.isAvailable {
+        if DS.Glass.isAvailable, !isInsideGlass {
             content.dsGlass(in: Circle(), interactive: true)
         } else {
             content.background(hovering ? DS.Palette.surfaceHover : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
         }
+    }
+}
+
+/// 区块标题栏右侧的一组小图标按钮：macOS 26 上合成一颗玻璃胶囊（与访达工具栏的按钮分组一致），
+/// 里面的按钮不再各自带玻璃；更早的系统是一条浅灰胶囊
+struct HeaderActionGroup<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        HStack(spacing: 0) {
+            content
+        }
+        .padding(.horizontal, DS.Space.s1 / 2)
+        .environment(\.isInsideGlass, true)
+        .dsGlass(in: Capsule(), fallback: DS.Palette.track)
     }
 }
 

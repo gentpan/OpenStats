@@ -84,6 +84,7 @@ VPN / 代理	VPN / Proxy
 VPN 隧道	VPN Tunnel
 Xcode 归档	Xcode Archives
 Xcode 编译缓存	Xcode Build Cache
+cleanip.io 对这次评分的把握：各数据源结论越一致越高	How sure cleanip.io is about this score: the more its sources agree, the higher
 macOS 系统目录（系统组件）	macOS system folder (system component)
 npm 缓存	npm Cache
 {} {} 英寸	{} {}-inch
@@ -394,7 +395,6 @@ npm 缓存	npm Cache
 安装失败：{}	Install failed: {}
 安装辅助工具	Install Helper
 安静	Quiet
-完整报告	Full report
 定时 ping 一个地址，记录网络是否通畅	Pings an address regularly to record whether the network is reachable
 定时探测网络	Connectivity Probe
 家目录	Home folder
@@ -642,7 +642,6 @@ npm 缓存	npm Cache
 查看	View
 查看全部进程	All Processes
 查看包含的项目	Show items
-查看完整报告	View full report
 查看完整更新日志	Full Changelog
 查看清理日志	View Cleanup Log
 查询中…	Looking up…
@@ -871,7 +870,7 @@ npm 缓存	npm Cache
 网络：{}	Network: {}
 网页数据	Web Data
 网页缓存与脚本缓存，不涉及 Cookie、历史记录和密码	Web and script caches; cookies, history and passwords are untouched
-置信度 {}%	Confidence {}%
+置信度	Confidence
 联动	Wired
 能效核	Efficiency
 腾讯 DNSPod	Tencent

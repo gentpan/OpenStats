@@ -336,9 +336,6 @@ private struct PuritySection: View {
     @Environment(AppModel.self) private var model
     @Environment(\.isPopover) private var isPopover
 
-    /// 标题行里“查看完整报告”链接的三种长度
-    enum ReportStyle { case full, short, icon }
-
     var body: some View {
         // 菜单栏弹窗里默认收起成一行，只显示分数与等级
         if isPopover, !model.settings.isExpanded(.networkPurity) {
@@ -369,12 +366,7 @@ private struct PuritySection: View {
         let hint = tr("纯净度看信誉、来路、邻居与网络类型四项；机房 IP 常见信誉高、来路和类型偏低。数据来自 cleanip.io")
 
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
-            // 标题、地址族徽章、置信度、报告链接、刷新按钮排成一行；宽度不够时报告链接依次缩成“完整报告”、只剩图标
-            ViewThatFits(in: .horizontal) {
-                header(addresses, report: .full)
-                header(addresses, report: .short)
-                header(addresses, report: .icon)
-            }
+            header(addresses)
             if let purity = addresses?.purity {
                 // 分数在左、cleanip.io 字标在右，色带在下占满整行
                 HStack(spacing: DS.Space.s2) {
@@ -420,44 +412,54 @@ private struct PuritySection: View {
         }
     }
 
-    /// 标题行：IP 纯净度 · [IPv4] · [置信度 92%] · 查看完整报告 ↗ ……… ⟳
-    private func header(_ addresses: PublicAddresses?, report: ReportStyle) -> some View {
+    /// 标题行：IP 纯净度 [IPv4] 置信度 92% ……… [↗ ⟳ ⌃]
+    /// 置信度是标题旁的一行浅色小字，不再用带框徽章；右侧的完整报告、刷新、收起并成一组按钮
+    private func header(_ addresses: PublicAddresses?) -> some View {
         let network = model.network
-        // 320 宽的弹窗里这一行很挤：标题与徽章之间只留最小间距，右侧刷新按钮自带留白
-        return HStack(spacing: DS.Space.s1) {
+        return HStack(spacing: DS.Space.s2) {
             Text(PopoverSection.networkPurity.title)
                 .dsFont(.xs, weight: .semibold)
                 .foregroundStyle(DS.Palette.textSecondary)
                 .lineLimit(1)
                 .fixedSize()
-            HStack(spacing: DS.Space.s1) {
-                if let family = network.shownFamily {
-                    TagBadge(text: family.title, tone: .primary, compact: true)
-                }
-                if let confidence = addresses?.purity?.confidence {
-                    TagBadge(text: tr("置信度 \(confidence)%"), tone: Self.confidenceTone(confidence), compact: true)
-                }
+            if let family = network.shownFamily {
+                TagBadge(text: family.title, tone: .primary, compact: true)
             }
-            if let url = addresses?.reportURL {
-                ReportLink(url: url, style: report).padding(.leading, DS.Space.s1)
+            if let confidence = addresses?.purity?.confidence {
+                HStack(spacing: DS.Space.s1 / 2) {
+                    Text(tr("置信度")).foregroundStyle(DS.Palette.textTertiary)
+                    Text(verbatim: "\(confidence)%")
+                        .fontWeight(.medium)
+                        .foregroundStyle(Self.confidenceColor(confidence))
+                        .monospacedDigit()
+                }
+                .dsFont(.xs)
+                .lineLimit(1)
+                .fixedSize()
+                .help(tr("cleanip.io 对这次评分的把握：各数据源结论越一致越高"))
             }
             Spacer(minLength: 0)
-            if isPopover {
+            HeaderActionGroup {
+                if let url = addresses?.reportURL {
+                    MiniIconButton(systemName: "arrow.up.forward", help: tr("在 cleanip.io 查看这个 IP 的完整报告")) {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
                 RefreshButton(loading: network.isLookingUpPublic, help: tr("强制刷新：忽略缓存，立即重新查询公网 IP 与归属地")) {
                     network.lookUpPublicAddresses(force: true)
                 }
-                .collapseButton(.networkPurity, settings: model.settings)
-            } else {
-                RefreshButton(loading: network.isLookingUpPublic, help: tr("强制刷新：忽略缓存，立即重新查询公网 IP 与归属地")) {
-                    network.lookUpPublicAddresses(force: true)
+                if isPopover {
+                    MiniIconButton(systemName: "chevron.up", help: tr("收起")) {
+                        withAnimation(DS.Motion.quick) { model.settings.setExpanded(.networkPurity, false) }
+                    }
                 }
             }
         }
     }
 
     /// 置信度高的绿、中等的灰、低的黄
-    static func confidenceTone(_ confidence: Int) -> TagBadge.Tone {
-        confidence >= 80 ? .success : confidence >= 50 ? .neutral : .warning
+    static func confidenceColor(_ confidence: Int) -> Color {
+        confidence >= 80 ? DS.Palette.success : confidence >= 50 ? DS.Palette.textSecondary : DS.Palette.warning
     }
 
     static func riskLabel(_ raw: String) -> String {
@@ -649,36 +651,6 @@ private struct NetworkProcessesSection: View {
                 .foregroundStyle(DS.Palette.textSecondary)
                 .explainable(.init(process))
             }
-        }
-    }
-}
-
-/// 纯净度标题行里的“查看完整报告”链接；`icon` 只剩一个外链图标
-private struct ReportLink: View {
-    let url: URL
-    let style: PuritySection.ReportStyle
-    @State private var hovering = false
-
-    var body: some View {
-        let help = tr("在 cleanip.io 查看这个 IP 的完整报告")
-        if style == .icon {
-            MiniIconButton(systemName: "arrow.up.forward.square", help: help) { NSWorkspace.shared.open(url) }
-        } else {
-            Button { NSWorkspace.shared.open(url) } label: {
-                HStack(spacing: DS.Space.s1 / 2) {
-                    Text(style == .full ? tr("查看完整报告") : tr("完整报告"))
-                        .dsFont(.xs, weight: .medium)
-                    Image(systemName: "arrow.up.forward.square")
-                        .font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
-                }
-                .foregroundStyle(hovering ? DS.Palette.primaryHover : DS.Palette.primary)
-                .lineLimit(1)
-                .fixedSize()
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .onHover { hovering = $0 }
-            .help(help)
         }
     }
 }
