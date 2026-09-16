@@ -16,19 +16,24 @@ final class StatusPanel: NSPanel {
     private var lastDismissal = Date.distantPast
 
     /// 面板隐藏时不保留 SwiftUI 视图，避免后台随数据刷新重绘
-    private let makeContent: () -> NSView
+    private var makeContent: (() -> NSView)?
     /// 平铺布局（不含滚动容器）的视图，只用来测量内容的自然高度
     private let makeMeasuringContent: () -> NSView
     private let width: CGFloat
 
     init<Content: View, Measuring: View>(width: CGFloat, content: @escaping () -> Content, measuring: @escaping () -> Measuring) {
         self.width = width
-        makeContent = { NSHostingView(rootView: content()) }
         makeMeasuringContent = { NSHostingView(rootView: measuring()) }
         super.init(contentRect: NSRect(x: 0, y: 0, width: width, height: DS.Size.panelMinHeight),
                    styleMask: [.borderless, .nonactivatingPanel],
                    backing: .buffered,
                    defer: true)
+        // 打开时按平铺布局测出的高度只是起点：真实内容会随数据刷新变高变矮，由滚动区域上报差值再校正
+        makeContent = { [weak self] in
+            NSHostingView(rootView: content().environment(\.reportPopoverOverflow) { overflow in
+                self?.adjustHeight(by: overflow)
+            })
+        }
         isFloatingPanel = true
         level = .statusBar
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient, .ignoresCycle]
@@ -56,7 +61,7 @@ final class StatusPanel: NSPanel {
         self.anchor = anchor
         anchorScreen = screen
 
-        let content = makeContent()
+        guard let content = makeContent?() else { return }
         setFrame(targetFrame(), display: false)
         content.frame = NSRect(origin: .zero, size: frame.size)
         contentView = PanelContainer.make(containing: content, cornerRadius: DS.Radius.xl)
@@ -78,6 +83,15 @@ final class StatusPanel: NSPanel {
         let frame = targetFrame()
         guard abs(frame.height - self.frame.height) > 1 else { return }
         setFrame(frame, display: true)
+        invalidateShadow()
+    }
+
+    /// 滚动内容比可视区域高出（或矮出）一截时调整窗口高度，顶边不动；屏幕放不下时停在最高处，由滚动条兜底
+    func adjustHeight(by overflow: CGFloat) {
+        guard contentView != nil, abs(overflow) > 1 else { return }
+        let height = min(max(frame.height + overflow, DS.Size.panelMinHeight), availableHeight())
+        guard abs(height - frame.height) > 1 else { return }
+        setFrame(NSRect(x: frame.minX, y: frame.maxY - height, width: width, height: height), display: true)
         invalidateShadow()
     }
 
@@ -116,14 +130,20 @@ final class StatusPanel: NSPanel {
         let visible = (anchorScreen ?? NSScreen.main)?.visibleFrame ?? .zero
         let margin = DS.Space.s2
         let top = min(anchor.minY - DS.Size.panelGap, visible.maxY)
-        let available = max(DS.Size.panelMinHeight, top - visible.minY - margin)
 
         let natural = makeMeasuringContent().fittingSize.height
-        let height = min(max(natural, DS.Size.panelMinHeight), available)
+        let height = min(max(natural, DS.Size.panelMinHeight), availableHeight())
 
         var x = anchor.midX - width / 2
         x = min(max(x, visible.minX + margin), visible.maxX - width - margin)
         return NSRect(x: x, y: top - height, width: width, height: height)
+    }
+
+    /// 菜单栏下方到屏幕底边（留一点边距）能放下的最大高度
+    private func availableHeight() -> CGFloat {
+        let visible = (anchorScreen ?? NSScreen.main)?.visibleFrame ?? .zero
+        let top = min(anchor.minY - DS.Size.panelGap, visible.maxY)
+        return max(DS.Size.panelMinHeight, top - visible.minY - DS.Space.s2)
     }
 
     // MARK: 事件

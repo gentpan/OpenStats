@@ -59,10 +59,14 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.3.2** (2026-09-16) · **6** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.3.2** (2026-09-16) · **7** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-09-16</b> · Unreleased · 5 style · 1 added</summary>
+<summary><b>2026-09-16</b> · Unreleased · 1 fixed · 5 style · 1 added</summary>
+
+**Fixed**
+
+- 网络弹窗偶尔差一点放不下、露出一小截滚动条：弹窗打开时按当时的内容算高度，之后公网 IP、归属地等数据陆续到达，内容变高了窗口却不跟着变。现在内容一变高或变矮，窗口高度随之调整到正好放下，只有屏幕放不下时才出现滚动条；展开、收起区块时同样适用。
 
 **Style**
 

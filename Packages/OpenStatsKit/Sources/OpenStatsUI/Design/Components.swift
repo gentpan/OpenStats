@@ -9,6 +9,8 @@ extension EnvironmentValues {
     @Entry var isDetailPage = false
     /// 菜单栏弹窗：区块去掉卡片底色，用细分隔线隔开，排得更紧凑
     @Entry var isPopover = false
+    /// 菜单栏弹窗：滚动内容的实际高度比可视区域高出（负数为矮出）多少，交给面板调整窗口高度
+    @Entry var reportPopoverOverflow: (@MainActor @Sendable (CGFloat) -> Void)? = nil
 }
 
 // MARK: - 卡片
@@ -851,7 +853,10 @@ struct DSSlider: View {
 struct PageScroll<Content: View>: View {
     @Environment(\.isSnapshot) private var isSnapshot
     @Environment(\.isPopover) private var isPopover
+    @Environment(\.reportPopoverOverflow) private var reportOverflow
     @ViewBuilder var content: Content
+    @State private var contentHeight: CGFloat = 0
+    @State private var viewportHeight: CGFloat = 0
 
     var body: some View {
         // 弹窗里区块之间靠分隔线隔开，不再额外留间距
@@ -863,9 +868,26 @@ struct PageScroll<Content: View>: View {
             stack
         } else {
             // 内容放得下时不回弹，避免点击时整页轻微抖动
-            ScrollView { stack.overlayScrollers() }
-                .scrollBounceBehavior(.basedOnSize)
+            ScrollView {
+                stack
+                    .overlayScrollers()
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                        contentHeight = height
+                        report()
+                    }
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                viewportHeight = height
+                report()
+            }
         }
+    }
+
+    /// 弹窗里内容高度一变（数据刷新、展开收起），就让面板把窗口调到正好放下；屏幕放不下时才出现滚动
+    private func report() {
+        guard let reportOverflow, contentHeight > 0, viewportHeight > 0 else { return }
+        reportOverflow(contentHeight - viewportHeight)
     }
 }
 
