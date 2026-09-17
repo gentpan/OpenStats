@@ -6,7 +6,7 @@
 
 **Mac 的状态，抬眼就看见——CPU、GPU、内存、网络与温度常驻菜单栏，还能调风扇、防休眠、一键清理、卸载应用，检测 IP 纯净度。**
 
-[![Release](https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.4.0-6ee02b)](https://getopenstats.com/#download)
+[![Release](https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.5.0-6ee02b)](https://getopenstats.com/#download)
 [![Stars](https://img.shields.io/github/stars/gentpan/OpenStats?style=flat&color=f5c518&label=%E6%98%9F%E6%A0%87)](https://github.com/gentpan/OpenStats/stargazers)
 [![Last commit](https://img.shields.io/github/last-commit/gentpan/OpenStats?color=black&label=%E6%9C%80%E8%BF%91%E6%8F%90%E4%BA%A4)](https://github.com/gentpan/OpenStats/commits/main)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/gentpan/OpenStats?color=black&label=%E6%8F%90%E4%BA%A4)](https://github.com/gentpan/OpenStats/graphs/commit-activity)
@@ -32,12 +32,12 @@ OpenStats 是一款 macOS 菜单栏应用，实时显示 Mac 正在做什么：�
 
 ## 安装
 
-从官网下载 OpenStats 0.4.0（Developer ID 签名、经过 Apple 公证），按 Mac 的芯片选择：
+从官网下载 OpenStats 0.5.0（Developer ID 签名、经过 Apple 公证），按 Mac 的芯片选择：
 
 | 芯片 | 下载 |
 |---|---|
-| Apple 芯片（M1、M2、M3、M4、M5 系列） | [OpenStats-0.4.0-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.4.0-AppleSilicon.dmg) |
-| Intel 芯片 | [OpenStats-0.4.0-Intel.dmg](https://getopenstats.com/download/OpenStats-0.4.0-Intel.dmg) |
+| Apple 芯片（M1、M2、M3、M4、M5 系列） | [OpenStats-0.5.0-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.5.0-AppleSilicon.dmg) |
+| Intel 芯片 | [OpenStats-0.5.0-Intel.dmg](https://getopenstats.com/download/OpenStats-0.5.0-Intel.dmg) |
 
 不确定是哪种，看苹果菜单 › 关于本机：写着“芯片 Apple M…”是 Apple 芯片，写着“处理器 Intel…”是 Intel。
 也可以用 Homebrew 安装，会自动选对版本：
@@ -55,24 +55,24 @@ CPU 不分性能核与能效核，部分功耗与频率读数可能不显示。
 <!-- changelog:start -->
 <!-- 由 Scripts/sync_changelog.py 从 CHANGELOG.md 生成，请勿手改。 -->
 
-最新版本 **0.4.0**（2026-09-16） · 开发中 **2** 项改动尚未发布 · [完整更新日志](CHANGELOG.md)
+最新版本 **0.5.0**（2026-09-18） · [完整更新日志](CHANGELOG.md)
 
 <details open>
-<summary><b>2026-09-18</b> · 未发布 · 新增 1</summary>
+<summary><b>2026-09-18</b> · 0.5.0 · 新增 6</summary>
 
 **新增**
 
-- 网络测速：网络页顶栏新增“网络测速”按钮，打开一个独立窗口，四块内容各自独立、可以单独跑也可以随时停。
-  - 本机宽带：用 speed.cloudflare.com 测下行、上行、空载延迟与抖动，并显示这次走的是哪个 Cloudflare 边缘节点。
-  - 国内分省三网延迟：31 个省份 × 电信 / 联通 / 移动共 93 个节点，只做 TCP 建连计时、不下载任何数据，给出三网各自的中位延迟与逐省数值。节点来自 zstaticcdn.com。
-  - 全球节点：亚太、欧洲、北美等 24 个节点先测延迟，再对想看的节点单独测下载速度，测速文件来自 Linode、Vultr、DataPacket。
-  - 全球探针看目标：填一个域名，从全球 10 / 20 / 30 个社区探针 ping 它，看各地访问的延迟与丢包。走 Globalping 的公开接口，请求从本机直接发出、不带任何密钥，用的是本机 IP 每小时的免费额度。
-  - 下载类测试有明确的用量上限，顶栏可选 3 秒 / 20 MB、5 秒 / 50 MB、10 秒 / 200 MB（默认），时间与流量哪个先到就停在哪，顶栏实时显示本次用掉多少流量，关窗即停。
+- 新增网络测速窗口：网络页顶栏多一个“网络测速”按钮。窗口里四块内容各自独立，可以单独跑、也可以随时停，关窗即停。
+- 本机宽带测速：下行、上行、空载延迟与抖动。数据由 speed.cloudflare.com 测量，并显示这次走的是哪个 Cloudflare 边缘节点。
+- 国内分省三网延迟：31 个省份 × 三网共 93 个节点。给出电信、联通、移动各自的中位延迟与逐省数值；节点来自 zstaticcdn.com，只做 TCP 建连计时、不下载任何数据。
+- 全球节点测速：24 个节点，先测延迟再单独测下载。覆盖亚太、欧洲、北美等地，测速文件来自 Linode、Vultr、DataPacket。
+- 全球探针看目标：从全球 10 / 20 / 30 个社区探针 ping 你填的域名。看各地访问它的延迟与丢包，走 Globalping 的公开接口，请求从本机直接发出、不带任何密钥，用的是本机 IP 每小时的免费额度；测量结果在 Globalping 上公开，所以只测你自己填写的域名。
+- 测速有明确的用量上限：默认 10 秒 / 200 MB，先到哪个停哪个。顶栏可改成 3 秒 / 20 MB 或 5 秒 / 50 MB，并实时显示本次用掉多少流量。
 
 </details>
 
 <details>
-<summary><b>2026-09-17</b> · 未发布 · 调整 1</summary>
+<summary><b>2026-09-17</b> · 0.5.0 · 调整 1</summary>
 
 **调整**
 

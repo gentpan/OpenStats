@@ -5,7 +5,7 @@
 #   ./Scripts/release.sh
 #
 # 需要钥匙串里的 Developer ID Application 证书和 notarytool 凭据。凭据按 Apple ID 与团队保存，
-# 默认沿用 QuotaBar 的 “QuotaBar” 凭据；也可以单独保存一份：
+# 默认用 GiantAccel 开发者账号的 “GiantAccel” 凭据；也可以单独保存一份：
 #   xcrun notarytool store-credentials OpenStats --apple-id you@example.com --team-id <TEAM_ID>
 #   NOTARY_PROFILE=OpenStats ./Scripts/release.sh
 #
@@ -16,7 +16,7 @@ cd "$(dirname "$0")/.."
 # 安装包放在官网
 DOWNLOAD_BASE="${DOWNLOAD_BASE:-https://getopenstats.com/download}"
 DIST="${DIST:-dist}"
-NOTARY_PROFILE="${NOTARY_PROFILE:-QuotaBar}"
+NOTARY_PROFILE="${NOTARY_PROFILE:-GiantAccel}"
 SIGN_ID="${SIGN_ID:-$(security find-identity -v -p codesigning 2>/dev/null \
   | grep 'Developer ID Application' | head -1 | sed -E 's/.*"(.*)".*/\1/' || true)}"
 VERSION="$(sed -nE 's/^ *MARKETING_VERSION: *"?([0-9.]+)"?.*/\1/p' project.yml | head -1)"

@@ -6,7 +6,7 @@
 
 **Your Mac at a glance — CPU, GPU, memory, network and temperatures in the menu bar, with fan control, keep-awake, one-click cleanup, an app uninstaller and an IP cleanliness check.**
 
-[![Release](https://img.shields.io/badge/release-0.4.0-6ee02b)](https://getopenstats.com/#download)
+[![Release](https://img.shields.io/badge/release-0.5.0-6ee02b)](https://getopenstats.com/#download)
 [![Stars](https://img.shields.io/github/stars/gentpan/OpenStats?style=flat&color=f5c518&label=stars)](https://github.com/gentpan/OpenStats/stargazers)
 [![Last commit](https://img.shields.io/github/last-commit/gentpan/OpenStats?color=black&label=last%20commit)](https://github.com/gentpan/OpenStats/commits/main)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/gentpan/OpenStats?color=black&label=commits)](https://github.com/gentpan/OpenStats/graphs/commit-activity)
@@ -34,13 +34,13 @@ Everything is read on your own Mac, and there is no telemetry. An account is opt
 
 ## Install
 
-Download OpenStats 0.4.0 from the website (signed with a Developer ID certificate and notarized by Apple) —
+Download OpenStats 0.5.0 from the website (signed with a Developer ID certificate and notarized by Apple) —
 pick the build for your Mac's chip:
 
 | Chip | Download |
 |---|---|
-| Apple silicon (M1, M2, M3, M4, M5) | [OpenStats-0.4.0-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.4.0-AppleSilicon.dmg) |
-| Intel | [OpenStats-0.4.0-Intel.dmg](https://getopenstats.com/download/OpenStats-0.4.0-Intel.dmg) |
+| Apple silicon (M1, M2, M3, M4, M5) | [OpenStats-0.5.0-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.5.0-AppleSilicon.dmg) |
+| Intel | [OpenStats-0.5.0-Intel.dmg](https://getopenstats.com/download/OpenStats-0.5.0-Intel.dmg) |
 
 Not sure? Apple menu › About This Mac says "Chip Apple M…" on Apple silicon and "Processor Intel…" on Intel.
 Homebrew picks the right build for you:
@@ -59,24 +59,24 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.4.0** (2026-09-16) · **2** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.5.0** (2026-09-18) · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-09-18</b> · Unreleased · 1 added</summary>
+<summary><b>2026-09-18</b> · 0.5.0 · 6 added</summary>
 
 **Added**
 
-- 网络测速：网络页顶栏新增“网络测速”按钮，打开一个独立窗口，四块内容各自独立、可以单独跑也可以随时停。
-  - 本机宽带：用 speed.cloudflare.com 测下行、上行、空载延迟与抖动，并显示这次走的是哪个 Cloudflare 边缘节点。
-  - 国内分省三网延迟：31 个省份 × 电信 / 联通 / 移动共 93 个节点，只做 TCP 建连计时、不下载任何数据，给出三网各自的中位延迟与逐省数值。节点来自 zstaticcdn.com。
-  - 全球节点：亚太、欧洲、北美等 24 个节点先测延迟，再对想看的节点单独测下载速度，测速文件来自 Linode、Vultr、DataPacket。
-  - 全球探针看目标：填一个域名，从全球 10 / 20 / 30 个社区探针 ping 它，看各地访问的延迟与丢包。走 Globalping 的公开接口，请求从本机直接发出、不带任何密钥，用的是本机 IP 每小时的免费额度。
-  - 下载类测试有明确的用量上限，顶栏可选 3 秒 / 20 MB、5 秒 / 50 MB、10 秒 / 200 MB（默认），时间与流量哪个先到就停在哪，顶栏实时显示本次用掉多少流量，关窗即停。
+- 新增网络测速窗口：网络页顶栏多一个“网络测速”按钮。窗口里四块内容各自独立，可以单独跑、也可以随时停，关窗即停。
+- 本机宽带测速：下行、上行、空载延迟与抖动。数据由 speed.cloudflare.com 测量，并显示这次走的是哪个 Cloudflare 边缘节点。
+- 国内分省三网延迟：31 个省份 × 三网共 93 个节点。给出电信、联通、移动各自的中位延迟与逐省数值；节点来自 zstaticcdn.com，只做 TCP 建连计时、不下载任何数据。
+- 全球节点测速：24 个节点，先测延迟再单独测下载。覆盖亚太、欧洲、北美等地，测速文件来自 Linode、Vultr、DataPacket。
+- 全球探针看目标：从全球 10 / 20 / 30 个社区探针 ping 你填的域名。看各地访问它的延迟与丢包，走 Globalping 的公开接口，请求从本机直接发出、不带任何密钥，用的是本机 IP 每小时的免费额度；测量结果在 Globalping 上公开，所以只测你自己填写的域名。
+- 测速有明确的用量上限：默认 10 秒 / 200 MB，先到哪个停哪个。顶栏可改成 3 秒 / 20 MB 或 5 秒 / 50 MB，并实时显示本次用掉多少流量。
 
 </details>
 
 <details>
-<summary><b>2026-09-17</b> · Unreleased · 1 changed</summary>
+<summary><b>2026-09-17</b> · 0.5.0 · 1 changed</summary>
 
 **Changed**
 

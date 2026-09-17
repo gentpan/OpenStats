@@ -341,16 +341,16 @@
         <li class="download__option">
           <h3>Apple 芯片</h3>
           <p>M1、M2、M3、M4、M5 系列的 Mac</p>
-          <a class="btn btn--primary" href="download/OpenStats-0.4.0-AppleSilicon.dmg">下载 Apple 芯片版</a>
+          <a class="btn btn--primary" href="download/OpenStats-0.5.0-AppleSilicon.dmg">下载 Apple 芯片版</a>
         </li>
         <li class="download__option">
           <h3>Intel 芯片</h3>
           <p>能升级到 macOS 14 的 Intel Mac（大多为 2018 年及以后的机型）</p>
-          <a class="btn btn--primary" href="download/OpenStats-0.4.0-Intel.dmg">下载 Intel 版</a>
+          <a class="btn btn--primary" href="download/OpenStats-0.5.0-Intel.dmg">下载 Intel 版</a>
         </li>
       </ul>
       <p class="download__hint">不确定是哪种？打开苹果菜单 › 关于本机，看“芯片”或“处理器”那一行。</p>
-      <p class="hero__meta">版本 0.4.0 · macOS 14 Sonoma 及以上 · 简体中文与 English 界面 · <a href="#changelog">这个版本更新了什么</a></p>
+      <p class="hero__meta">版本 0.5.0 · macOS 14 Sonoma 及以上 · 简体中文与 English 界面 · <a href="#changelog">这个版本更新了什么</a></p>
       <p class="download__brew">也可以用 Homebrew 安装：<code>brew install --cask gentpan/tap/openstats</code></p>
     </div>
   </section>
@@ -364,6 +364,25 @@
       <!-- changelog:start -->
       <!-- 由 Scripts/sync_changelog.py 从 CHANGELOG.md 生成，请勿手改。 -->
       <div class="log">
+        <article class="log__day">
+          <div class="log__head"><time datetime="2026-09-18">2026-09-18</time><span class="log__tag">0.5.0</span></div>
+          <p class="log__counts">新增 6</p>
+          <ul class="log__list">
+            <li><span class="log__kind">新增</span>新增网络测速窗口：网络页顶栏多一个“网络测速”按钮。窗口里四块内容各自独立，可以单独跑、也可以随时停，关窗即停。</li>
+            <li><span class="log__kind">新增</span>本机宽带测速：下行、上行、空载延迟与抖动。数据由 speed.cloudflare.com 测量，并显示这次走的是哪个 Cloudflare 边缘节点。</li>
+            <li><span class="log__kind">新增</span>国内分省三网延迟：31 个省份 × 三网共 93 个节点。给出电信、联通、移动各自的中位延迟与逐省数值；节点来自 zstaticcdn.com，只做 TCP 建连计时、不下载任何数据。</li>
+            <li><span class="log__kind">新增</span>全球节点测速：24 个节点，先测延迟再单独测下载。覆盖亚太、欧洲、北美等地，测速文件来自 Linode、Vultr、DataPacket。</li>
+            <li><span class="log__kind">新增</span>全球探针看目标：从全球 10 / 20 / 30 个社区探针 ping 你填的域名。看各地访问它的延迟与丢包，走 Globalping 的公开接口，请求从本机直接发出、不带任何密钥，用的是本机 IP 每小时的免费额度；测量结果在 Globalping 上公开，所以只测你自己填写的域名。</li>
+            <li><span class="log__kind">新增</span>测速有明确的用量上限：默认 10 秒 / 200 MB，先到哪个停哪个。顶栏可改成 3 秒 / 20 MB 或 5 秒 / 50 MB，并实时显示本次用掉多少流量。</li>
+          </ul>
+        </article>
+        <article class="log__day">
+          <div class="log__head"><time datetime="2026-09-17">2026-09-17</time><span class="log__tag">0.5.0</span></div>
+          <p class="log__counts">调整 1</p>
+          <ul class="log__list">
+            <li><span class="log__kind">调整</span>程序坞默认不再显示 OpenStats 图标：以前打开主窗口（比如从风扇弹窗进入温度与风扇页）时，图标会出现在程序坞与 ⌘Tab 里，关窗后才消失。现在和其他菜单栏工具一样始终只在菜单栏运行，主窗口照常打开并置于最前。想从程序坞或 ⌘Tab 切回主窗口的，可以在「设置 · 通用」打开“在程序坞显示图标”，开关立即生效。</li>
+          </ul>
+        </article>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-09-16">2026-09-16</time><span class="log__tag">0.4.0</span></div>
           <p class="log__counts">修复 1 · 调整 2 · 样式 6 · 新增 1</p>
@@ -385,6 +404,8 @@
             </ul>
           </details>
         </article>
+        <details class="log__older">
+          <summary>更早的更新（6 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-09-16">2026-09-16</time><span class="log__tag">0.3.2</span></div>
           <p class="log__counts">修复 2</p>
@@ -401,8 +422,6 @@
             <li><span class="log__kind">新增</span>在线升级按芯片下载对应的安装包，并在安装前核对安装包支持这台 Mac 的芯片；在 Apple 芯片上经 Rosetta 运行的 Intel 版会升级为 Apple 芯片版。</li>
           </ul>
         </article>
-        <details class="log__older">
-          <summary>更早的更新（4 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-09-15">2026-09-15</time><span class="log__tag">0.3.0</span></div>
           <p class="log__counts">新增 8 · 调整 14 · 修复 3</p>
