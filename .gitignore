@@ -6,3 +6,4 @@ xcuserdata/
 .swiftpm/
 Packages/OpenStatsKit/Package.resolved
 dist/
+__pycache__/
