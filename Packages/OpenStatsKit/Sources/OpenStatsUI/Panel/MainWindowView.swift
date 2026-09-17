@@ -236,6 +236,16 @@ private struct PageHeader: View {
                 .buttonStyle(DSButtonStyle(kind: .secondary))
                 .help(tr("测本机宽带、国内分省三网延迟与全球节点"))
             }
+            if tab == .network {
+                Button { model.openEgressWindow() } label: {
+                    HStack(spacing: DS.Space.s1) {
+                        Image(systemName: "arrow.triangle.branch")
+                        Text(tr("出口与分流")).lineLimit(1).fixedSize()
+                    }
+                }
+                .buttonStyle(DSButtonStyle(kind: .secondary))
+                .help(tr("检查 VPN 与代理是否生效、各网站从哪个出口出去"))
+            }
             // 每个监控页都能在这里开关自己的菜单栏项目；温度与风扇页有两项，各带一个小标签
             let items = tab.menuBarItems
             if !items.isEmpty {

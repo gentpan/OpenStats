@@ -49,6 +49,7 @@ CPU 负载偏高	CPU load is high
 CPU 负载很高	CPU load is very high
 CPU 过热	CPU Overheating
 CPU：{}（以单核满载为 100%）	CPU: {} (100% = one full core)
+Cloudflare 接入节点（机场代码）	Cloudflare edge location (airport code)
 Cloudflare（1.1.1.1）	Cloudflare (1.1.1.1)
 CoreSimulator 的动态库与运行时缓存	CoreSimulator dyld and runtime caches
 DNS 地址格式不正确	Invalid DNS address
@@ -61,6 +62,8 @@ Google（8.8.8.8）	Google (8.8.8.8)
 IP 地址	IP Addresses
 IP 类型	IP type
 IP 纯净度	IP cleanliness
+IPv6 没有经过代理：只走 IPv6 的连接会直接暴露本机地址 {}。	IPv6 isn't going through the proxy: IPv6-only connections expose your address {}.
+IPv6 连接也经过代理。	IPv6 connections also go through the proxy.
 OpenStats {} 已发布	OpenStats {} is available
 OpenStats 控制	Controlled by OpenStats
 OpenStats 控制中	Controlled by OpenStats
@@ -82,6 +85,9 @@ SMC 通信与 Apple Silicon 风扇解锁流程移植自该项目 · MIT License	
 SSD 健康	SSD Health
 Time Machine 在备份之间会先在本机留下快照，它们占的空间计入“可清除”，系统缺空间时会自动删。手动删除不影响已完成的备份。	Between backups Time Machine keeps snapshots on this Mac. Their space counts as purgeable and macOS removes them when it runs low. Deleting them by hand does not affect completed backups.
 VPN / 代理	VPN / Proxy
+VPN / 隧道	VPN / Tunnel
+VPN 不允许绕开它连接	The VPN doesn't allow bypassing it
+VPN 不允许绕开它连接，读不到本机网络原本的出口。下方按出口列出各网站。	The VPN doesn't allow connections that bypass it, so your network's original exit can't be read. Sites are listed by exit below.
 VPN 隧道	VPN Tunnel
 Xcode 归档	Xcode Archives
 Xcode 编译缓存	Xcode Build Cache
@@ -96,6 +102,7 @@ npm 缓存	npm Cache
 {} 个	{}
 {} 个传感器	{} sensors
 {} 个应用，系统自带的不列出	{} apps; built-in apps are not listed
+{} 个网站	{} sites
 {} 个进程	{} processes
 {} 中位延迟	{} median
 {} 分钟	{} min
@@ -111,6 +118,7 @@ npm 缓存	npm Cache
 {} 测	at {}
 {} 秒	{}s
 {} 秒 / {} MB	{}s / {} MB
+{} 秒·{} MB	{}s · {} MB
 {} 组	{} groups
 {} 缓存	{} Cache
 {} 英寸	{}-inch
@@ -125,15 +133,19 @@ npm 缓存	npm Cache
 {}。系统会自动分配任务，不用你操心	{}. macOS assigns work between them automatically.
 {}中	{}
 {}前	{} ago
+{}前检测	Checked {} ago
 {}后充满	Full in {}
 {}电量低	{} battery low
 {}（{}）	{} ({})
+{}（代理接管）	{} (handled by proxy)
 {}，{}，健康 {}	{}, {}, health {}
 {}，后台{}	{}, background {}
 {}：{}	{}: {}
+{}：{}/{} 个节点连得上	{}: {}/{} nodes reachable
 ~/.npm/_cacache，安装依赖时自动重新下载	~/.npm/_cacache; downloaded again when installing dependencies
 ~/Library/Caches 中各应用的缓存，删除后会按需重建	App caches in ~/Library/Caches; rebuilt as needed
 ~/Library/Logs 中的日志和诊断报告	Logs and diagnostic reports in ~/Library/Logs
+· 结果反映 OpenStats 自己发出的请求，按应用分流的规则下其他应用可能走不同出口	· Results reflect requests sent by OpenStats; with per-app rules, other apps may use different exits
 “{}”只剩 {} 可用。可以用 OpenStats 的清理功能释放缓存。	“{}” has only {} free. Use OpenStats Cleanup to clear caches.
 “{}”（{}）会移到废纸篓，可以从废纸篓放回。	“{1}” ({2}) will be moved to the Trash; you can put it back from there.
 、	, 
@@ -157,15 +169,18 @@ npm 缓存	npm Cache
 不在允许清理的目录内	Not inside an allowed cleanup folder
 不在可卸载的位置：{}	Not in a location that can be uninstalled: {}
 不提供电量	No battery info
+不支持 IPv6	IPv6 not supported
 不是团队 {} 签名的完整应用（{}）	Not a complete app signed by team {} ({})
 不是应用程序	Not an application
 不是绝对路径	Not an absolute path
+不经过代理	Without proxy
 不能删除清理目录本身	Can't delete the cleanup folder itself
 不限	No limit
 不限时	Indefinitely
 与 30 秒前持平	Same as 30s ago
 丢包 {}%	{}% loss
 严重	Critical
+中位延迟	Median
 中等负载	Moderate load
 中等风险	Medium risk
 中继	Relay
@@ -180,6 +195,12 @@ npm 缓存	npm Cache
 从未	Never
 从这个节点下载测速，上限 {}	Download from this node, up to {}
 代理	Proxy
+代理出口	proxy exit
+代理出口不支持 IPv6，IPv6 连接也不会绕过代理泄露地址。	The proxy exit doesn't support IPv6, and IPv6 connections don't leak your address around the proxy.
+代理出口（{}）	proxy exit ({})
+代理方式	Proxy Setup
+代理没有生效	Proxy Not Working
+代理软件	Proxy Apps
 以单核满载为 100%	100% = one full core
 以后再说	Later
 以系统权限运行的后台服务，只接受本应用的请求	A background service with system privileges that only accepts requests from this app
@@ -221,12 +242,14 @@ npm 缓存	npm Cache
 充电上限可在系统设置中设为 80%–100%，长期接电源时有助于延缓电池老化	Set a charge limit of 80%–100% in System Settings to slow battery aging when you stay plugged in
 充电中	Charging
 充电盒	Case
+全局代理	Global Proxy
 全局快捷键（在任何应用中都能使用，需要包含 ⌘、⌥ 或 ⌃）	Global shortcuts (work in any app; must include ⌘, ⌥ or ⌃)
 全球探针看目标	Global Probes
 全球节点	Global Nodes
 全选	Select All
 全部	All
 全部删除	Delete all
+全部经代理	All Traffic Proxied
 公网 IP	Public IP
 公网 IP 查询	Public IP Lookup
 公网 IPv4	Public IPv4
@@ -255,10 +278,18 @@ npm 缓存	npm Cache
 内存类型	Memory type
 内存：{}	Memory: {}
 写入	Write
+出口	Exit
+出口与分流	Egress & Routing
+出口与分流：检查 VPN 与代理是否生效、各网站从哪个出口出去	Egress & Routing: check whether your VPN and proxy work and which exit each site uses
+出口依据	Basis
+出口未知	Exit unknown
 出现介质错误，建议备份	Media errors found; back up your data
+分别经物理网卡、系统代理与 VPN 隧道访问检测目标，约需 10 秒。	Reaching test targets through the network interface, the system proxy, and the VPN tunnel. This takes about 10 seconds.
+分流正常	Split Routing Works
 切换到浅色	Switch to Light
 切换到深色	Switch to Dark
 刚刚	Just now
+刚刚检测	Checked just now
 刚刚被使用	Recently used
 删除	Delete
 删除…	Delete…
@@ -327,6 +358,7 @@ npm 缓存	npm Cache
 受保护	Protected
 受保护的项目：{}	Protected item: {}
 另一台 Mac	Another Mac
+另有 {} 个出口，见网站分流	{} more exits, see Site Routing
 另有 {} 移到废纸篓	Plus {} moved to Trash
 另有 {} 项	{} more
 只含当前用户的进程	Your processes only
@@ -336,6 +368,7 @@ npm 缓存	npm Cache
 只在菜单栏显示电池或打开电池页面时记录	Recorded only while Battery is in the menu bar or the Battery page is open
 只显示菜单栏时的采样间隔；打开弹窗或主窗口时为 1 秒（进程页 2 秒）	Sampling interval when only the menu bar is shown; 1 second with a popover or window open (2 seconds on Processes)
 只查找以该应用包名命名的文件，以及 Application Support、Logs 下与应用同名的目录；钥匙串与其他应用共享的数据不会动。程序坞里的图标会一并移除	Only files named after the app's bundle ID, plus folders with the app's name in Application Support and Logs, are included. Keychains and data shared with other apps are never touched. The Dock icon is removed as well
+只设置了系统代理：浏览器等应用走代理，命令行工具、游戏等不读代理设置的程序仍在直连。要接管全部流量，可以开启增强模式或 TUN 模式。	Only a system proxy is set: browsers and most apps use it, but command-line tools, games, and other programs that ignore proxy settings still connect directly. To route all traffic, turn on enhanced mode or TUN mode.
 可以恢复，但清空废纸篓前不会释放空间	Recoverable, but space isn't freed until the Trash is emptied
 可执行文件：{}	Executable: {}
 可清理 · 已选 {} 项	Cleanable · {} selected
@@ -346,6 +379,7 @@ npm 缓存	npm Cache
 可用 {} / 共 {}	{1} free of {2}
 可用内存只剩 {}，系统正在压缩和交换内存。关闭不用的应用可以缓解。	Only {} of memory is available and the system is compressing and swapping. Quitting unused apps will help.
 可用空间包含系统可以随时清除的缓存，与访达显示一致	Available space includes purgeable caches, matching Finder
+可访问	Reachable
 右侧风扇	Right Fan
 右耳	Right
 各核心占用	Per-Core Load
@@ -373,9 +407,14 @@ npm 缓存	npm Cache
 启用	Turn On
 启用 {}	Enable {}
 启用失败：{}	Failed to turn on: {}
+哔哩哔哩	Bilibili
 唤醒	Wakeups
 团队 {}	team {}
+国内	China
 国内分省三网延迟	Latency Across China
+国内网站也绕到了{}，访问会变慢，也可能触发风控。	Chinese sites also detour through the {}, which is slower and may trigger security checks.
+国内网站直连，国际网站经 {} 的{}。	Chinese sites connect directly; international sites go through {}'s {}.
+国内网站走了代理，访问会绕路变慢。	Chinese sites are going through the proxy, which takes a longer route and is slower.
 国内网络建议选阿里云或腾讯；选路由器只检测本地连接	In mainland China, Alibaba Cloud or Tencent work best; Router only checks the local link
 图形	Graphics
 图形处理器	GPU
@@ -412,6 +451,7 @@ npm 缓存	npm Cache
 安静	Quiet
 定时 ping 一个地址，记录网络是否通畅	Pings an address regularly to record whether the network is reachable
 定时探测网络	Connectivity Probe
+实测	Measured
 家目录	Home folder
 容量	Capacity
 导出…	Export…
@@ -485,8 +525,10 @@ npm 缓存	npm Cache
 应用缓存	App Caches
 应用退出或断开连接时，自动恢复风扇与睡眠设置	Restores fan and sleep settings when the app quits or disconnects
 废纸篓	Trash
+延迟	Latency
 开	On
 开关防休眠	Toggle Keep Awake
+开发	Developer
 开发构建不支持在线升级	Development builds can't update online
 开发构建不支持在线升级，请下载安装包	Development builds can't update online; download the installer instead
 开发版	Development
@@ -506,6 +548,7 @@ npm 缓存	npm Cache
 强制刷新：忽略缓存，立即重新查询公网 IP 与归属地	Force refresh: ignore the cache and look up the public IP and location again now
 强制退出	Force Quit
 归属地	Location
+归属地数据来自	Location data from
 当前 {} · 发布于 {} · {} · {}	Current {} · Released {} · {} · {}
 当前为临时签名的开发构建，辅助工具只能校验应用标识。使用 Developer ID 证书构建后会自动启用团队校验。	This is an ad-hoc signed development build, so the helper can only check the bundle ID. Team verification turns on automatically with a Developer ID build.
 当前效果（实时数据）	Preview (live data)
@@ -514,8 +557,10 @@ npm 缓存	npm Cache
 当前版本 {} · {} · {}	Current version {} · {} · {}
 当前用户	Current User
 录制快捷键	Record Shortcut
+影音	Video
 循环 {} 次	{} cycles
 循环次数	Cycle count
+微信	WeChat
 忙	Busy
 快捷开关	Quick Toggles
 快照名称格式不认识，没有删除	Unrecognized snapshot names; nothing was deleted
@@ -527,6 +572,7 @@ npm 缓存	npm Cache
 所属应用：{}（{}）	App: {} ({})
 所有内容先移到废纸篓。	Everything goes to the Trash first.
 所有指标合成一个图标，点击打开主窗口	All metrics in one icon; click to open the main window
+所有检测目标都连不上。请检查网络连接，或者代理软件是否正常运行。	None of the test targets could be reached. Check your network connection and whether your proxy app is running properly.
 所有用户	All Users
 所有用户与系统级的启动项需要管理员权限，请在系统设置的登录项中管理	All-users and system items need admin rights; manage them in Login Items in System Settings
 所有磁盘合计	All disks
@@ -547,6 +593,7 @@ npm 缓存	npm Cache
 扫描中…	Scanning…
 扫描于 	Scanned 
 抖动	Jitter
+抖音	Douyin
 折线历史	Line History
 折线是最近 30 次采样（约 1 分钟）的走势	The line shows the last 30 samples (about a minute)
 拷贝	Copy
@@ -558,7 +605,9 @@ npm 缓存	npm Cache
 按应用	By App
 按应用汇总	By App
 按文件夹	By folder
+按系统代理访问国际网站	International sites via system proxy
 按系统休眠	System sleep
+按规则分流	Rule-Based Routing
 按进程	By Process
 换一台 Mac 登录后，菜单栏、外观、通知与快捷键等偏好会自动恢复。不登录也能使用全部功能。	Sign in on another Mac and your menu bar, appearance, notification and hotkey preferences come back automatically. Everything works without signing in.
 换入 / 换出	Swap in / out
@@ -567,10 +616,12 @@ npm 缓存	npm Cache
 探测目标	Probe Target
 探针一直没有返回结果，稍后再试	The probes never returned a result; try again later
 探针数量，一个探针占一次额度	Number of probes; each probe uses one test from the quota
+接入 Cloudflare 的网站能实测出口，其余按国内 / 国际规则推断	Exits are measured for sites behind Cloudflare and inferred for the rest
 接口	Interface
 接通电源	Plugged in
 推出	Eject
 推出中…	Ejecting…
+推断	Inferred
 搜索名称、PID 或用户	Search name, PID or user
 搜索应用	Search apps
 撤销	Undo
@@ -597,6 +648,7 @@ npm 缓存	npm Cache
 无法打开	Couldn't open
 无法打开登录窗口	Couldn't open the sign-in window
 无法推出“{}”：{}	Couldn't eject “{1}”: {2}
+无法确认是否经过代理	Can't Confirm Proxy Use
 无法移到废纸篓：{}	Couldn't move to the Trash: {}
 无法读取	Unreadable
 无法读取签名	Couldn't read the signature
@@ -635,7 +687,9 @@ npm 缓存	npm Cache
 服务器返回 {}	Server returned {}
 服务器返回的数据格式不正确	The server returned malformed data
 未使用	Unused
+未使用代理	No Proxy in Use
 未保存的内容可能会丢失。强制退出会立即结束，不给应用保存的机会。	Unsaved work may be lost. Force Quit ends it immediately without letting it save.
+未发现	None found
 未安装	Not Installed
 未完成的下载	Incomplete Downloads
 未开启，Mac 按系统设置休眠	Off; your Mac sleeps as usual
@@ -646,6 +700,7 @@ npm 缓存	npm Cache
 未知状态	Unknown status
 未签名或临时签名	Unsigned or ad-hoc signed
 未签名（开发构建）	Unsigned (development build)
+未设置	Not set
 未连接	Not connected
 未连接网络	No network
 本地 IPv4	Local IPv4
@@ -654,6 +709,7 @@ npm 缓存	npm Cache
 本机 IP 这一小时还剩 {}/{} 次探针额度	{}/{} probe tests left this hour for this Mac's IP
 本机信息	This Mac
 本机宽带	Your Connection
+本机网络	Your Network
 本次用掉 {}	{} used
 机型	Model
 机型标识符	Model Identifier
@@ -682,19 +738,21 @@ npm 缓存	npm Cache
 核心热力图	Core Heatmap
 核心负载	Core Load
 检查	Check
+检查 VPN 与代理是否生效、各网站从哪个出口出去	Check whether your VPN and proxy work and which exit each site uses
 检查中…	Checking…
 检查完成，但没有得到明确结论	The check finished without a clear verdict
 检查更新	Check for Updates
 检查更新…	Check for Updates…
 检查更新失败	Update check failed
 检查未能完成（退出码 {}）	The check didn't complete (exit code {})
+检测中 {}/{}	Checking {}/{}
+检测到 {}，但测试的网站都在直连，没有经过代理出口。	{} was detected, but all tested sites connect directly without going through a proxy exit.
 模式	Mode
 模拟器	Simulators
 模拟器缓存	Simulator Caches
 正在下载	Downloading
 正在使用	In use
 正在修改 DNS…	Changing DNS…
-正在刷新…	Flushing…
 正在同步	Syncing
 正在同步…	Syncing…
 正在安装，完成后 OpenStats 会自动重启。	Installing. OpenStats will relaunch when it's done.
@@ -709,6 +767,7 @@ npm 缓存	npm Cache
 正在核对校验值、开发者签名与 Apple 公证…	Verifying checksum, developer signature and Apple notarization…
 正在检查…	Checking…
 正在检查更新	Checking for updates
+正在检测出口与分流…	Checking egress and routing…
 正在测 {}/{}	Testing {}/{}
 正在测上行	Measuring upload
 正在测下行	Measuring download
@@ -744,6 +803,7 @@ npm 缓存	npm Cache
 没有匹配的进程	No matching processes
 没有启动项	No startup items
 没有已连接的蓝牙设备	No connected Bluetooth devices
+没有检测到 VPN 或系统代理，所有流量都从本机网络直接出去。	No VPN or system proxy detected. All traffic leaves directly from your network.
 没有检测到显示器	No displays detected
 没有移动任何文件{}	Nothing was moved{}
 没有超过 50 MB 的文件	No files over 50 MB
@@ -753,8 +813,10 @@ npm 缓存	npm Cache
 浅色菜单栏预览	Light menu bar preview
 测延迟	Latency
 测本机宽带、国内分省三网延迟与全球节点	Test your broadband, per-province latency in China and global nodes
+测试的网站都经 {} 的{}，没有暴露本机网络的地址。	All tested sites go through {}'s {}, so your network's own address isn't exposed.
 测速	Test
 浏览器	Browsers
+淘宝	Taobao
 深色	Dark
 深色菜单栏预览	Dark menu bar preview
 清理	Cleanup
@@ -825,8 +887,10 @@ npm 缓存	npm Cache
 登录时启动	Launch at Login
 登录时运行	Runs at login
 登录项设置	Login Items
+百度	Baidu
 监控	Monitor
 目标转速	Target speed
+直连	Direct
 相当于“磁盘工具”里的急救，但只检查不修改：核对启动盘的目录结构、文件分配与快照元数据是否一致。	Like First Aid in Disk Utility, but read-only: checks that the startup disk's directory structure, allocation and snapshot metadata are consistent.
 省份	Province
 确认清理	Clean
@@ -837,6 +901,7 @@ npm 缓存	npm Cache
 磁盘清理	Disk Cleanup
 磁盘空间不足	Low Disk Space
 磁盘空间偏紧	Disk space is tight
+社交	Social
 移到废纸篓	Move to Trash
 移到废纸篓？	Move to the Trash?
 移动网络	Mobile
@@ -858,6 +923,7 @@ npm 缓存	npm Cache
 签名校验未通过：{}	Signature check failed: {}
 粘贴	Paste
 系统	System
+系统代理	System Proxy
 系统或其他用户的进程，OpenStats 不提供结束	A system or other user's process; OpenStats can't end it
 系统服务	System Services
 系统正在把内存写到磁盘，可能会变慢。可以关掉占用大的应用。	The system is swapping memory to disk and may slow down. Quit apps that use a lot of memory.
@@ -877,6 +943,9 @@ npm 缓存	npm Cache
 线程 {}	Threads {}
 线程数（只能读取自己的进程）	Thread count (your processes only)
 经 Cloudflare {} 边缘节点	Via the Cloudflare {} edge
+经 {}	Via {}
+经 {} 直接连接	Direct via {}
+经代理	Proxied
 结束 {} 失败：{}	Failed to end {}: {}
 结束“{}”？	End “{}”?
 结束它会注销当前用户，已禁止	Ending it would log you out, so it's blocked
@@ -889,11 +958,16 @@ npm 缓存	npm Cache
 缓存与日志直接删除，下载内容移到废纸篓。	Caches and logs are deleted; downloads go to the Trash.
 缓存也先移到废纸篓	Move caches to Trash too
 编辑	Edit
+网站	Site
+网站分流	Site Routing
+网站没有接入 Cloudflare，读不到出口，按国内 / 国际规则归到对应出口	This site isn't behind Cloudflare, so its exit can't be read. It's grouped by the China / international rule.
 网络	Network
+网络不通	No Connection
 网络名称	Network name
 网络已恢复	Network Restored
 网络断开	Network Down
 网络测速	Network Speed Test
+网络环境变了，下面是之前的结果，正在重新检测。	The network changed. These are the previous results; checking again.
 网络类型	Network type
 网络详情打开时每秒 ping 一次，通了是绿格、不通是红格，显示最近 60 次	Pings once a second while network details are open: green when reachable, red when not, showing the last 60
 网络运营方	Network operator
@@ -910,6 +984,7 @@ npm 缓存	npm Cache
 腾讯（119.29.29.29）	Tencent (119.29.29.29)
 自 {} 起	Since {}
 自动	Auto
+自动代理配置	Auto proxy config
 自动检查更新	Check Automatically
 自动（由路由器分配）	Automatic (from router)
 自定义	Custom
@@ -918,6 +993,7 @@ npm 缓存	npm Cache
 自己的进程为实际占用内存，系统进程为常驻内存	Footprint for your processes, resident memory for system processes
 致谢	Acknowledgements
 良好	Good
+节点	Edge
 芯片	Chip
 菜单栏	Menu Bar
 菜单栏图标	Menu Bar Icons
@@ -949,6 +1025,7 @@ npm 缓存	npm Cache
 读 {} · 写 {}	Read {} · Write {}
 读写最多的应用	Top Disk Activity
 读写速度	Read & Write
+读到了这次连接的出口	The exit of this connection was read directly
 读取	Read
 读取中	Loading
 调节风扇需要安装辅助工具，仅需管理员授权一次。	Fan control needs the helper, which requires one-time admin approval.
@@ -961,6 +1038,7 @@ npm 缓存	npm Cache
 账号与同步	Account & Sync
 走势图显示最近多长时间	How far back the trend chart shows
 走势时长	Trend duration
+超时	Timed out
 超级核	Super
 超过 1 天未更新的 .crdownload / .part / .download	.crdownload / .part / .download files untouched for over a day
 跟随整体	Follow global
@@ -987,6 +1065,7 @@ npm 缓存	npm Cache
 还有 {} 个	{} more
 还没有足够的记录。菜单栏显示电池或打开这个页面时，每分钟记录一次电量	Not enough records yet. The level is recorded every minute while Battery is in the menu bar or this page is open
 还能用 {}	{} left
+这一类没有检测结果	No results in this category
 这个小时的免费额度用完了，{} 分钟后可以再试	The free quota for this hour is used up; try again in {} minutes
 这个小时的免费额度用完了，过一会儿再试	The free quota for this hour is used up; try again later
 这个快捷键已被其他应用或系统占用，请换一个	This shortcut is used by another app or the system. Choose another.
@@ -1003,6 +1082,7 @@ npm 缓存	npm Cache
 进程名：{}	Process name: {}
 进程启动以来累计占用的 CPU 时间	Total CPU time since the process started
 进程页刷新频率调整为每 2 秒	Processes page now refreshes every 2 seconds
+连不上	Unreachable
 连接探测	Connectivity
 连接探测历史	Probe History
 连接探测只在需要时运行，更省电	Connectivity probing runs only when needed, saving power
@@ -1019,6 +1099,7 @@ npm 缓存	npm Cache
 通知可以正常显示。发生你打开的状况时，会像这样提醒你。	Notifications are working. You'll be alerted like this when something you turned on happens.
 通过 {} 登录	Signed in with {}
 速度与省电介于两者之间	In between on speed and efficiency
+部分网站直连、部分经代理，每个网站走哪个出口见下方。	Some sites connect directly and some go through a proxy. See below for the exit each site uses.
 部分项目需要“完全磁盘访问权限”才能扫描（Safari 缓存、废纸篓）。	Some items need Full Disk Access to scan (Safari caches, Trash).
 配置方式	Configuration
 释放内存	Free Memory
@@ -1027,6 +1108,7 @@ npm 缓存	npm Cache
 重新安装	Reinstall
 重新扫描	Rescan
 重新查询公网 IP	Look Up Public IP Again
+重新检测	Check Again
 重新生成	Regenerate
 重新读取蓝牙设备电量	Read Bluetooth device batteries again
 重置上传与下载统计：从现在起重新累计。重启后自动回到开机后的累计；右键可改回	Reset the upload and download totals and count from now on. After a restart they go back to since-boot totals; right-click to switch back

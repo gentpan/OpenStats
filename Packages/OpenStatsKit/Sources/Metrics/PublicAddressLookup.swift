@@ -322,6 +322,10 @@ public enum PublicAddressLookup {
     }
 
     static func getWithStatus(_ url: URL) async -> (Data?, Int) {
+        await getWithStatus(url, session: session)
+    }
+
+    static func getWithStatus(_ url: URL, session: URLSession) async -> (Data?, Int) {
         guard let (data, response) = try? await session.data(from: url) else { return (nil, 0) }
         return (data, (response as? HTTPURLResponse)?.statusCode ?? 0)
     }

@@ -41,6 +41,8 @@ extension DS {
         /// 侧边栏选中项的淡蓝底
         static let sidebarSelected = Color.dynamic(light: 0x2563EB, lightAlpha: 0.12, dark: 0x3B82F6, darkAlpha: 0.22)
         /// 全局加载时压暗整个窗口
+        /// 网站图标的垫底：深色模式下也保持浅色，黑色字标才看得清
+        static let logoTile = Color.dynamic(light: 0xFFFFFF, dark: 0xF3F4F6)
         static let scrim = Color.dynamic(light: 0x000000, lightAlpha: 0.12, dark: 0x000000, darkAlpha: 0.40)
 
         /// 核心类型配色：最高性能档为品牌蓝，其次浅蓝，能效核灰色
@@ -168,9 +170,14 @@ extension DS {
         static let panelGap: CGFloat = 4
         /// 窗口顶栏高度：标准工具栏的标题栏（52pt），红绿灯、页面标题与右上角 32pt 的按钮在同一条水平线上，按钮上下各留 10pt
         static let windowHeader: CGFloat = DS.Space.s12 + DS.Space.s1
+        /// 没有侧边栏的窗口里，顶栏标题要让出红绿灯按钮的宽度
+        static let trafficLightsWidth: CGFloat = 80
         /// 网络测速窗口
         static let speedTestWindowWidth: CGFloat = 720
         static let speedTestWindowHeight: CGFloat = 840
+        /// 出口与分流窗口
+        static let egressWindowWidth: CGFloat = 720
+        static let egressWindowHeight: CGFloat = 800
         /// 主窗口首次打开的最小高度（屏幕放得下时）
         static let windowDefaultHeight: CGFloat = 720
         /// 主窗口默认内容区宽度（侧边栏另计）

@@ -17,6 +17,7 @@ public final class AppModel {
     public let cleaner: CleanerController
     public let maintenance: MaintenanceController
     public let network: NetworkController
+    public let egress = EgressController()
     public let speedTest: SpeedTestController
     public let explainer = ProcessExplainer()
     public let updates: UpdateController
@@ -40,6 +41,7 @@ public final class AppModel {
 
     @ObservationIgnored var openSettings: () -> Void = {}
     @ObservationIgnored var openMainWindow: (PanelTab?) -> Void = { _ in }
+    @ObservationIgnored var openEgressWindow: () -> Void = {}
     @ObservationIgnored var openSpeedTestWindow: () -> Void = {}
     @ObservationIgnored var quit: () -> Void = {}
 

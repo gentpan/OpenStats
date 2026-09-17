@@ -273,6 +273,9 @@ private struct AddressSection: View {
                     }
                 }
             }
+            MiniIconButton(systemName: "arrow.triangle.branch", help: tr("出口与分流：检查 VPN 与代理是否生效、各网站从哪个出口出去")) {
+                model.openEgressWindow()
+            }
         }
     }
 
@@ -524,11 +527,34 @@ private struct DNSSection: View {
         let manual = physical?.manualDNS ?? []
         let matched = DNSPreset.matching(manual)
 
-        SectionCard(title: PopoverSection.networkDNS.title, trailing: {
+        // 走代理隧道时标题旁放一个叹号，悬停才显示说明；刷新缓存是图标按钮，放在标题行右侧
+        let tunnelWarning = network.details?.tunnel.map { tunnel in
+            AnyView(Image(systemName: "exclamationmark.circle")
+                .font(.system(size: DS.TextSize.xs.rawValue, weight: .semibold))
+                .foregroundStyle(DS.Palette.warning)
+                .help(tr("流量经过 \(tunnel.name)，系统 DNS 可能由它接管，修改后不一定生效。"))
+                .accessibilityLabel(tr("流量经过 \(tunnel.name)，系统 DNS 可能由它接管，修改后不一定生效。")))
+        }
+        // 网络服务与线路做成两个徽章：Wi-Fi / 有线，直连或经过哪个代理
+        let actions = HStack(spacing: DS.Space.s2) {
+            if let physical {
+                TagBadge(icon: physical.wifi != nil ? "wifi" : "cable.connector", text: physical.serviceName, tone: .neutral, compact: true)
+                if let tunnel = network.details?.tunnel {
+                    TagBadge(icon: "globe", text: tr("经 \(tunnel.name)"), tone: .primary, compact: true)
+                } else {
+                    TagBadge(icon: "arrow.right", text: tr("直连"), tone: .neutral, compact: true)
+                }
+            }
+            RefreshButton(loading: maintenance.running == .flushDNS, help: tr("刷新 DNS 缓存")) {
+                Task { await maintenance.run(.flushDNS) }
+            }
+            .disabled(maintenance.running != nil)
+        }
+        SectionCard(title: PopoverSection.networkDNS.title, titleAccessory: tunnelWarning, trailing: {
             if isPopover {
-                Text(verbatim: physical?.serviceName ?? "").collapseButton(.networkDNS, settings: model.settings)
-            } else if let physical {
-                Text(verbatim: physical.serviceName)
+                actions.collapseButton(.networkDNS, settings: model.settings)
+            } else {
+                actions
             }
         }) {
             InfoRow(label: tr("正在使用")) {
@@ -573,10 +599,6 @@ private struct DNSSection: View {
                 InfoRow(label: tr("配置方式"), text: manual.isEmpty ? tr("自动（由路由器分配）") : matched?.title ?? tr("手动"))
             }
 
-            if let tunnel = network.details?.tunnel {
-                InfoBanner(icon: "info.circle", text: tr("流量经过 \(tunnel.name)，系统 DNS 可能由它接管，修改后不一定生效。"), tone: .neutral)
-            }
-
             if let physical {
                 if editingManual {
                     HStack(spacing: DS.Space.s2) {
@@ -593,15 +615,6 @@ private struct DNSSection: View {
                             .disabled(DNSConfiguration.parse(manualText)?.isEmpty != false)
                     }
                 }
-            }
-
-            HStack(spacing: DS.Space.s2) {
-                Button(maintenance.running == .flushDNS ? tr("正在刷新…") : tr("刷新 DNS 缓存")) {
-                    Task { await maintenance.run(.flushDNS) }
-                }
-                .buttonStyle(DSButtonStyle(kind: .secondary))
-                .disabled(maintenance.running != nil)
-                Spacer(minLength: 0)
             }
 
             if maintenance.isApplyingDNS {

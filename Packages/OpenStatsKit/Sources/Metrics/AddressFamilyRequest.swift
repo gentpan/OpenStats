@@ -8,22 +8,41 @@ import Network
 /// 请求写成最简单的 HTTP/1.1（Connection: close，不要压缩），读到对方关闭为止。
 /// 这一族没有路由时连接会进入 waiting，直接当失败处理，不干等超时。
 enum AddressFamilyRequest {
+    /// 出口检测用的额外选项：默认与查纯净度时一样，走系统路由、只锁定地址族
+    struct Options: @unchecked Sendable {
+        /// 绑定到这块网卡发出，绕开 VPN 隧道
+        var interface: NWInterface?
+        /// 直接连这个 IP，TLS 与 Host 仍用 URL 里的域名。绑定物理网卡时系统 DNS 可能被代理改成 fake-ip，只能自己解析
+        var address: String?
+        /// 忽略系统里配置的代理
+        var bypassProxies = false
+        var accept = "application/json"
+    }
+
     /// 返回响应体与状态码；连接失败时状态码为 0
-    static func get(_ url: URL, ipv6: Bool, timeout: TimeInterval = 10) async -> (Data?, Int) {
-        guard url.scheme == "https", let host = url.host, !host.isEmpty else { return (nil, 0) }
+    static func get(_ url: URL, ipv6: Bool, timeout: TimeInterval = 10, options: Options = Options()) async -> (Data?, Int) {
+        // IPv6 字面量的 host 可能带着方括号
+        guard url.scheme == "https",
+              let host = url.host?.trimmingCharacters(in: CharacterSet(charactersIn: "[]")), !host.isEmpty else { return (nil, 0) }
         var path = url.path.isEmpty ? "/" : url.path
         if let query = url.query { path += "?" + query }
 
         let tls = NWProtocolTLS.Options()
         sec_protocol_options_add_tls_application_protocol(tls.securityProtocolOptions, "http/1.1")
+        if options.address != nil {
+            sec_protocol_options_set_tls_server_name(tls.securityProtocolOptions, host)
+        }
         let tcp = NWProtocolTCP.Options()
         tcp.connectionTimeout = Int(timeout)
         let parameters = NWParameters(tls: tls, tcp: tcp)
         if let ip = parameters.defaultProtocolStack.internetProtocol as? NWProtocolIP.Options {
             ip.version = ipv6 ? .v6 : .v4
         }
-        let connection = NWConnection(host: NWEndpoint.Host(host), port: .https, using: parameters)
-        let request = "GET \(path) HTTP/1.1\r\nHost: \(host)\r\nUser-Agent: OpenStats\r\nAccept: application/json\r\nConnection: close\r\n\r\n"
+        if let interface = options.interface { parameters.requiredInterface = interface }
+        parameters.preferNoProxies = options.bypassProxies
+        let connection = NWConnection(host: NWEndpoint.Host(options.address ?? host), port: .https, using: parameters)
+        let hostHeader = host.contains(":") ? "[\(host)]" : host
+        let request = "GET \(path) HTTP/1.1\r\nHost: \(hostHeader)\r\nUser-Agent: OpenStats\r\nAccept: \(options.accept)\r\nConnection: close\r\n\r\n"
         guard let raw = await Exchange(connection: connection, request: Data(request.utf8), timeout: timeout).run() else {
             return (nil, 0)
         }
