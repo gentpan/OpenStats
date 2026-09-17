@@ -17,6 +17,7 @@ public struct SettingsDocument: Codable, Equatable, Sendable {
     public var lidModeBatteryFloor: Int?
     public var fanSafetyTemperature: Int?
     public var appearance: String?
+    public var showDockIcon: Bool?
     public var menuBarLayout: String?
     public var hiddenPopoverSections: [String]?
     public var probeEnabled: Bool?
@@ -50,6 +51,7 @@ extension AppSettings {
         doc.lidModeBatteryFloor = lidModeBatteryFloor
         doc.fanSafetyTemperature = fanSafetyTemperature
         doc.appearance = appearance.rawValue
+        doc.showDockIcon = showDockIcon
         doc.menuBarLayout = menuBarLayout.rawValue
         doc.hiddenPopoverSections = hiddenPopoverSections.map(\.rawValue).sorted()
         doc.probeEnabled = probeEnabled
@@ -93,6 +95,7 @@ extension AppSettings {
         assign(\.lidModeBatteryFloor, option(doc.lidModeBatteryFloor, in: Self.batteryFloorOptions))
         assign(\.fanSafetyTemperature, option(doc.fanSafetyTemperature, in: Self.fanSafetyOptions))
         assign(\.appearance, doc.appearance.flatMap(AppearanceMode.init(rawValue:)))
+        assign(\.showDockIcon, doc.showDockIcon)
         assign(\.menuBarLayout, doc.menuBarLayout.flatMap(MenuBarLayout.init(rawValue:)))
         assign(\.hiddenPopoverSections, doc.hiddenPopoverSections.map { Set($0.compactMap(PopoverSection.init(rawValue:))) })
         assign(\.probeEnabled, doc.probeEnabled)

@@ -74,6 +74,11 @@ struct GeneralSettings: View {
                 }
             }
             GroupRow {
+                SettingRow(title: tr("在程序坞显示图标"), subtitle: tr("默认只在菜单栏运行；打开后，主窗口开着时图标出现在程序坞与 ⌘Tab 中")) {
+                    DSToggle(isOn: $settings.showDockIcon, label: tr("在程序坞显示图标"))
+                }
+            }
+            GroupRow {
                 SettingRow(title: tr("刷新频率"), subtitle: tr("只显示菜单栏时的采样间隔；打开弹窗或主窗口时为 1 秒（进程页 2 秒）")) {
                     SegmentedControl(selection: $settings.refreshSeconds,
                                      options: AppSettings.refreshOptions.map { ($0, tr("\($0) 秒")) })

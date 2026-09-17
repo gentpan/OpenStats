@@ -421,6 +421,10 @@ public final class AppSettings {
     public var appearance: AppearanceMode {
         didSet { defaults.set(appearance.rawValue, forKey: Keys.appearance) }
     }
+    /// 主窗口开着时在程序坞与 ⌘Tab 中显示图标；默认关闭，和其他菜单栏工具一样只在菜单栏运行
+    public var showDockIcon: Bool {
+        didSet { defaults.set(showDockIcon, forKey: Keys.showDockIcon) }
+    }
     public var menuBarLayout: MenuBarLayout {
         didSet { defaults.set(menuBarLayout.rawValue, forKey: Keys.menuBarLayout) }
     }
@@ -520,6 +524,7 @@ public final class AppSettings {
             ? defaults.integer(forKey: Keys.fanSafetyTemperature) : 95
         panelTab = defaults.string(forKey: Keys.panelTab).flatMap(PanelTab.init(rawValue:)) ?? .overview
         appearance = defaults.string(forKey: Keys.appearance).flatMap(AppearanceMode.init(rawValue:)) ?? .system
+        showDockIcon = defaults.bool(forKey: Keys.showDockIcon)
         cleanPrefersTrash = defaults.bool(forKey: Keys.cleanPrefersTrash)
         menuBarLayout = defaults.string(forKey: Keys.menuBarLayout).flatMap(MenuBarLayout.init(rawValue:)) ?? .separate
         expandedPopoverSections = Set((defaults.stringArray(forKey: Keys.expandedPopoverSections) ?? []).compactMap(PopoverSection.init(rawValue:)))
@@ -590,6 +595,7 @@ public final class AppSettings {
         static let fanSafetyTemperature = "fanSafetyTemperature"
         static let panelTab = "panelTab"
         static let appearance = "appearance"
+        static let showDockIcon = "showDockIcon"
         static let cleanPrefersTrash = "cleanPrefersTrash"
         static let menuBarLayout = "menuBarLayout"
         static let hiddenPopoverSections = "hiddenPopoverSections"

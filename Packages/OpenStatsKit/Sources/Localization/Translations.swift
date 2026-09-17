@@ -372,6 +372,7 @@ npm 缓存	npm Cache
 圆环表示当前占用比例	A ring shows current usage
 在 cleanip.io 查看这个 IP 的完整报告	Open this IP's full report on cleanip.io
 在主窗口打开“{}”	Open “{}” in the main window
+在程序坞显示图标	Show Icon in Dock
 在线升级	Online Updates
 在线升级：发现新版本时显示更新摘要，一键安装并自动重启	Online updates: see what's new, install in one click and relaunch automatically
 在菜单栏显示	Show in Menu Bar
@@ -1030,6 +1031,7 @@ npm 缓存	npm Cache
 高负载	Heavy load
 高负载时着色	Color High Load
 高风险	High risk
+默认只在菜单栏运行；打开后，主窗口开着时图标出现在程序坞与 ⌘Tab 中	OpenStats lives in the menu bar by default. Turn this on to show its icon in the Dock and ⌘Tab while the main window is open
 （{}）	 ({})
 ，	, 
 ，{} 项未能移动	, {} couldn't be moved

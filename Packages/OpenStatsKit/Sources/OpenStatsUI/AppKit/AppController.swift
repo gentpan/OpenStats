@@ -159,10 +159,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         updateTimer?.tolerance = 5 * 60
     }
 
-    /// 有窗口打开时显示在程序坞与 ⌘Tab 里，全部关闭后回到仅菜单栏
+    /// 默认只在菜单栏运行、不占程序坞；打开了“在程序坞显示图标”时，有窗口开着才出现在程序坞与 ⌘Tab 里
     private func updateActivationPolicy() {
         let hasWindow = mainWindow.isVisible
-        let policy: NSApplication.ActivationPolicy = hasWindow ? .regular : .accessory
+        let policy: NSApplication.ActivationPolicy = hasWindow && model.settings.showDockIcon ? .regular : .accessory
         guard NSApp.activationPolicy() != policy else { return }
         NSApp.setActivationPolicy(policy)
         if hasWindow { NSApp.activate() }
@@ -186,6 +186,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
             _ = model.settings.expandedPopoverSections
             _ = model.keepAwake.isActive
             _ = model.settings.appearance
+            _ = model.settings.showDockIcon
             _ = model.isNetworkDetailVisible
             _ = model.settings.probeEnabled
             _ = model.settings.probeInBackground
@@ -199,6 +200,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
                 await self.model.hub.update(self.model.demand)
                 self.model.bluetooth.setDemand(self.model.bluetoothDemand)
                 self.applyAppearance()
+                self.updateActivationPolicy()
                 self.menuBar.update()
                 self.menuBar.refreshPopoverHeight()
                 self.updateNetworkVisibility()

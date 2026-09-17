@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// 主窗口。打开时应用出现在程序坞与 ⌘Tab 中，关闭后回到仅菜单栏运行
+/// 主窗口。应用默认只在菜单栏运行，窗口开着也不占程序坞；设置里打开“在程序坞显示图标”后才出现在程序坞与 ⌘Tab 中
 @MainActor
 final class MainWindowController: NSObject, NSWindowDelegate {
     private let model: AppModel
