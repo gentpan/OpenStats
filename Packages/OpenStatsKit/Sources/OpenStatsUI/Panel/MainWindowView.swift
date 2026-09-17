@@ -226,6 +226,16 @@ private struct PageHeader: View {
                 .dsGlass(in: Capsule(), fallback: DS.Palette.primary.opacity(0.12))
             }
             if tab == .memory { PurgeMemoryButton() }
+            if tab == .network {
+                Button { model.openSpeedTestWindow() } label: {
+                    HStack(spacing: DS.Space.s1) {
+                        Image(systemName: "gauge.with.dots.needle.67percent")
+                        Text(tr("网络测速")).lineLimit(1).fixedSize()
+                    }
+                }
+                .buttonStyle(DSButtonStyle(kind: .secondary))
+                .help(tr("测本机宽带、国内分省三网延迟与全球节点"))
+            }
             // 每个监控页都能在这里开关自己的菜单栏项目；温度与风扇页有两项，各带一个小标签
             let items = tab.menuBarItems
             if !items.isEmpty {

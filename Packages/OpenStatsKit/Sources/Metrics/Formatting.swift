@@ -74,6 +74,21 @@ public enum Format {
         return "\(text) \(units[index])"
     }
 
+    /// 测速用的带宽：按 1000 进位，单位与运营商、测速站一致
+    /// 例：820 kbps、95.3 Mbps、1.21 Gbps
+    public static func bandwidth(_ bitsPerSecond: Double) -> String {
+        let units = ["bps", "kbps", "Mbps", "Gbps"]
+        var value = max(0, bitsPerSecond)
+        guard value >= 1 else { return "0 bps" }
+        var index = 0
+        while value >= 1000, index < units.count - 1 {
+            value /= 1000
+            index += 1
+        }
+        let digits = value >= 100 ? 0 : (value >= 10 ? 1 : 2)
+        return "\(value.formatted(.number.precision(.fractionLength(digits)))) \(units[index])"
+    }
+
     public static func percent(_ fraction: Double) -> String {
         "\(Int((min(1, max(0, fraction)) * 100).rounded()))%"
     }

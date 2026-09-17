@@ -59,9 +59,23 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.4.0** (2026-09-16) · **1** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.4.0** (2026-09-16) · **2** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
+<summary><b>2026-09-18</b> · Unreleased · 1 added</summary>
+
+**Added**
+
+- 网络测速：网络页顶栏新增“网络测速”按钮，打开一个独立窗口，四块内容各自独立、可以单独跑也可以随时停。
+  - 本机宽带：用 speed.cloudflare.com 测下行、上行、空载延迟与抖动，并显示这次走的是哪个 Cloudflare 边缘节点。
+  - 国内分省三网延迟：31 个省份 × 电信 / 联通 / 移动共 93 个节点，只做 TCP 建连计时、不下载任何数据，给出三网各自的中位延迟与逐省数值。节点来自 zstaticcdn.com。
+  - 全球节点：亚太、欧洲、北美等 24 个节点先测延迟，再对想看的节点单独测下载速度，测速文件来自 Linode、Vultr、DataPacket。
+  - 全球探针看目标：填一个域名，从全球 10 / 20 / 30 个社区探针 ping 它，看各地访问的延迟与丢包。走 Globalping 的公开接口，请求从本机直接发出、不带任何密钥，用的是本机 IP 每小时的免费额度。
+  - 下载类测试有明确的用量上限，顶栏可选 3 秒 / 20 MB、5 秒 / 50 MB、10 秒 / 200 MB（默认），时间与流量哪个先到就停在哪，顶栏实时显示本次用掉多少流量，关窗即停。
+
+</details>
+
+<details>
 <summary><b>2026-09-17</b> · Unreleased · 1 changed</summary>
 
 **Changed**
@@ -94,16 +108,6 @@ Latest release **0.4.0** (2026-09-16) · **1** changes in development · [full c
 **Added**
 
 - 清理、卸载等耗时操作进行中显示全局加载框：清理、卸载应用、导出诊断信息、修改 DNS 进行中，整个主窗口压暗，中间浮一块加载框写明正在做什么（macOS 26 上是液态玻璃），期间不能误点其他操作，完成后自动消失。
-
-</details>
-
-<details>
-<summary><b>2026-09-16</b> · 0.3.2 · 2 fixed</summary>
-
-**Fixed**
-
-- 修复网络详情里 IP 纯净度查不到的问题：之前一直显示“正在查询”、IP 地址区块只剩国家，因为 cleanip.io 不再接受查询指定 IP，改为只查请求方自己的出口。现在分别锁定 IPv4 与 IPv6 连接各查一次，两族仍然各有自己的归属地与纯净度；锁定地址族的连接建不起来时退回系统默认的请求方式。用了分流代理、cleanip.io 看到的出口与 Cloudflare 看到的不同时，以 cleanip.io 看到的地址显示，纯净度与地址对得上。
-- 修复查询失败后纯净度长时间空着：空结果不再被当成有效结果保存 7 天，没查到的下次打开网络详情就会重查，服务恢复后纯净度不会一直空着。
 
 </details>
 

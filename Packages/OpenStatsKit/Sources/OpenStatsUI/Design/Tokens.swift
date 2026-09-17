@@ -168,6 +168,9 @@ extension DS {
         static let panelGap: CGFloat = 4
         /// 窗口顶栏高度：标准工具栏的标题栏（52pt），红绿灯、页面标题与右上角 32pt 的按钮在同一条水平线上，按钮上下各留 10pt
         static let windowHeader: CGFloat = DS.Space.s12 + DS.Space.s1
+        /// 网络测速窗口
+        static let speedTestWindowWidth: CGFloat = 720
+        static let speedTestWindowHeight: CGFloat = 840
         /// 主窗口首次打开的最小高度（屏幕放得下时）
         static let windowDefaultHeight: CGFloat = 720
         /// 主窗口默认内容区宽度（侧边栏另计）

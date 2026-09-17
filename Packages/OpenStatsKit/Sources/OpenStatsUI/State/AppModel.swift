@@ -17,6 +17,7 @@ public final class AppModel {
     public let cleaner: CleanerController
     public let maintenance: MaintenanceController
     public let network: NetworkController
+    public let speedTest: SpeedTestController
     public let explainer = ProcessExplainer()
     public let updates: UpdateController
     let diagnostics = DiagnosticsExporter()
@@ -39,6 +40,7 @@ public final class AppModel {
 
     @ObservationIgnored var openSettings: () -> Void = {}
     @ObservationIgnored var openMainWindow: (PanelTab?) -> Void = { _ in }
+    @ObservationIgnored var openSpeedTestWindow: () -> Void = {}
     @ObservationIgnored var quit: () -> Void = {}
 
     public init(settings: AppSettings = AppSettings(), historyURL: URL? = HistoryDatabase.defaultURL) {
@@ -57,6 +59,7 @@ public final class AppModel {
         history = HistoryRecorder(settings: settings, databaseURL: historyURL)
         sync = SyncController(settings: settings)
         diskTools = DiskToolsController(helper: helper)
+        speedTest = SpeedTestController(settings: settings)
     }
 
     /// 根据当前可见内容决定采集范围：主窗口看标签页，详情弹窗看是哪一项

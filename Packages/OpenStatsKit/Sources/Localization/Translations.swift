@@ -56,6 +56,7 @@ DNS 已设置为 {}	DNS set to {}
 DNS 缓存已刷新	DNS cache flushed
 DerivedData，下次编译时自动重建	DerivedData; rebuilt on the next build
 GPU 占用	GPU Usage
+Globalping 返回了错误（HTTP {}）	Globalping returned an error (HTTP {})
 Google（8.8.8.8）	Google (8.8.8.8)
 IP 地址	IP Addresses
 IP 类型	IP type
@@ -96,6 +97,7 @@ npm 缓存	npm Cache
 {} 个传感器	{} sensors
 {} 个应用，系统自带的不列出	{} apps; built-in apps are not listed
 {} 个进程	{} processes
+{} 中位延迟	{} median
 {} 分钟	{} min
 {} 可用 {} · 共 {}	{} {} free · {} total
 {} 天	{} d
@@ -106,7 +108,9 @@ npm 缓存	npm Cache
 {} 核图形处理器	{}-core GPU
 {} 正在运行	{} is running
 {} 正在运行，卸载前需要先退出。	{} is running. Quit it before uninstalling.
+{} 测	at {}
 {} 秒	{}s
+{} 秒 / {} MB	{}s / {} MB
 {} 组	{} groups
 {} 缓存	{} Cache
 {} 英寸	{}-inch
@@ -115,6 +119,7 @@ npm 缓存	npm Cache
 {} 项 · 需要管理员权限，只读	{} items · needs admin, read-only
 {} 项失败	{} failed
 {}%（阈值 {}%）	{}% (threshold {}%)
+{}/{} 个节点连得上	{}/{} nodes reachable
 {}{}只剩 {}%，记得充电。	{}{} is down to {}%. Time to charge.
 {}{}（{}）	{}{} ({})
 {}。系统会自动分配任务，不用你操心	{}. macOS assigns work between them automatically.
@@ -143,6 +148,8 @@ npm 缓存	npm Cache
 上次检查发现问题	Last check found problems
 上次检查正常	Last check was fine
 上次检查：{}	Last checked: {}
+上行	Upload
+下行	Download
 下载	Download
 下载失败：{}	Download failed: {}
 下载目录中的 .dmg / .pkg / .xip / .iso，移到废纸篓	.dmg / .pkg / .xip / .iso files in Downloads; moved to Trash
@@ -157,6 +164,7 @@ npm 缓存	npm Cache
 不限	No limit
 不限时	Indefinitely
 与 30 秒前持平	Same as 30s ago
+丢包 {}%	{}% loss
 严重	Critical
 中等负载	Moderate load
 中等风险	Medium risk
@@ -170,6 +178,7 @@ npm 缓存	npm Cache
 介质错误	Media errors
 从左侧选择应用，或把应用拖到这里	Choose an app on the left, or drop one here
 从未	Never
+从这个节点下载测速，上限 {}	Download from this node, up to {}
 代理	Proxy
 以单核满载为 100%	100% = one full core
 以后再说	Later
@@ -213,6 +222,8 @@ npm 缓存	npm Cache
 充电中	Charging
 充电盒	Case
 全局快捷键（在任何应用中都能使用，需要包含 ⌘、⌥ 或 ⌃）	Global shortcuts (work in any app; must include ⌘, ⌥ or ⌃)
+全球探针看目标	Global Probes
+全球节点	Global Nodes
 全选	Select All
 全部	All
 全部删除	Delete all
@@ -271,6 +282,7 @@ npm 缓存	npm Cache
 包名是 {}	Bundle ID is {}
 包含城市数据	Include City Data
 协议版本	Protocol version
+单个节点一次测速最多花的时间与流量，先到哪个停哪个	Time and data cap for one node's speed test, whichever comes first
 单行	Inline
 单行文字	Inline Text
 占整机 CPU 的比例：{} 个核心全部跑满为 100%	Share of total CPU: all {} cores fully busy is 100%
@@ -363,6 +375,7 @@ npm 缓存	npm Cache
 启用失败：{}	Failed to turn on: {}
 唤醒	Wakeups
 团队 {}	team {}
+国内分省三网延迟	Latency Across China
 国内网络建议选阿里云或腾讯；选路由器只检测本地连接	In mainland China, Alibaba Cloud or Tencent work best; Router only checks the local link
 图形	Graphics
 图形处理器	GPU
@@ -379,6 +392,7 @@ npm 缓存	npm Cache
 在菜单栏显示{}	Show {} in menu bar
 在访达中显示	Show in Finder
 型号	Model
+域名，例如 example.com	Domain, for example example.com
 处理器	Processor
 处理器核心	CPU cores
 备用空间	Available spare
@@ -481,6 +495,7 @@ npm 缓存	npm Cache
 开启 / 关闭“合盖不睡眠”（等同 pmset disablesleep）	Turn lid-closed sleep prevention on or off (same as pmset disablesleep)
 开启后图标出现在菜单栏；按住 ⌘ 键拖动图标可以调整位置	Adds the icon to the menu bar; hold ⌘ and drag the icon to move it
 开始分析	Analyze
+开始探测	Run
 开机以来	Since boot
 开机后上传	Uploaded since boot
 开机后下载	Downloaded since boot
@@ -531,6 +546,7 @@ npm 缓存	npm Cache
 扫描中	Scanning
 扫描中…	Scanning…
 扫描于 	Scanned 
+抖动	Jitter
 折线历史	Line History
 折线是最近 30 次采样（约 1 分钟）的走势	The line shows the last 30 samples (about a minute)
 拷贝	Copy
@@ -549,6 +565,8 @@ npm 缓存	npm Cache
 掌托	Palm rest
 排队程度	Run Queue
 探测目标	Probe Target
+探针一直没有返回结果，稍后再试	The probes never returned a result; try again later
+探针数量，一个探针占一次额度	Number of probes; each probe uses one test from the quota
 接口	Interface
 接通电源	Plugged in
 推出	Eject
@@ -633,7 +651,10 @@ npm 缓存	npm Cache
 本地 IPv4	Local IPv4
 本地 IPv6	Local IPv6
 本地快照	Local snapshots
+本机 IP 这一小时还剩 {}/{} 次探针额度	{}/{} probe tests left this hour for this Mac's IP
 本机信息	This Mac
+本机宽带	Your Connection
+本次用掉 {}	{} used
 机型	Model
 机型标识符	Model Identifier
 机房	Data center
@@ -688,6 +709,10 @@ npm 缓存	npm Cache
 正在核对校验值、开发者签名与 Apple 公证…	Verifying checksum, developer signature and Apple notarization…
 正在检查…	Checking…
 正在检查更新	Checking for updates
+正在测 {}/{}	Testing {}/{}
+正在测上行	Measuring upload
+正在测下行	Measuring download
+正在测延迟	Measuring latency
 正在清理…	Cleaning…
 正在移除…	Removing…
 正在统计…	Counting…
@@ -726,6 +751,9 @@ npm 缓存	npm Cache
 流量经过 {}，系统 DNS 可能由它接管，修改后不一定生效。	Traffic goes through {}, which may take over system DNS, so changes might not apply.
 浅色	Light
 浅色菜单栏预览	Light menu bar preview
+测延迟	Latency
+测本机宽带、国内分省三网延迟与全球节点	Test your broadband, per-province latency in China and global nodes
+测速	Test
 浏览器	Browsers
 深色	Dark
 深色菜单栏预览	Dark menu bar preview
@@ -800,6 +828,7 @@ npm 缓存	npm Cache
 监控	Monitor
 目标转速	Target speed
 相当于“磁盘工具”里的急救，但只检查不修改：核对启动盘的目录结构、文件分配与快照元数据是否一致。	Like First Aid in Disk Utility, but read-only: checks that the startup disk's directory structure, allocation and snapshot metadata are consistent.
+省份	Province
 确认清理	Clean
 确认通知能正常显示	Check that notifications appear
 磁盘	Disk
@@ -847,6 +876,7 @@ npm 缓存	npm Cache
 线程	Threads
 线程 {}	Threads {}
 线程数（只能读取自己的进程）	Thread count (your processes only)
+经 Cloudflare {} 边缘节点	Via the Cloudflare {} edge
 结束 {} 失败：{}	Failed to end {}: {}
 结束“{}”？	End “{}”?
 结束它会注销当前用户，已禁止	Ending it would log you out, so it's blocked
@@ -863,6 +893,7 @@ npm 缓存	npm Cache
 网络名称	Network name
 网络已恢复	Network Restored
 网络断开	Network Down
+网络测速	Network Speed Test
 网络类型	Network type
 网络详情打开时每秒 ping 一次，通了是绿格、不通是红格，显示最近 60 次	Pings once a second while network details are open: green when reachable, red when not, showing the last 60
 网络运营方	Network operator
@@ -913,6 +944,7 @@ npm 缓存	npm Cache
 请从菜单退出 OpenStats	Quit OpenStats from its menu
 请先在“系统设置 → Apple 智能与 Siri”中开启 Apple 智能。	Turn on Apple Intelligence in System Settings → Apple Intelligence & Siri first.
 请在“系统设置 › 通用 › 登录项”中允许 OpenStats 的后台项目。	Allow OpenStats in System Settings › General › Login Items.
+请填写一个域名，例如 example.com	Enter a domain, for example example.com
 请打开系统自带的“磁盘工具”，选择启动盘运行“急救”进行修复	Open the built-in Disk Utility, select the startup disk and run First Aid to repair it
 读 {} · 写 {}	Read {} · Write {}
 读写最多的应用	Top Disk Activity
@@ -955,6 +987,8 @@ npm 缓存	npm Cache
 还有 {} 个	{} more
 还没有足够的记录。菜单栏显示电池或打开这个页面时，每分钟记录一次电量	Not enough records yet. The level is recorded every minute while Battery is in the menu bar or this page is open
 还能用 {}	{} left
+这个小时的免费额度用完了，{} 分钟后可以再试	The free quota for this hour is used up; try again in {} minutes
+这个小时的免费额度用完了，过一会儿再试	The free quota for this hour is used up; try again later
 这个快捷键已被其他应用或系统占用，请换一个	This shortcut is used by another app or the system. Choose another.
 这台 Mac 不提供功耗读数	This Mac doesn't report power
 这台 Mac 不支持 Apple 智能。	This Mac doesn't support Apple Intelligence.

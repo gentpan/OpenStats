@@ -9,6 +9,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     private var menuBar: MenuBarController!
     private var mainWindow: MainWindowController!
     private var updateWindow: UpdateWindowController!
+    private var speedTestWindow: SpeedTestWindowController!
     private var updateTimer: Timer?
     private let hotKeys = HotKeyCenter()
     private var workspaceObservers: [NSObjectProtocol] = []
@@ -27,6 +28,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
         mainWindow = MainWindowController(model: model)
         mainWindow.onVisibilityChange = { [weak self] _ in self?.updateActivationPolicy() }
         updateWindow = UpdateWindowController(model: model)
+        speedTestWindow = SpeedTestWindowController(model: model)
+        speedTestWindow.onVisibilityChange = { [weak self] _ in self?.updateActivationPolicy() }
         menuBar.update()
 
         // 设置已并入主窗口：所有“设置…”入口都打开主窗口的通用设置
@@ -37,6 +40,10 @@ public final class AppController: NSObject, NSApplicationDelegate {
         model.openMainWindow = { [weak self] tab in
             self?.menuBar.dismissPopovers()
             self?.mainWindow.show(tab: tab)
+        }
+        model.openSpeedTestWindow = { [weak self] in
+            self?.menuBar.dismissPopovers()
+            self?.speedTestWindow.show()
         }
         model.quit = { NSApp.terminate(nil) }
         model.helper.refreshStatus()
@@ -76,6 +83,15 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         if arguments.contains("--show-window") {
             mainWindow.show(tab: nil)
+        }
+        if arguments.contains("--show-speedtest") {
+            speedTestWindow.show()
+        }
+        // 开发调试：--probe <域名> 打开测速窗口并立即用全球探针 ping 这个域名
+        if let index = arguments.firstIndex(of: "--probe"), let domain = arguments.dropFirst(index + 1).first {
+            speedTestWindow.show()
+            model.speedTest.globalpingTarget = domain
+            model.speedTest.runGlobalping()
         }
         // 开发调试：--explain-process <进程名> 打开进程页并用 Apple 智能解释该进程
         if let index = arguments.firstIndex(of: "--explain-process"), let name = arguments.dropFirst(index + 1).first {
@@ -161,7 +177,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
 
     /// 默认只在菜单栏运行、不占程序坞；打开了“在程序坞显示图标”时，有窗口开着才出现在程序坞与 ⌘Tab 里
     private func updateActivationPolicy() {
-        let hasWindow = mainWindow.isVisible
+        let hasWindow = mainWindow.isVisible || speedTestWindow.isVisible
         let policy: NSApplication.ActivationPolicy = hasWindow && model.settings.showDockIcon ? .regular : .accessory
         guard NSApp.activationPolicy() != policy else { return }
         NSApp.setActivationPolicy(policy)
