@@ -239,6 +239,9 @@ struct CleanIPLogo: View {
             }
         }
         .frame(width: width, height: height)
+        // 字母落在画布 y = 78 处（下面是 p 的下伸部分）：与文字按基线对齐时对齐这条线，字标才和文字在同一水平线上
+        .alignmentGuide(.firstTextBaseline) { $0.height * 78 / 98 }
+        .alignmentGuide(.lastTextBaseline) { $0.height * 78 / 98 }
         .accessibilityLabel("cleanip.io")
     }
 }
