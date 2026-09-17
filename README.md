@@ -6,7 +6,7 @@
 
 **Your Mac at a glance — CPU, GPU, memory, network and temperatures in the menu bar, with fan control, keep-awake, one-click cleanup, an app uninstaller and an IP cleanliness check.**
 
-[![Release](https://img.shields.io/badge/release-0.5.0-6ee02b)](https://getopenstats.com/#download)
+[![Release](https://img.shields.io/badge/release-0.6.0-6ee02b)](https://getopenstats.com/#download)
 [![Stars](https://img.shields.io/github/stars/gentpan/OpenStats?style=flat&color=f5c518&label=stars)](https://github.com/gentpan/OpenStats/stargazers)
 [![Last commit](https://img.shields.io/github/last-commit/gentpan/OpenStats?color=black&label=last%20commit)](https://github.com/gentpan/OpenStats/commits/main)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/gentpan/OpenStats?color=black&label=commits)](https://github.com/gentpan/OpenStats/graphs/commit-activity)
@@ -34,13 +34,13 @@ Everything is read on your own Mac, and there is no telemetry. An account is opt
 
 ## Install
 
-Download OpenStats 0.5.0 from the website (signed with a Developer ID certificate and notarized by Apple) —
+Download OpenStats 0.6.0 from the website (signed with a Developer ID certificate and notarized by Apple) —
 pick the build for your Mac's chip:
 
 | Chip | Download |
 |---|---|
-| Apple silicon (M1, M2, M3, M4, M5) | [OpenStats-0.5.0-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.5.0-AppleSilicon.dmg) |
-| Intel | [OpenStats-0.5.0-Intel.dmg](https://getopenstats.com/download/OpenStats-0.5.0-Intel.dmg) |
+| Apple silicon (M1, M2, M3, M4, M5) | [OpenStats-0.6.0-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.6.0-AppleSilicon.dmg) |
+| Intel | [OpenStats-0.6.0-Intel.dmg](https://getopenstats.com/download/OpenStats-0.6.0-Intel.dmg) |
 
 Not sure? Apple menu › About This Mac says "Chip Apple M…" on Apple silicon and "Processor Intel…" on Intel.
 Homebrew picks the right build for you:
@@ -59,18 +59,18 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.5.0** (2026-09-18) · **6** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.6.0** (2026-09-18) · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-09-18</b> · Unreleased · 5 added · 1 style</summary>
+<summary><b>2026-09-18</b> · 0.6.0 · 5 added · 1 style</summary>
 
 **Added**
 
 - 新增出口与分流窗口：网络页顶栏和菜单栏网络弹窗各有一个入口。一次检测约十秒，看清 VPN 与代理有没有生效、各个网站分别从哪个出口出去。
-- 一句话结论：分“未使用代理”“代理出口（地区）”“代理没有生效”“网络不通”四种情况，右侧给出经代理、直连、连不上的网站数量。
-- 本机网络：显示物理网卡的出口 IP、归属地、运营商与 IPv6，归属地数据来自 cleanip.io。
-- 网站分流：ChatGPT、Claude、YouTube、GitHub、哔哩哔哩等 25 个常用网站，按 AI、影音、社交、开发、国内分类筛选。接入 Cloudflare 的网站能实测出口与边缘节点，其余按国内 / 国际规则推断，每个网站带延迟信号条。
-- 代理方式：列出 VPN / 隧道、系统代理、自动代理配置、DNS（被代理接管时会标出）与检测到的代理软件。
+- 结论只用一句话说清：未使用代理、代理出口（地区）、代理没有生效、网络不通四种情况。右侧同时给出经代理、直连、连不上的网站数量。
+- 本机网络：物理网卡的出口 IP、归属地、运营商与 IPv6。归属地数据来自 cleanip.io。
+- 网站分流：25 个常用网站分别从哪个出口出去。按 AI、影音、社交、开发、国内分类筛选；接入 Cloudflare 的网站能实测出口与边缘节点，其余按国内 / 国际规则推断，每个网站带延迟信号条。
+- 代理方式一览：VPN / 隧道、系统代理、自动代理配置、DNS 与检测到的代理软件。DNS 被代理接管时会标出来。
 
 **Style**
 

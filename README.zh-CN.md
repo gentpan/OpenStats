@@ -6,7 +6,7 @@
 
 **Mac 的状态，抬眼就看见——CPU、GPU、内存、网络与温度常驻菜单栏，还能调风扇、防休眠、一键清理、卸载应用，检测 IP 纯净度。**
 
-[![Release](https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.5.0-6ee02b)](https://getopenstats.com/#download)
+[![Release](https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.6.0-6ee02b)](https://getopenstats.com/#download)
 [![Stars](https://img.shields.io/github/stars/gentpan/OpenStats?style=flat&color=f5c518&label=%E6%98%9F%E6%A0%87)](https://github.com/gentpan/OpenStats/stargazers)
 [![Last commit](https://img.shields.io/github/last-commit/gentpan/OpenStats?color=black&label=%E6%9C%80%E8%BF%91%E6%8F%90%E4%BA%A4)](https://github.com/gentpan/OpenStats/commits/main)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/gentpan/OpenStats?color=black&label=%E6%8F%90%E4%BA%A4)](https://github.com/gentpan/OpenStats/graphs/commit-activity)
@@ -32,12 +32,12 @@ OpenStats 是一款 macOS 菜单栏应用，实时显示 Mac 正在做什么：�
 
 ## 安装
 
-从官网下载 OpenStats 0.5.0（Developer ID 签名、经过 Apple 公证），按 Mac 的芯片选择：
+从官网下载 OpenStats 0.6.0（Developer ID 签名、经过 Apple 公证），按 Mac 的芯片选择：
 
 | 芯片 | 下载 |
 |---|---|
-| Apple 芯片（M1、M2、M3、M4、M5 系列） | [OpenStats-0.5.0-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.5.0-AppleSilicon.dmg) |
-| Intel 芯片 | [OpenStats-0.5.0-Intel.dmg](https://getopenstats.com/download/OpenStats-0.5.0-Intel.dmg) |
+| Apple 芯片（M1、M2、M3、M4、M5 系列） | [OpenStats-0.6.0-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.6.0-AppleSilicon.dmg) |
+| Intel 芯片 | [OpenStats-0.6.0-Intel.dmg](https://getopenstats.com/download/OpenStats-0.6.0-Intel.dmg) |
 
 不确定是哪种，看苹果菜单 › 关于本机：写着“芯片 Apple M…”是 Apple 芯片，写着“处理器 Intel…”是 Intel。
 也可以用 Homebrew 安装，会自动选对版本：
@@ -55,18 +55,18 @@ CPU 不分性能核与能效核，部分功耗与频率读数可能不显示。
 <!-- changelog:start -->
 <!-- 由 Scripts/sync_changelog.py 从 CHANGELOG.md 生成，请勿手改。 -->
 
-最新版本 **0.5.0**（2026-09-18） · 开发中 **6** 项改动尚未发布 · [完整更新日志](CHANGELOG.md)
+最新版本 **0.6.0**（2026-09-18） · [完整更新日志](CHANGELOG.md)
 
 <details open>
-<summary><b>2026-09-18</b> · 未发布 · 新增 5 · 样式 1</summary>
+<summary><b>2026-09-18</b> · 0.6.0 · 新增 5 · 样式 1</summary>
 
 **新增**
 
 - 新增出口与分流窗口：网络页顶栏和菜单栏网络弹窗各有一个入口。一次检测约十秒，看清 VPN 与代理有没有生效、各个网站分别从哪个出口出去。
-- 一句话结论：分“未使用代理”“代理出口（地区）”“代理没有生效”“网络不通”四种情况，右侧给出经代理、直连、连不上的网站数量。
-- 本机网络：显示物理网卡的出口 IP、归属地、运营商与 IPv6，归属地数据来自 cleanip.io。
-- 网站分流：ChatGPT、Claude、YouTube、GitHub、哔哩哔哩等 25 个常用网站，按 AI、影音、社交、开发、国内分类筛选。接入 Cloudflare 的网站能实测出口与边缘节点，其余按国内 / 国际规则推断，每个网站带延迟信号条。
-- 代理方式：列出 VPN / 隧道、系统代理、自动代理配置、DNS（被代理接管时会标出）与检测到的代理软件。
+- 结论只用一句话说清：未使用代理、代理出口（地区）、代理没有生效、网络不通四种情况。右侧同时给出经代理、直连、连不上的网站数量。
+- 本机网络：物理网卡的出口 IP、归属地、运营商与 IPv6。归属地数据来自 cleanip.io。
+- 网站分流：25 个常用网站分别从哪个出口出去。按 AI、影音、社交、开发、国内分类筛选；接入 Cloudflare 的网站能实测出口与边缘节点，其余按国内 / 国际规则推断，每个网站带延迟信号条。
+- 代理方式一览：VPN / 隧道、系统代理、自动代理配置、DNS 与检测到的代理软件。DNS 被代理接管时会标出来。
 
 **样式**
 

@@ -341,16 +341,16 @@
         <li class="download__option">
           <h3>Apple 芯片</h3>
           <p>M1、M2、M3、M4、M5 系列的 Mac</p>
-          <a class="btn btn--primary" href="download/OpenStats-0.5.0-AppleSilicon.dmg">下载 Apple 芯片版</a>
+          <a class="btn btn--primary" href="download/OpenStats-0.6.0-AppleSilicon.dmg">下载 Apple 芯片版</a>
         </li>
         <li class="download__option">
           <h3>Intel 芯片</h3>
           <p>能升级到 macOS 14 的 Intel Mac（大多为 2018 年及以后的机型）</p>
-          <a class="btn btn--primary" href="download/OpenStats-0.5.0-Intel.dmg">下载 Intel 版</a>
+          <a class="btn btn--primary" href="download/OpenStats-0.6.0-Intel.dmg">下载 Intel 版</a>
         </li>
       </ul>
       <p class="download__hint">不确定是哪种？打开苹果菜单 › 关于本机，看“芯片”或“处理器”那一行。</p>
-      <p class="hero__meta">版本 0.5.0 · macOS 14 Sonoma 及以上 · 简体中文与 English 界面 · <a href="#changelog">这个版本更新了什么</a></p>
+      <p class="hero__meta">版本 0.6.0 · macOS 14 Sonoma 及以上 · 简体中文与 English 界面 · <a href="#changelog">这个版本更新了什么</a></p>
       <p class="download__brew">也可以用 Homebrew 安装：<code>brew install --cask gentpan/tap/openstats</code></p>
     </div>
   </section>
@@ -364,6 +364,18 @@
       <!-- changelog:start -->
       <!-- 由 Scripts/sync_changelog.py 从 CHANGELOG.md 生成，请勿手改。 -->
       <div class="log">
+        <article class="log__day">
+          <div class="log__head"><time datetime="2026-09-18">2026-09-18</time><span class="log__tag">0.6.0</span></div>
+          <p class="log__counts">新增 5 · 样式 1</p>
+          <ul class="log__list">
+            <li><span class="log__kind">新增</span>新增出口与分流窗口：网络页顶栏和菜单栏网络弹窗各有一个入口。一次检测约十秒，看清 VPN 与代理有没有生效、各个网站分别从哪个出口出去。</li>
+            <li><span class="log__kind">新增</span>结论只用一句话说清：未使用代理、代理出口（地区）、代理没有生效、网络不通四种情况。右侧同时给出经代理、直连、连不上的网站数量。</li>
+            <li><span class="log__kind">新增</span>本机网络：物理网卡的出口 IP、归属地、运营商与 IPv6。归属地数据来自 cleanip.io。</li>
+            <li><span class="log__kind">新增</span>网站分流：25 个常用网站分别从哪个出口出去。按 AI、影音、社交、开发、国内分类筛选；接入 Cloudflare 的网站能实测出口与边缘节点，其余按国内 / 国际规则推断，每个网站带延迟信号条。</li>
+            <li><span class="log__kind">新增</span>代理方式一览：VPN / 隧道、系统代理、自动代理配置、DNS 与检测到的代理软件。DNS 被代理接管时会标出来。</li>
+            <li><span class="log__kind">样式</span>菜单栏网络弹窗的 DNS 区块重排：网络服务与线路做成两个徽章（Wi-Fi / 有线、直连或经过哪个代理），走隧道时标题旁有叹号提示 DNS 可能被接管，刷新 DNS 缓存改为图标按钮。</li>
+          </ul>
+        </article>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-09-18">2026-09-18</time><span class="log__tag">0.5.0</span></div>
           <p class="log__counts">新增 6</p>
@@ -383,6 +395,8 @@
             <li><span class="log__kind">调整</span>程序坞默认不再显示 OpenStats 图标：以前打开主窗口（比如从风扇弹窗进入温度与风扇页）时，图标会出现在程序坞与 ⌘Tab 里，关窗后才消失。现在和其他菜单栏工具一样始终只在菜单栏运行，主窗口照常打开并置于最前。想从程序坞或 ⌘Tab 切回主窗口的，可以在「设置 · 通用」打开“在程序坞显示图标”，开关立即生效。</li>
           </ul>
         </article>
+        <details class="log__older">
+          <summary>更早的更新（7 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-09-16">2026-09-16</time><span class="log__tag">0.4.0</span></div>
           <p class="log__counts">修复 1 · 调整 2 · 样式 6 · 新增 1</p>
@@ -404,8 +418,6 @@
             </ul>
           </details>
         </article>
-        <details class="log__older">
-          <summary>更早的更新（6 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-09-16">2026-09-16</time><span class="log__tag">0.3.2</span></div>
           <p class="log__counts">修复 2</p>
