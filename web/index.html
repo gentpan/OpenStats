@@ -341,16 +341,16 @@
         <li class="download__option">
           <h3>Apple 芯片</h3>
           <p>M1、M2、M3、M4、M5 系列的 Mac</p>
-          <a class="btn btn--primary" href="download/OpenStats-0.6.0-AppleSilicon.dmg">下载 Apple 芯片版</a>
+          <a class="btn btn--primary" href="download/OpenStats-0.6.1-AppleSilicon.dmg">下载 Apple 芯片版</a>
         </li>
         <li class="download__option">
           <h3>Intel 芯片</h3>
           <p>能升级到 macOS 14 的 Intel Mac（大多为 2018 年及以后的机型）</p>
-          <a class="btn btn--primary" href="download/OpenStats-0.6.0-Intel.dmg">下载 Intel 版</a>
+          <a class="btn btn--primary" href="download/OpenStats-0.6.1-Intel.dmg">下载 Intel 版</a>
         </li>
       </ul>
       <p class="download__hint">不确定是哪种？打开苹果菜单 › 关于本机，看“芯片”或“处理器”那一行。</p>
-      <p class="hero__meta">版本 0.6.0 · macOS 14 Sonoma 及以上 · 简体中文与 English 界面 · <a href="#changelog">这个版本更新了什么</a></p>
+      <p class="hero__meta">版本 0.6.1 · macOS 14 Sonoma 及以上 · 简体中文与 English 界面 · <a href="#changelog">这个版本更新了什么</a></p>
       <p class="download__brew">也可以用 Homebrew 安装：<code>brew install --cask gentpan/tap/openstats</code></p>
     </div>
   </section>
@@ -364,6 +364,13 @@
       <!-- changelog:start -->
       <!-- 由 Scripts/sync_changelog.py 从 CHANGELOG.md 生成，请勿手改。 -->
       <div class="log">
+        <article class="log__day">
+          <div class="log__head"><time datetime="2026-09-18">2026-09-18</time><span class="log__tag">0.6.1</span></div>
+          <p class="log__counts">新增 1</p>
+          <ul class="log__list">
+            <li><span class="log__kind">新增</span>菜单栏“合并为一个”时，点击图标弹出状态总览，不再直接打开主窗口：菜单栏里开启的每一项占一行，写着当前数值、一句状态（负载与温度、已用内存、上下行速度、剩余时间等）和最近的走势，数值偏高时变色；点一行或点顶部的标签，就能看到该项的完整详情，与“每项独立”时点单个图标看到的一样。顶部标签可在总览与各项之间来回切换，面板高度随内容变化；标题栏右侧可以打开主窗口的仪表盘或设置。「设置 · 菜单栏」里各项弹窗显示哪些区块的选项，合并模式下同样可用。解决 <a href="https://github.com/gentpan/OpenStats/issues/2">Issue #2</a>：合并显示时点击只能打开主窗口，看不到各项状态。</li>
+          </ul>
+        </article>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-09-18">2026-09-18</time><span class="log__tag">0.6.0</span></div>
           <p class="log__counts">新增 5 · 样式 1</p>
@@ -388,6 +395,8 @@
             <li><span class="log__kind">新增</span>测速有明确的用量上限：默认 10 秒 / 200 MB，先到哪个停哪个。顶栏可改成 3 秒 / 20 MB 或 5 秒 / 50 MB，并实时显示本次用掉多少流量。</li>
           </ul>
         </article>
+        <details class="log__older">
+          <summary>更早的更新（8 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-09-17">2026-09-17</time><span class="log__tag">0.5.0</span></div>
           <p class="log__counts">调整 1</p>
@@ -395,8 +404,6 @@
             <li><span class="log__kind">调整</span>程序坞默认不再显示 OpenStats 图标：以前打开主窗口（比如从风扇弹窗进入温度与风扇页）时，图标会出现在程序坞与 ⌘Tab 里，关窗后才消失。现在和其他菜单栏工具一样始终只在菜单栏运行，主窗口照常打开并置于最前。想从程序坞或 ⌘Tab 切回主窗口的，可以在「设置 · 通用」打开“在程序坞显示图标”，开关立即生效。</li>
           </ul>
         </article>
-        <details class="log__older">
-          <summary>更早的更新（7 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-09-16">2026-09-16</time><span class="log__tag">0.4.0</span></div>
           <p class="log__counts">修复 1 · 调整 2 · 样式 6 · 新增 1</p>

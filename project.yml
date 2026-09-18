@@ -11,7 +11,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "0.6.0"
+    MARKETING_VERSION: "0.6.1"
     # 构建号四位数字，每次 make build 加一；营销版本只在发布时用 Scripts/version.sh patch / minor 修改
     CURRENT_PROJECT_VERSION: "0104"
     MACOSX_DEPLOYMENT_TARGET: "14.0"
