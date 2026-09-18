@@ -59,9 +59,18 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.6.0** (2026-09-18) · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.6.0** (2026-09-18) · **1** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
+<summary><b>2026-09-18</b> · Unreleased · 1 added</summary>
+
+**Added**
+
+- 菜单栏“合并为一个”时，点击图标弹出状态总览，不再直接打开主窗口：菜单栏里开启的每一项占一行，写着当前数值、一句状态（负载与温度、已用内存、上下行速度、剩余时间等）和最近的走势，数值偏高时变色；点一行或点顶部的标签，就能看到该项的完整详情，与“每项独立”时点单个图标看到的一样。顶部标签可在总览与各项之间来回切换，面板高度随内容变化；标题栏右侧可以打开主窗口的仪表盘或设置。「设置 · 菜单栏」里各项弹窗显示哪些区块的选项，合并模式下同样可用。
+
+</details>
+
+<details>
 <summary><b>2026-09-18</b> · 0.6.0 · 5 added · 1 style</summary>
 
 **Added**
@@ -89,15 +98,6 @@ Latest release **0.6.0** (2026-09-18) · [full changelog](CHANGELOG.md) (kept in
 - 全球节点测速：24 个节点，先测延迟再单独测下载。覆盖亚太、欧洲、北美等地，测速文件来自 Linode、Vultr、DataPacket。
 - 全球探针看目标：从全球 10 / 20 / 30 个社区探针 ping 你填的域名。看各地访问它的延迟与丢包，走 Globalping 的公开接口，请求从本机直接发出、不带任何密钥，用的是本机 IP 每小时的免费额度；测量结果在 Globalping 上公开，所以只测你自己填写的域名。
 - 测速有明确的用量上限：默认 10 秒 / 200 MB，先到哪个停哪个。顶栏可改成 3 秒 / 20 MB 或 5 秒 / 50 MB，并实时显示本次用掉多少流量。
-
-</details>
-
-<details>
-<summary><b>2026-09-17</b> · 0.5.0 · 1 changed</summary>
-
-**Changed**
-
-- 程序坞默认不再显示 OpenStats 图标：以前打开主窗口（比如从风扇弹窗进入温度与风扇页）时，图标会出现在程序坞与 ⌘Tab 里，关窗后才消失。现在和其他菜单栏工具一样始终只在菜单栏运行，主窗口照常打开并置于最前。想从程序坞或 ⌘Tab 切回主窗口的，可以在「设置 · 通用」打开“在程序坞显示图标”，开关立即生效。
 
 </details>
 

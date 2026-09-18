@@ -6,28 +6,31 @@ import SwiftUI
 /// 点击菜单栏单个指标弹出的窄详情。区块可在设置中逐个隐藏
 struct PopoverRootView: View {
     let item: MenuBarItem
-    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        PopoverFrame {
+            PopoverHeader(item: item)
+        } content: {
+            PopoverDetail(item: item)
+        }
+    }
+}
+
+/// 菜单栏弹窗的外框：顶部标题栏固定，下面的内容可滚动
+struct PopoverFrame<Header: View, Content: View>: View {
+    @ViewBuilder var header: Header
+    @ViewBuilder var content: Content
     @Environment(\.isSnapshot) private var isSnapshot
 
     var body: some View {
         VStack(spacing: 0) {
-            PopoverHeader(item: item)
+            header
                 .padding(.horizontal, DS.Space.s3)
                 .padding(.vertical, DS.Space.s2)
 
-            PageScroll {
-                switch item {
-                case .cpu: CPUPopover()
-                case .memory: MemoryPopover()
-                case .network: NetworkPopover()
-                case .gpu: GPUPopover()
-                case .disk: DiskPopover()
-                case .temperature, .fan: ThermalPopover(item: item)
-                case .battery: BatteryPopover()
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
-            .environment(\.isPopover, true)
+            PageScroll { content }
+                .frame(maxWidth: .infinity, maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
+                .environment(\.isPopover, true)
         }
         .frame(width: DS.Size.popoverWidth)
         .frame(maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
@@ -39,7 +42,24 @@ struct PopoverRootView: View {
     }
 }
 
-private struct PopoverHeader: View {
+/// 某一项的详情内容，每项独立时的弹窗与合并时的弹窗共用
+struct PopoverDetail: View {
+    let item: MenuBarItem
+
+    var body: some View {
+        switch item {
+        case .cpu: CPUPopover()
+        case .memory: MemoryPopover()
+        case .network: NetworkPopover()
+        case .gpu: GPUPopover()
+        case .disk: DiskPopover()
+        case .temperature, .fan: ThermalPopover(item: item)
+        case .battery: BatteryPopover()
+        }
+    }
+}
+
+struct PopoverHeader: View {
     let item: MenuBarItem
     @Environment(AppModel.self) private var model
 

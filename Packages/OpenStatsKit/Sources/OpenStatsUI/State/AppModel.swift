@@ -34,8 +34,24 @@ public final class AppModel {
     public var isMainWindowVisible = false
     /// 被其他应用占用、没能注册的快捷键
     public var hotKeyConflicts: Set<HotKeyAction> = []
-    /// 当前打开的菜单栏详情弹窗
+    /// 当前打开的菜单栏详情弹窗；合并模式的弹窗切到某一项时也是这一项
     public var openPopover: MenuBarItem?
+    /// 合并模式下点击菜单栏图标弹出的面板正在显示。
+    /// 面板切到某一项的详情时 openPopover 就是这一项，按那一项的弹窗加采数据；总览只用菜单栏本来就在采的指标
+    public var isCombinedPopoverOpen = false {
+        didSet {
+            guard isCombinedPopoverOpen != oldValue else { return }
+            if isCombinedPopoverOpen {
+                openPopover = combinedPopoverTab
+            } else if openPopover == combinedPopoverTab {
+                openPopover = nil
+            }
+        }
+    }
+    /// 合并模式面板当前的标签：nil 是状态总览，否则是某一项的详情
+    public var combinedPopoverTab: MenuBarItem? {
+        didSet { if isCombinedPopoverOpen { openPopover = combinedPopoverTab } }
+    }
     public private(set) var launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
     public private(set) var launchAtLoginError: String?
 
@@ -75,7 +91,7 @@ public final class AppModel {
 
         // 进程页要读全系统进程（启动 ps），每 2 秒刷新一次足够，也更省电
         demand.interval = window && tab == .processes && popover == nil ? .seconds(2)
-            : window || popover != nil ? .seconds(1) : .seconds(settings.refreshSeconds)
+            : window || popover != nil || isCombinedPopoverOpen ? .seconds(1) : .seconds(settings.refreshSeconds)
         demand.memory = true
         demand.network = true
         let showing = { (page: PanelTab, item: MenuBarItem) in (window && tab == page) || popover == item }

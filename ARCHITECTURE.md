@@ -135,7 +135,10 @@ pieces of read-mostly logic in `Cleaner/DiskTools.swift`, each testable without 
 
 `MenuBarController` owns the status items. In the *separate* layout every enabled metric gets
 its own `NSStatusItem` (created in reverse so they read left to right) and opens a 320 pt
-popover for that metric; in the *combined* layout a single item opens the main window.
+popover for that metric; in the *combined* layout a single item opens `CombinedPopoverView`: a status
+overview with one row per enabled metric, plus tabs that switch to each metric's full popover content
+(`PopoverDetail`, shared with the separate layout). While a detail tab is showing, `AppModel.openPopover`
+is set to that metric so sampling matches the standalone popover.
 
 Popovers are borderless, non-activating `NSPanel`s. The SwiftUI tree is created on open and
 destroyed on close, so a hidden popover costs nothing. Height comes from measuring a flat,

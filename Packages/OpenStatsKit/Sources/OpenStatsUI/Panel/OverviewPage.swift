@@ -154,7 +154,7 @@ private struct HealthHeader: View {
 
 // MARK: - 指标卡片
 
-private func loadLevel(_ value: Double) -> String {
+func loadLevel(_ value: Double) -> String {
     value < 0.3 ? tr("低负载") : value < 0.7 ? tr("中等负载") : tr("高负载")
 }
 
@@ -368,7 +368,7 @@ private struct BatteryCard: View {
                             .dsFont(.xl, weight: .semibold)
                             .monospacedDigit()
                             .foregroundStyle(DS.Palette.textPrimary)
-                        Text(stateText(battery))
+                        Text(battery.stateText)
                             .dsFont(.xs, weight: .medium)
                             .foregroundStyle(DS.Palette.textSecondary)
                         if let watts = battery.adapterWatts, battery.isPluggedIn {
@@ -391,12 +391,6 @@ private struct BatteryCard: View {
                     .lineLimit(1)
             }
         }
-    }
-
-    private func stateText(_ battery: BatteryStatus) -> String {
-        if battery.isCharging { return tr("充电中") }
-        if battery.isPluggedIn { return battery.isFullyCharged ? tr("已充满") : tr("电源供电") }
-        return tr("电池供电")
     }
 
     private func detailText(_ battery: BatteryStatus) -> String {

@@ -566,12 +566,13 @@ npm 缓存	npm Cache
 快照名称格式不认识，没有删除	Unrecognized snapshot names; nothing was deleted
 性能核	Performance
 总占用	Total
+总览	Overview
 恢复系统睡眠失败：{}	Failed to restore system sleep: {}
 我的	Mine
 截图已输出到 {}	Snapshots saved to {}
 所属应用：{}（{}）	App: {} ({})
 所有内容先移到废纸篓。	Everything goes to the Trash first.
-所有指标合成一个图标，点击打开主窗口	All metrics in one icon; click to open the main window
+所有指标合成一个图标，点击弹出状态总览，可切到各项详情	All metrics in one icon; click for a status overview, with tabs for each metric's details
 所有检测目标都连不上。请检查网络连接，或者代理软件是否正常运行。	None of the test targets could be reached. Check your network connection and whether your proxy app is running properly.
 所有用户	All Users
 所有用户与系统级的启动项需要管理员权限，请在系统设置的登录项中管理	All-users and system items need admin rights; manage them in Login Items in System Settings
@@ -719,6 +720,7 @@ npm 缓存	npm Cache
 极高风险	Very high risk
 构建	Build
 查看	View
+查看{}详情	Show {} details
 查看全部进程	All Processes
 查看包含的项目	Show items
 查看完整更新日志	Full Changelog
@@ -805,6 +807,7 @@ npm 缓存	npm Cache
 没有已连接的蓝牙设备	No connected Bluetooth devices
 没有检测到 VPN 或系统代理，所有流量都从本机网络直接出去。	No VPN or system proxy detected. All traffic leaves directly from your network.
 没有检测到显示器	No displays detected
+没有电池	No battery
 没有移动任何文件{}	Nothing was moved{}
 没有超过 50 MB 的文件	No files over 50 MB
 流量历史	Traffic History
@@ -845,6 +848,7 @@ npm 缓存	npm Cache
 物理地址	Hardware address
 状态	Status
 状态圆点	Status Dot
+状态总览	Status Overview
 状态正常	Healthy
 状态良好	Healthy
 现在	Now
@@ -999,6 +1003,7 @@ npm 缓存	npm Cache
 菜单栏图标	Menu Bar Icons
 菜单栏布局	Menu Bar Layout
 菜单栏里的图标可以调整顺序：按住 ⌘ 键拖动任意一个，松开后位置会一直保留。新开启的项目由系统安排位置，可能离其他图标较远，拖一下就能挪到一起。	You can reorder the icons in the menu bar: hold ⌘ and drag any of them, and the position sticks. macOS picks where a newly enabled item first appears, sometimes away from the others; just drag it over.
+菜单栏里还没有开启任何项目。	No items are turned on in the menu bar yet.
 菜单栏项目	Menu Bar Items
 菜单栏风格	Menu bar style
 蓝牙设备	Bluetooth Devices
@@ -1092,6 +1097,7 @@ npm 缓存	npm Cache
 退出应用…	Quit App…
 退出登录	Sign out
 适中	Moderate
+选择显示项目	Choose Items
 通用	General
 通电时间	Power-on hours
 通电次数	Power cycles

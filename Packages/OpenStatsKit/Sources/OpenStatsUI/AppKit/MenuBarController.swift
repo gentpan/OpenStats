@@ -2,12 +2,15 @@ import AppKit
 import Localization
 import SwiftUI
 
-/// 菜单栏图标：每项独立时一个指标一个图标，点击弹出该项详情；合并时只有一个图标，点击打开主窗口
+/// 菜单栏图标：每项独立时一个指标一个图标，点击弹出该项详情；合并时只有一个图标，点击弹出状态总览，
+/// 总览顶部的标签可以切到各项的详情
 @MainActor
 final class MenuBarController: NSObject {
     private let model: AppModel
     private var items: [(key: MenuBarItem?, statusItem: NSStatusItem)] = []
     private var panels: [MenuBarItem: StatusPanel] = [:]
+    /// 合并模式的面板：状态总览与各项详情
+    private var combinedPanel: StatusPanel?
     private var layoutSignature: [MenuBarItem?] = []
 
     /// 开发调试：启动后展开并固定某个弹窗
@@ -24,7 +27,7 @@ final class MenuBarController: NSObject {
     func update() {
         let settings = model.settings
         let enabled = settings.orderedMenuBarItems
-        // 没有任何项目时保留一个图标，确保仍能打开主窗口
+        // 没有任何项目时保留一个图标，确保仍能打开面板与主窗口
         let signature: [MenuBarItem?] = settings.menuBarLayout == .separate && !enabled.isEmpty ? enabled : [nil]
         if signature != layoutSignature {
             rebuild(signature)
@@ -96,13 +99,18 @@ final class MenuBarController: NSObject {
         } else if let key = entry.key {
             togglePopover(key, button: sender)
         } else {
-            model.openMainWindow(nil)
+            toggleCombinedPanel(tab: nil, button: sender)
         }
     }
 
     func togglePopover(_ item: MenuBarItem, button: NSStatusBarButton? = nil) {
-        guard let button = button ?? items.first(where: { $0.key == item })?.statusItem.button,
-              let window = button.window else { return }
+        // 合并模式下没有这一项自己的图标：打开合并面板并切到这一项
+        guard let button = button ?? items.first(where: { $0.key == item })?.statusItem.button else {
+            toggleCombinedPanel(tab: item, button: nil)
+            return
+        }
+        guard let window = button.window else { return }
+        combinedPanel?.dismiss()
         for (key, panel) in panels where key != item { panel.dismiss() }
         let frame = window.convertToScreen(button.convert(button.bounds, to: nil))
         let panel = self.panel(for: item)
@@ -113,12 +121,49 @@ final class MenuBarController: NSObject {
         }
     }
 
+    /// 合并模式的状态总览
+    func toggleOverview() {
+        toggleCombinedPanel(tab: nil, button: nil)
+    }
+
+    /// 合并模式：点图标打开时总是先看总览；从快捷入口打开某一项时直接切到那一项
+    private func toggleCombinedPanel(tab: MenuBarItem?, button: NSStatusBarButton?) {
+        guard let button = button ?? items.first(where: { $0.key == nil })?.statusItem.button,
+              let window = button.window else { return }
+        for panel in panels.values { panel.dismiss() }
+        let panel = combinedPanel ?? makeCombinedPanel()
+        if !panel.isVisible { model.combinedPopoverTab = tab }
+        let frame = window.convertToScreen(button.convert(button.bounds, to: nil))
+        panel.toggle(below: frame, on: window.screen)
+        if pinsNextPopover, panel.isVisible {
+            panel.isPinned = true
+            pinsNextPopover = false
+        }
+    }
+
+    private func makeCombinedPanel() -> StatusPanel {
+        let model = self.model
+        let panel = StatusPanel(width: DS.Size.popoverWidth, minHeight: DS.Size.panelMinHeight / 2,
+                                content: { CombinedPopoverView().environment(model) },
+                                measuring: { CombinedPopoverView().environment(model).environment(\.isSnapshot, true) })
+        panel.onVisibilityChange = { [weak self] visible in
+            guard let self else { return }
+            self.model.isCombinedPopoverOpen = visible
+            if visible { self.model.helper.refreshStatus() }
+            self.items.first { $0.key == nil }?.statusItem.button?.highlight(visible)
+        }
+        combinedPanel = panel
+        return panel
+    }
+
     func dismissPopovers() {
         for panel in panels.values { panel.dismiss() }
+        combinedPanel?.dismiss()
     }
 
     func refreshPopoverHeight() {
         for panel in panels.values { panel.refreshHeight() }
+        combinedPanel?.refreshHeight()
     }
 
     private func panel(for item: MenuBarItem) -> StatusPanel {

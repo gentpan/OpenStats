@@ -79,14 +79,20 @@ public final class AppController: NSObject, NSApplicationDelegate {
         model.sync.presentationAnchor = { [weak self] in self?.mainWindow.nsWindow }
         model.sync.start()
 
-        // 开发调试：--show-panel [cpu|memory|network|gpu|disk|temperature|fan|battery] 启动后展开并固定弹窗；--show-window 打开主窗口；
+        // 开发调试：--show-panel [overview|cpu|memory|network|gpu|disk|temperature|fan|battery] 启动后展开并固定弹窗
+        // （overview 是合并模式的状态总览；合并模式下给某一项则打开面板并切到这一项）；--show-window 打开主窗口；
         // --show-egress 打开出口与分流窗口
         let arguments = CommandLine.arguments
         if let index = arguments.firstIndex(of: "--show-panel") {
-            let item = arguments.dropFirst(index + 1).first.flatMap(MenuBarItem.init(rawValue:)) ?? .network
+            let argument = arguments.dropFirst(index + 1).first
+            let item = argument.flatMap(MenuBarItem.init(rawValue:)) ?? .network
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
                 self?.menuBar.pinsNextPopover = true
-                self?.menuBar.togglePopover(item)
+                if argument == "overview" {
+                    self?.menuBar.toggleOverview()
+                } else {
+                    self?.menuBar.togglePopover(item)
+                }
             }
         }
         if arguments.contains("--show-window") {

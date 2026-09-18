@@ -82,6 +82,10 @@ enum SnapshotRenderer {
                 write(PopoverRootView(item: item), model: model, appearance: appearance,
                       to: outputDirectory.appendingPathComponent("popover-\(item.rawValue)-\(suffix).png"))
             }
+            // 合并模式的面板：状态总览
+            model.combinedPopoverTab = nil
+            write(CombinedPopoverView(), model: model, appearance: appearance,
+                  to: outputDirectory.appendingPathComponent("popover-combined-\(suffix).png"))
         }
 
         let menuBar = MenuBarRenderer.image(for: model)

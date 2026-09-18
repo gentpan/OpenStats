@@ -144,7 +144,7 @@ public enum PopoverSection: String, CaseIterable, Identifiable, Sendable {
 public enum MenuBarLayout: String, CaseIterable, Identifiable, Sendable {
     /// 每个指标一个图标，点击弹出该项详情
     case separate
-    /// 所有指标合成一个图标，点击打开主窗口
+    /// 所有指标合成一个图标，点击弹出状态总览，可切到各项详情
     case combined
 
     public var id: String { rawValue }

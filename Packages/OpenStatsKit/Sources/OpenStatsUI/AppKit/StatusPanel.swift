@@ -20,11 +20,15 @@ final class StatusPanel: NSPanel {
     /// 平铺布局（不含滚动容器）的视图，只用来测量内容的自然高度
     private let makeMeasuringContent: () -> NSView
     private let width: CGFloat
+    /// 内容再少也不低于这个高度；合并模式的状态总览项目少时很矮，用更小的下限
+    private let minHeight: CGFloat
 
-    init<Content: View, Measuring: View>(width: CGFloat, content: @escaping () -> Content, measuring: @escaping () -> Measuring) {
+    init<Content: View, Measuring: View>(width: CGFloat, minHeight: CGFloat = DS.Size.panelMinHeight,
+                                         content: @escaping () -> Content, measuring: @escaping () -> Measuring) {
         self.width = width
+        self.minHeight = minHeight
         makeMeasuringContent = { NSHostingView(rootView: measuring()) }
-        super.init(contentRect: NSRect(x: 0, y: 0, width: width, height: DS.Size.panelMinHeight),
+        super.init(contentRect: NSRect(x: 0, y: 0, width: width, height: minHeight),
                    styleMask: [.borderless, .nonactivatingPanel],
                    backing: .buffered,
                    defer: true)
@@ -89,7 +93,7 @@ final class StatusPanel: NSPanel {
     /// 滚动内容比可视区域高出（或矮出）一截时调整窗口高度，顶边不动；屏幕放不下时停在最高处，由滚动条兜底
     func adjustHeight(by overflow: CGFloat) {
         guard contentView != nil, abs(overflow) > 1 else { return }
-        let height = min(max(frame.height + overflow, DS.Size.panelMinHeight), availableHeight())
+        let height = min(max(frame.height + overflow, minHeight), availableHeight())
         guard abs(height - frame.height) > 1 else { return }
         setFrame(NSRect(x: frame.minX, y: frame.maxY - height, width: width, height: height), display: true)
         invalidateShadow()
@@ -132,7 +136,7 @@ final class StatusPanel: NSPanel {
         let top = min(anchor.minY - DS.Size.panelGap, visible.maxY)
 
         let natural = makeMeasuringContent().fittingSize.height
-        let height = min(max(natural, DS.Size.panelMinHeight), availableHeight())
+        let height = min(max(natural, minHeight), availableHeight())
 
         var x = anchor.midX - width / 2
         x = min(max(x, visible.minX + margin), visible.maxX - width - margin)
@@ -143,7 +147,7 @@ final class StatusPanel: NSPanel {
     private func availableHeight() -> CGFloat {
         let visible = (anchorScreen ?? NSScreen.main)?.visibleFrame ?? .zero
         let top = min(anchor.minY - DS.Size.panelGap, visible.maxY)
-        return max(DS.Size.panelMinHeight, top - visible.minY - DS.Space.s2)
+        return max(minHeight, top - visible.minY - DS.Space.s2)
     }
 
     // MARK: 事件

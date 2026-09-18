@@ -287,7 +287,7 @@ struct MenuBarSettings: View {
                 SettingRow(title: tr("菜单栏图标"),
                            subtitle: settings.menuBarLayout == .separate
                                ? tr("每个指标一个图标，点击弹出该项详情")
-                               : tr("所有指标合成一个图标，点击打开主窗口")) {
+                               : tr("所有指标合成一个图标，点击弹出状态总览，可切到各项详情")) {
                     SegmentedControl(selection: $settings.menuBarLayout,
                                      options: MenuBarLayout.allCases.map { ($0, $0.title) })
                         .frame(width: DS.Size.sidebarWidth + DS.Space.s6)
@@ -329,9 +329,7 @@ struct MenuBarSettings: View {
                         }
                         if settings.isEnabled(item) {
                             ItemStyleRow(item: item)
-                            if settings.menuBarLayout == .separate {
-                                PopoverSectionPicker(item: item)
-                            }
+                            PopoverSectionPicker(item: item)
                         }
                     }
                 }

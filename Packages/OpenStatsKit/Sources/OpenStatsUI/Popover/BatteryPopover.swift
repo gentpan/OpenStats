@@ -59,7 +59,7 @@ private struct BatteryHero: View {
                     }
                     VStack(alignment: .leading, spacing: DS.Space.s1 / 2) {
                         HeroValue(value: Format.percent(battery.level))
-                        Text(Self.stateText(battery))
+                        Text(battery.stateText)
                             .dsFont(.xs, weight: .medium)
                             .foregroundStyle(DS.Palette.textSecondary)
                         if let minutes = battery.minutesRemaining {
@@ -93,10 +93,13 @@ private struct BatteryHero: View {
             }
         }
     }
+}
 
-    static func stateText(_ battery: BatteryStatus) -> String {
-        if battery.isCharging { return tr("充电中") }
-        if battery.isPluggedIn { return battery.isFullyCharged ? tr("已充满") : tr("电源供电") }
+extension BatteryStatus {
+    /// 充电中 / 已充满 / 电源供电 / 电池供电
+    var stateText: String {
+        if isCharging { return tr("充电中") }
+        if isPluggedIn { return isFullyCharged ? tr("已充满") : tr("电源供电") }
         return tr("电池供电")
     }
 }
