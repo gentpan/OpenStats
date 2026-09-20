@@ -1,3 +1,4 @@
+import AccountSync
 import Foundation
 @testable import Metrics
 import Testing
@@ -385,5 +386,30 @@ private func isolatedDefaults() -> UserDefaults {
         var ranking = ActivityRanking()
         ranking.update(["x": 5_000, "y": 5_000, "z": 9_000])
         #expect(ranking.ranked(limit: 2).map(\.id) == ["z", "x"])
+    }
+}
+
+@MainActor
+@Suite struct SyncSignInTests {
+    /// 系统在后台的 XPC 队列上回调登录结果。回调闭包如果带着主线程隔离，Swift 6 会在入口处中止进程，
+    /// 表现为选完账号应用直接退出；这里在后台队列调用一次，能跑完并回到主线程处理就算通过
+    @Test func completionHandlerMayRunOffMainThread() async {
+        let controller = SyncController(settings: AppSettings(defaults: isolatedDefaults()), defaults: isolatedDefaults(),
+                                        tokens: MemoryTokenStore())
+        let handler = SyncController.completionHandler(for: controller, verifier: "verifier")
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            DispatchQueue.global().async {
+                handler(nil, nil)
+                continuation.resume()
+            }
+        }
+        // 没有回调地址按失败处理；处理发生在主线程的下一个任务里，稍等一下
+        for _ in 0..<100 where controller.phase == .idle {
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        guard case .failed = controller.phase else {
+            Issue.record("回调之后 phase 应为 failed，实际是 \(controller.phase)")
+            return
+        }
     }
 }

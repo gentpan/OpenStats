@@ -116,9 +116,8 @@ public final class SyncController {
         let verifier = PKCE.verifier()
         let url = client.loginURL(provider: provider, challenge: PKCE.challenge(for: verifier))
         let anchor = AnchorProvider(anchor: presentationAnchor)
-        let session = ASWebAuthenticationSession(url: url, callbackURLScheme: SyncClient.callbackScheme) { [weak self] callback, error in
-            Task { @MainActor in self?.finishSignIn(callback: callback, error: error, verifier: verifier) }
-        }
+        let session = ASWebAuthenticationSession(url: url, callbackURLScheme: SyncClient.callbackScheme,
+                                                 completionHandler: Self.completionHandler(for: self, verifier: verifier))
         session.presentationContextProvider = anchor
         // 保留浏览器里已登录的第三方账号，用户不必再输一次密码
         session.prefersEphemeralWebBrowserSession = false
@@ -129,6 +128,15 @@ public final class SyncController {
         if !session.start() {
             phase = .failed(tr("无法打开登录窗口"))
             authSession = nil
+        }
+    }
+
+    /// 登录结束时系统在它自己的 XPC 队列上回调，不在主线程。这个闭包必须在非隔离的上下文里创建：
+    /// 直接写在 signIn 里会继承 @MainActor 隔离，Swift 6 在闭包入口检查执行器，发现不在主线程就中止进程
+    /// （选完账号应用直接退出，令牌还没换到，重开也没有登录状态）
+    nonisolated static func completionHandler(for controller: SyncController, verifier: String) -> @Sendable (URL?, Error?) -> Void {
+        { [weak controller] callback, error in
+            Task { @MainActor in controller?.finishSignIn(callback: callback, error: error, verifier: verifier) }
         }
     }
 
