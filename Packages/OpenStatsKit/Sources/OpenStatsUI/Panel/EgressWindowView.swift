@@ -306,7 +306,7 @@ private struct ExitNode: View {
                             .lineLimit(1)
                             .truncationMode(.tail)
                     }
-                    if let type = geo?.ipType.flatMap(EgressText.ipTypeBadge) {
+                    if let type = geo?.ipType.flatMap(GeoText.ipTypeBadge) {
                         TagBadge(text: type.text, tone: type.tone, compact: true)
                     }
                 }
@@ -744,24 +744,11 @@ private enum EgressText {
         }
     }
 
-    static func ipTypeBadge(_ raw: String) -> (text: String, tone: TagBadge.Tone)? {
-        let type = raw.lowercased()
-        if type.contains("residential") { return (tr("住宅 IP"), .success) }
-        if type.contains("mobile") { return (tr("移动网络 IP"), .success) }
-        if type.contains("business") { return (tr("企业 IP"), .success) }
-        if type.contains("idc") || type.contains("datacenter") || type.contains("hosting") { return (tr("机房 IP"), .warning) }
-        return nil
-    }
-
     /// 国家 · 省 / 州 · 城市；英文界面优先用英文地名，重复的相邻项只留一个
     static func location(_ geo: EgressGeo?, fallback country: String?) -> String {
         guard let code = geo?.countryCode ?? country else { return "" }
-        let name = Locale(identifier: L10n.isEnglish ? "en" : "zh-Hans").localizedString(forRegionCode: code) ?? code
-        let region = L10n.isEnglish ? (geo?.regionEnglish ?? geo?.region) : geo?.region
-        let city = L10n.isEnglish ? (geo?.cityEnglish ?? geo?.city) : geo?.city
-        var parts = [name]
-        for part in [region, city].compactMap({ $0 }) where part != parts.last { parts.append(part) }
-        return parts.joined(separator: " · ")
+        return GeoText.location(countryCode: code, region: geo?.region, regionEnglish: geo?.regionEnglish,
+                                city: geo?.city, cityEnglish: geo?.cityEnglish)
     }
 
     static func checkedAt(_ date: Date, now: Date) -> String {

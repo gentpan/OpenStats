@@ -140,10 +140,6 @@ public final class HelperClient {
         await call { proxy, reply in proxy.setFanTarget(fan: fan, rpm: rpm, reply: reply) }
     }
 
-    func setFanAutomatic(fan: Int) async -> String? {
-        await call { proxy, reply in proxy.setFanAutomatic(fan: fan, reply: reply) }
-    }
-
     func resetAllFans() async -> String? {
         await call { proxy, reply in proxy.resetAllFans(reply: reply) }
     }

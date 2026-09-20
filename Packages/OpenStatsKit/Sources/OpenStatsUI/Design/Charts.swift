@@ -42,6 +42,18 @@ struct BarHistoryChart: View {
     }
 }
 
+/// 图表里 25% / 50% / 75% 三条淡淡的参考线
+enum ChartGrid {
+    static func draw(in context: GraphicsContext, size: CGSize) {
+        let usable = size.height - DS.Size.chartLine * 2
+        for fraction in [0.25, 0.5, 0.75] {
+            let y = (DS.Size.chartLine + usable * CGFloat(1 - fraction)).rounded()
+            context.fill(Path(CGRect(x: 0, y: y, width: size.width, height: DS.Size.stroke)),
+                         with: .color(DS.Palette.border))
+        }
+    }
+}
+
 /// 历史折线（可带实色半透明填充）
 struct LineHistoryChart: View {
     let values: [Double]
@@ -55,14 +67,7 @@ struct LineHistoryChart: View {
 
     var body: some View {
         Canvas { context, size in
-            if grid {
-                let usable = size.height - DS.Size.chartLine * 2
-                for fraction in [0.25, 0.5, 0.75] {
-                    let y = (DS.Size.chartLine + usable * CGFloat(1 - fraction)).rounded()
-                    context.fill(Path(CGRect(x: 0, y: y, width: size.width, height: DS.Size.stroke)),
-                                 with: .color(DS.Palette.border))
-                }
-            }
+            if grid { ChartGrid.draw(in: context, size: size) }
             let line = LineHistoryChart.path(values: values, capacity: capacity, maxValue: maxValue, in: size)
             guard let line else { return }
             if filled {
@@ -112,14 +117,7 @@ struct TimedLineChart: View {
 
     var body: some View {
         Canvas { context, size in
-            if grid {
-                let usable = size.height - DS.Size.chartLine * 2
-                for fraction in [0.25, 0.5, 0.75] {
-                    let y = (DS.Size.chartLine + usable * CGFloat(1 - fraction)).rounded()
-                    context.fill(Path(CGRect(x: 0, y: y, width: size.width, height: DS.Size.stroke)),
-                                 with: .color(DS.Palette.border))
-                }
-            }
+            if grid { ChartGrid.draw(in: context, size: size) }
             for segment in Self.segments(points, duration: duration, end: end, in: size) {
                 guard let first = segment.first, let last = segment.last else { continue }
                 var line = Path()

@@ -7,3 +7,5 @@ xcuserdata/
 Packages/OpenStatsKit/Package.resolved
 dist/
 __pycache__/
+# go build 在同步服务目录下生成的本地二进制
+server/sync/sync

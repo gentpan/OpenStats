@@ -159,7 +159,6 @@ public enum PublicAddressLookup {
         struct Geo: Decodable {
             let countryCode: String?
             let country: String?
-            let countryEn: String?
             let region: String?
             let city: String?
         }

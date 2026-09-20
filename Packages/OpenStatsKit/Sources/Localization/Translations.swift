@@ -60,7 +60,6 @@ GPU 占用	GPU Usage
 Globalping 返回了错误（HTTP {}）	Globalping returned an error (HTTP {})
 Google（8.8.8.8）	Google (8.8.8.8)
 IP 地址	IP Addresses
-IP 类型	IP type
 IP 纯净度	IP cleanliness
 IPv6 没有经过代理：只走 IPv6 的连接会直接暴露本机地址 {}。	IPv6 isn't going through the proxy: IPv6-only connections expose your address {}.
 IPv6 连接也经过代理。	IPv6 connections also go through the proxy.
@@ -104,7 +103,6 @@ npm 缓存	npm Cache
 {} 个应用，系统自带的不列出	{} apps; built-in apps are not listed
 {} 个网站	{} sites
 {} 个进程	{} processes
-{} 中位延迟	{} median
 {} 分钟	{} min
 {} 可用 {} · 共 {}	{} {} free · {} total
 {} 天	{} d
@@ -117,7 +115,6 @@ npm 缓存	npm Cache
 {} 正在运行，卸载前需要先退出。	{} is running. Quit it before uninstalling.
 {} 测	at {}
 {} 秒	{}s
-{} 秒 / {} MB	{}s / {} MB
 {} 秒·{} MB	{}s · {} MB
 {} 组	{} groups
 {} 缓存	{} Cache
@@ -127,7 +124,6 @@ npm 缓存	npm Cache
 {} 项 · 需要管理员权限，只读	{} items · needs admin, read-only
 {} 项失败	{} failed
 {}%（阈值 {}%）	{}% (threshold {}%)
-{}/{} 个节点连得上	{}/{} nodes reachable
 {}{}只剩 {}%，记得充电。	{}{} is down to {}%. Time to charge.
 {}{}（{}）	{}{} ({})
 {}。系统会自动分配任务，不用你操心	{}. macOS assigns work between them automatically.
@@ -205,7 +201,6 @@ npm 缓存	npm Cache
 以后再说	Later
 以系统权限运行的后台服务，只接受本应用的请求	A background service with system privileges that only accepts requests from this app
 仪表盘	Dashboard
-企业	Business
 企业 IP	Business IP
 企业网络	Business network
 会一并找出它留在资源库里的缓存、偏好设置、容器与登录启动项，全部移到废纸篓，可以放回	Also finds its caches, preferences, containers and launch agents in your Library and moves them all to the Trash, where you can restore them
@@ -217,8 +212,6 @@ npm 缓存	npm Cache
 低风险	Low risk
 住宅 IP	Residential IP
 住宅代理	Residential proxy
-住宅宽带	Residential
-住宅概率	Residential probability
 余量 {}	Headroom {}
 使用 {} 登录	Sign in with {}
 使用云端设置	Use cloud settings
@@ -311,14 +304,12 @@ npm 缓存	npm Cache
 剪切	Cut
 功耗	Power
 包名是 {}	Bundle ID is {}
-包含城市数据	Include City Data
 协议版本	Protocol version
 单个节点一次测速最多花的时间与流量，先到哪个停哪个	Time and data cap for one node's speed test, whichever comes first
 单行	Inline
 单行文字	Inline Text
 占整机 CPU 的比例：{} 个核心全部跑满为 100%	Share of total CPU: all {} cores fully busy is 100%
 占用	Usage
-占用超过 85% 时数值与图形显示为红色	Show values and graphs in red above 85%
 占用超过 85%（电池电量低于 20%）时数值与图形显示为红色	Values and graphics turn red above 85% usage (below 20% battery)
 占用高于	Usage above
 卷	Volume
@@ -339,14 +330,12 @@ npm 缓存	npm Cache
 压缩包里应当只有一个 .app	The archive should contain exactly one .app
 压缩比	Compression ratio
 原因	Reason
-原生 / 广播	Native / broadcast
 原生 IP	Native IP
 去批准	Approve
 去授权	Grant Access
 双行圆点	Dots
 双行文字	Stacked Text
 双行箭头	Arrows
-反向解析	Reverse DNS
 反馈问题	Report a Problem
 发现新版本 {}	Version {} available
 发现问题	Problems found
@@ -378,7 +367,6 @@ npm 缓存	npm Cache
 可用 {}	{} available
 可用 {} / 共 {}	{1} free of {2}
 可用内存只剩 {}，系统正在压缩和交换内存。关闭不用的应用可以缓解。	Only {} of memory is available and the system is compressing and swapping. Quitting unused apps will help.
-可用空间包含系统可以随时清除的缓存，与访达显示一致	Available space includes purgeable caches, matching Finder
 可访问	Reachable
 右侧风扇	Right Fan
 右耳	Right
@@ -536,6 +524,7 @@ npm 缓存	npm Cache
 开启	On
 开启 / 关闭“合盖不睡眠”（等同 pmset disablesleep）	Turn lid-closed sleep prevention on or off (same as pmset disablesleep)
 开启后图标出现在菜单栏；按住 ⌘ 键拖动图标可以调整位置	Adds the icon to the menu bar; hold ⌘ and drag the icon to move it
+开始	Start
 开始分析	Analyze
 开始探测	Run
 开机以来	Since boot
@@ -582,7 +571,6 @@ npm 缓存	npm Cache
 打包版本、系统与辅助工具状态、主要设置、最近 3 天的运行日志和崩溃报告，反馈问题时附上；会去掉序列号、IP 与硬件地址	Bundles version, system and helper status, main settings, and the last 3 days of logs and crash reports to attach to a bug report. Serial numbers, IP and hardware addresses are removed.
 打包生成的 .xcarchive，删除后无法重新符号化旧版本崩溃日志	.xcarchive bundles; without them old crash logs can't be symbolicated
 打开 OpenStats	Open OpenStats
-打开 OpenStats 主窗口	Open the OpenStats Window
 打开 SMC 失败 ({})	Failed to open SMC ({})
 打开登录项设置	Open Login Items Settings
 打开网络详情时向 Cloudflare（1.1.1.1）或 ipify 查询一次公网地址，10 分钟内不重复请求；归属地、ASN、网络类型与纯净度由这台 Mac 直接向 cleanip.io 查询，只发送公网地址	When network details open, asks Cloudflare (1.1.1.1) or ipify for your public address, at most once every 10 minutes; location, ASN, network type and cleanliness are looked up by this Mac directly at cleanip.io, sending only the public address
@@ -632,7 +620,6 @@ npm 缓存	npm Cache
 教育网	Education
 散热模式	Cooling
 数据	Data
-数据来源	Source
 整体风格	Overall style
 整体风格套用到所有项目。想让某个项目不一样，在下面“显示项目”里给它单独选一种，比如 CPU 用圆环、风扇用数字。	The overall style applies to every item. To make one item different, pick a style for it under Items below, say a ring for CPU and plain numbers for the fan.
 整机	System
@@ -908,7 +895,6 @@ npm 缓存	npm Cache
 社交	Social
 移到废纸篓	Move to Trash
 移到废纸篓？	Move to the Trash?
-移动网络	Mobile
 移动网络 IP	Mobile IP
 移动运营商	Mobile carrier
 空	empty
@@ -972,7 +958,6 @@ npm 缓存	npm Cache
 网络断开	Network Down
 网络测速	Network Speed Test
 网络环境变了，下面是之前的结果，正在重新检测。	The network changed. These are the previous results; checking again.
-网络类型	Network type
 网络详情打开时每秒 ping 一次，通了是绿格、不通是红格，显示最近 60 次	Pings once a second while network details are open: green when reachable, red when not, showing the last 60
 网络运营方	Network operator
 网络连接中断超过 20 秒，恢复后再提示一次	Network has been down for over 20 seconds; notifies again when it's back
@@ -1046,7 +1031,6 @@ npm 缓存	npm Cache
 超时	Timed out
 超级核	Super
 超过 1 天未更新的 .crdownload / .part / .download	.crdownload / .part / .download files untouched for over a day
-跟随整体	Follow global
 跟随整体（{}）	Follow overall ({})
 跟随系统	System
 路径不可读	Path not readable
@@ -1113,7 +1097,6 @@ npm 缓存	npm Cache
 重新分析	Analyze again
 重新安装	Reinstall
 重新扫描	Rescan
-重新查询公网 IP	Look Up Public IP Again
 重新检测	Check Again
 重新生成	Regenerate
 重新读取蓝牙设备电量	Read Bluetooth device batteries again
@@ -1143,7 +1126,6 @@ npm 缓存	npm Cache
 风扇模式	Fan mode
 风扇设置	Fan Settings
 风扇转速	Fan Speed
-风格	Style
 风险标记	Risk flags
 风险评分	Risk score
 饼图	Pie

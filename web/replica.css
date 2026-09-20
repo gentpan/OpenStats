@@ -155,7 +155,6 @@
 }
 .mb-drop a:hover { background: var(--color-primary); color: #fff; }
 .mb-drop hr { border: 0; border-top: 1px solid var(--drop-border); margin: var(--space-1) var(--space-2); }
-.mb-drop__ext { opacity: 0.6; }
 
 .menubar__right { margin-left: auto; display: flex; align-items: center; gap: var(--space-3); }
 .menubar__clock { font-variant-numeric: tabular-nums; }

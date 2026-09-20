@@ -244,12 +244,8 @@ private struct AddressSection: View {
 
     /// 国家 · 省 / 州 · 城市；英文界面优先用英文地名，重复的相邻项只留一个
     private func location(_ addresses: PublicAddresses, code: String) -> String {
-        let country = Locale(identifier: L10n.isEnglish ? "en" : "zh-Hans").localizedString(forRegionCode: code) ?? code
-        let region = L10n.isEnglish ? (addresses.regionEnglish ?? addresses.region) : addresses.region
-        let city = L10n.isEnglish ? (addresses.cityEnglish ?? addresses.city) : addresses.city
-        var parts: [String] = [country]
-        for part in [region, city].compactMap({ $0 }) where part != parts.last { parts.append(part) }
-        return parts.joined(separator: " · ")
+        GeoText.location(countryCode: code, region: addresses.region, regionEnglish: addresses.regionEnglish,
+                         city: addresses.city, cityEnglish: addresses.cityEnglish)
     }
 
     /// 标题行：IP 地址 ……… [IPv4 | IPv6] ⟳；数据来源的字标只放在下面的纯净度区块里
@@ -292,13 +288,11 @@ private struct AddressSection: View {
             badges.append(isNative ? Badge(icon: "checkmark.shield.fill", text: tr("原生 IP"), tone: .success)
                                    : Badge(icon: "antenna.radiowaves.left.and.right", text: tr("广播 IP"), tone: .warning))
         }
-        if let ipType = addresses.ipType?.lowercased() {
-            switch ipType {
-            case "residential ip": badges.append(Badge(icon: "house.fill", text: tr("住宅 IP"), tone: .success))
-            case "datacenter ip", "hosting ip": badges.append(Badge(icon: "server.rack", text: tr("机房 IP"), tone: .warning))
-            case "mobile ip": badges.append(Badge(icon: "iphone.radiowaves.left.and.right", text: tr("移动网络 IP"), tone: .success))
-            case "business ip": badges.append(Badge(icon: "building.2.fill", text: tr("企业 IP"), tone: .success))
-            default: badges.append(Badge(icon: "questionmark.circle", text: addresses.ipType ?? "", tone: .neutral))
+        if let ipType = addresses.ipType {
+            if let known = GeoText.ipTypeBadge(ipType) {
+                badges.append(Badge(icon: known.icon, text: known.text, tone: known.tone))
+            } else {
+                badges.append(Badge(icon: "questionmark.circle", text: ipType, tone: .neutral))
             }
         }
         if let asnType = addresses.asnType {
@@ -313,28 +307,6 @@ private struct AddressSection: View {
             }
         }
         return badges
-    }
-
-    static func networkTypeLabel(_ raw: String) -> String {
-        switch raw.lowercased() {
-        case "residential", "isp": tr("住宅宽带")
-        case "business": tr("企业")
-        case "hosting", "datacenter", "data center": tr("机房")
-        case "mobile", "cellular": tr("移动网络")
-        case "education": tr("教育网")
-        case "government": tr("政府")
-        default: raw
-        }
-    }
-
-    static func ipTypeLabel(_ raw: String) -> String {
-        switch raw.lowercased() {
-        case "residential ip": tr("住宅 IP")
-        case "datacenter ip", "hosting ip": tr("机房 IP")
-        case "mobile ip": tr("移动网络 IP")
-        case "business ip": tr("企业 IP")
-        default: raw
-        }
     }
 }
 
