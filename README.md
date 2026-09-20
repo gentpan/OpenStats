@@ -59,9 +59,19 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.6.1** (2026-09-18) · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.6.2** (2026-09-21) · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
+<summary><b>2026-09-21</b> · 0.6.2 · 2 fixed</summary>
+
+**Fixed**
+
+- 账号登录后应用直接退出：在登录窗口里选完 GitHub、Google 或 Apple 账号，应用立即闪退，重新打开也没有登录状态。原因是系统在后台队列回调登录结果，而回调闭包带着主线程隔离，被运行时当场中止，令牌还没来得及换取和保存。现在回调改为不带隔离、收到后再回到主线程处理，并补了回归测试。
+- 英文界面下测速窗口的“开始”按钮没有翻译，仍显示中文。
+
+</details>
+
+<details>
 <summary><b>2026-09-18</b> · 0.6.1 · 1 added</summary>
 
 **Added**
@@ -84,20 +94,6 @@ Latest release **0.6.1** (2026-09-18) · [full changelog](CHANGELOG.md) (kept in
 **Style**
 
 - 菜单栏网络弹窗的 DNS 区块重排：网络服务与线路做成两个徽章（Wi-Fi / 有线、直连或经过哪个代理），走隧道时标题旁有叹号提示 DNS 可能被接管，刷新 DNS 缓存改为图标按钮。
-
-</details>
-
-<details>
-<summary><b>2026-09-18</b> · 0.5.0 · 6 added</summary>
-
-**Added**
-
-- 新增网络测速窗口：网络页顶栏多一个“网络测速”按钮。窗口里四块内容各自独立，可以单独跑、也可以随时停，关窗即停。
-- 本机宽带测速：下行、上行、空载延迟与抖动。数据由 speed.cloudflare.com 测量，并显示这次走的是哪个 Cloudflare 边缘节点。
-- 国内分省三网延迟：31 个省份 × 三网共 93 个节点。给出电信、联通、移动各自的中位延迟与逐省数值；节点来自 zstaticcdn.com，只做 TCP 建连计时、不下载任何数据。
-- 全球节点测速：24 个节点，先测延迟再单独测下载。覆盖亚太、欧洲、北美等地，测速文件来自 Linode、Vultr、DataPacket。
-- 全球探针看目标：从全球 10 / 20 / 30 个社区探针 ping 你填的域名。看各地访问它的延迟与丢包，走 Globalping 的公开接口，请求从本机直接发出、不带任何密钥，用的是本机 IP 每小时的免费额度；测量结果在 Globalping 上公开，所以只测你自己填写的域名。
-- 测速有明确的用量上限：默认 10 秒 / 200 MB，先到哪个停哪个。顶栏可改成 3 秒 / 20 MB 或 5 秒 / 50 MB，并实时显示本次用掉多少流量。
 
 </details>
 
