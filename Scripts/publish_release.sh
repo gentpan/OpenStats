@@ -75,4 +75,4 @@ else
   git -C "$WORK/tap" push -q
   echo "✅ 已提交 Casks/openstats.rb 到 $TAP"
 fi
-echo "安装：brew install --cask gentpan/tap/openstats"
+echo "安装：brew tap gentpan/tap && brew trust gentpan/tap && brew install --cask openstats"

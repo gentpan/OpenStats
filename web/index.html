@@ -351,7 +351,7 @@
       </ul>
       <p class="download__hint">不确定是哪种？打开苹果菜单 › 关于本机，看“芯片”或“处理器”那一行。</p>
       <p class="hero__meta">版本 0.6.2 · macOS 14 Sonoma 及以上 · 简体中文与 English 界面 · <a href="#changelog">这个版本更新了什么</a></p>
-      <p class="download__brew">也可以用 Homebrew 安装：<code>brew install --cask gentpan/tap/openstats</code></p>
+      <p class="download__brew">也可以用 Homebrew 安装：<code>brew tap gentpan/tap &amp;&amp; brew trust gentpan/tap &amp;&amp; brew install --cask openstats</code></p>
     </div>
   </section>
 
@@ -613,7 +613,7 @@
       </details>
       <details class="faq" id="install">
         <summary>怎么安装、卸载？</summary>
-        <p>下载 DMG 后把 OpenStats 拖进“应用程序”；也可以用 Homebrew：<code>brew install --cask gentpan/tap/openstats</code>。卸载时先在“设置 › 辅助工具”里卸载辅助工具，再把应用移到废纸篓；用 Homebrew 安装的执行 <code>brew uninstall --zap --cask openstats</code>。</p>
+        <p>下载 DMG 后把 OpenStats 拖进“应用程序”；也可以用 Homebrew：<code>brew tap gentpan/tap &amp;&amp; brew trust gentpan/tap &amp;&amp; brew install --cask openstats</code>（新版 Homebrew 要先信任第三方 tap 才能安装）。卸载时先在“设置 › 辅助工具”里卸载辅助工具，再把应用移到废纸篓；用 Homebrew 安装的执行 <code>brew uninstall --zap --cask openstats</code>。</p>
       </details>
       <details class="faq">
         <summary>菜单栏图标的顺序怎么调？</summary>

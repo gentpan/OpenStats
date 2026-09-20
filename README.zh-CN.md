@@ -40,10 +40,12 @@ OpenStats 是一款 macOS 菜单栏应用，实时显示 Mac 正在做什么：�
 | Intel 芯片 | [OpenStats-0.6.2-Intel.dmg](https://getopenstats.com/download/OpenStats-0.6.2-Intel.dmg) |
 
 不确定是哪种，看苹果菜单 › 关于本机：写着“芯片 Apple M…”是 Apple 芯片，写着“处理器 Intel…”是 Intel。
-也可以用 Homebrew 安装，会自动选对版本：
+也可以用 Homebrew 安装，会自动选对版本。新版 Homebrew 不加载未经信任的第三方 tap，所以要先 `trust` 一次：
 
 ```bash
-brew install --cask gentpan/tap/openstats
+brew tap gentpan/tap
+brew trust gentpan/tap
+brew install --cask openstats
 ```
 
 需要 macOS 14（Sonoma）或更高版本。主要在 Apple 芯片上开发和测试；Intel 机型上不能用 Apple 智能解释进程，

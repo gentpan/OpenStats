@@ -43,10 +43,13 @@ pick the build for your Mac's chip:
 | Intel | [OpenStats-0.6.2-Intel.dmg](https://getopenstats.com/download/OpenStats-0.6.2-Intel.dmg) |
 
 Not sure? Apple menu › About This Mac says "Chip Apple M…" on Apple silicon and "Processor Intel…" on Intel.
-Homebrew picks the right build for you:
+Homebrew picks the right build for you. Recent Homebrew refuses to load casks from an untrusted third-party
+tap, so trust it once first:
 
 ```bash
-brew install --cask gentpan/tap/openstats
+brew tap gentpan/tap
+brew trust gentpan/tap
+brew install --cask openstats
 ```
 
 Requires macOS 14 (Sonoma) or later. Developed and tested mainly on Apple silicon; on Intel Macs, Apple
