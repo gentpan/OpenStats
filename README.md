@@ -6,7 +6,7 @@
 
 **Your Mac at a glance — CPU, GPU, memory, network and temperatures in the menu bar, with fan control, keep-awake, one-click cleanup, an app uninstaller and an IP cleanliness check.**
 
-[![Release](https://img.shields.io/badge/release-0.6.1-6ee02b)](https://getopenstats.com/#download)
+[![Release](https://img.shields.io/badge/release-0.6.2-6ee02b)](https://getopenstats.com/#download)
 [![Stars](https://img.shields.io/github/stars/gentpan/OpenStats?style=flat&color=f5c518&label=stars)](https://github.com/gentpan/OpenStats/stargazers)
 [![Last commit](https://img.shields.io/github/last-commit/gentpan/OpenStats?color=black&label=last%20commit)](https://github.com/gentpan/OpenStats/commits/main)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/gentpan/OpenStats?color=black&label=commits)](https://github.com/gentpan/OpenStats/graphs/commit-activity)
@@ -34,13 +34,13 @@ Everything is read on your own Mac, and there is no telemetry. An account is opt
 
 ## Install
 
-Download OpenStats 0.6.1 from the website (signed with a Developer ID certificate and notarized by Apple) —
+Download OpenStats 0.6.2 from the website (signed with a Developer ID certificate and notarized by Apple) —
 pick the build for your Mac's chip:
 
 | Chip | Download |
 |---|---|
-| Apple silicon (M1, M2, M3, M4, M5) | [OpenStats-0.6.1-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.6.1-AppleSilicon.dmg) |
-| Intel | [OpenStats-0.6.1-Intel.dmg](https://getopenstats.com/download/OpenStats-0.6.1-Intel.dmg) |
+| Apple silicon (M1, M2, M3, M4, M5) | [OpenStats-0.6.2-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.6.2-AppleSilicon.dmg) |
+| Intel | [OpenStats-0.6.2-Intel.dmg](https://getopenstats.com/download/OpenStats-0.6.2-Intel.dmg) |
 
 Not sure? Apple menu › About This Mac says "Chip Apple M…" on Apple silicon and "Processor Intel…" on Intel.
 Homebrew picks the right build for you:

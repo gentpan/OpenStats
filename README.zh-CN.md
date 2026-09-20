@@ -6,7 +6,7 @@
 
 **Mac 的状态，抬眼就看见——CPU、GPU、内存、网络与温度常驻菜单栏，还能调风扇、防休眠、一键清理、卸载应用，检测 IP 纯净度。**
 
-[![Release](https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.6.1-6ee02b)](https://getopenstats.com/#download)
+[![Release](https://img.shields.io/badge/%E7%89%88%E6%9C%AC-0.6.2-6ee02b)](https://getopenstats.com/#download)
 [![Stars](https://img.shields.io/github/stars/gentpan/OpenStats?style=flat&color=f5c518&label=%E6%98%9F%E6%A0%87)](https://github.com/gentpan/OpenStats/stargazers)
 [![Last commit](https://img.shields.io/github/last-commit/gentpan/OpenStats?color=black&label=%E6%9C%80%E8%BF%91%E6%8F%90%E4%BA%A4)](https://github.com/gentpan/OpenStats/commits/main)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/gentpan/OpenStats?color=black&label=%E6%8F%90%E4%BA%A4)](https://github.com/gentpan/OpenStats/graphs/commit-activity)
@@ -32,12 +32,12 @@ OpenStats 是一款 macOS 菜单栏应用，实时显示 Mac 正在做什么：�
 
 ## 安装
 
-从官网下载 OpenStats 0.6.1（Developer ID 签名、经过 Apple 公证），按 Mac 的芯片选择：
+从官网下载 OpenStats 0.6.2（Developer ID 签名、经过 Apple 公证），按 Mac 的芯片选择：
 
 | 芯片 | 下载 |
 |---|---|
-| Apple 芯片（M1、M2、M3、M4、M5 系列） | [OpenStats-0.6.1-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.6.1-AppleSilicon.dmg) |
-| Intel 芯片 | [OpenStats-0.6.1-Intel.dmg](https://getopenstats.com/download/OpenStats-0.6.1-Intel.dmg) |
+| Apple 芯片（M1、M2、M3、M4、M5 系列） | [OpenStats-0.6.2-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.6.2-AppleSilicon.dmg) |
+| Intel 芯片 | [OpenStats-0.6.2-Intel.dmg](https://getopenstats.com/download/OpenStats-0.6.2-Intel.dmg) |
 
 不确定是哪种，看苹果菜单 › 关于本机：写着“芯片 Apple M…”是 Apple 芯片，写着“处理器 Intel…”是 Intel。
 也可以用 Homebrew 安装，会自动选对版本：
