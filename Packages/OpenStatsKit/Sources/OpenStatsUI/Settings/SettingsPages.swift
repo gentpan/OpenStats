@@ -472,8 +472,20 @@ private struct StyleCard: View {
     let action: () -> Void
     @State private var hovering = false
 
+    /// 两种双行风格的差别只在标签比数值宽时看得出来，预览里用风扇（标签宽、数值短）代替 GPU
+    private var isStacked: Bool { style == .stacked || style == .stackedCenter }
+
+    private var previewItems: [MenuBarItem] { isStacked ? [.cpu, .memory, .fan] : [.cpu, .memory, .gpu] }
+
+    private var previewReading: MenuBarReading {
+        guard isStacked else { return .sample }
+        var reading = MenuBarReading.sample
+        reading.fanRPM = 0
+        return reading
+    }
+
     var body: some View {
-        let sample = MenuBarRenderer.image(reading: .sample, items: [.cpu, .memory, .gpu],
+        let sample = MenuBarRenderer.image(reading: previewReading, items: previewItems,
                                            style: { _ in style }, networkStyle: model.settings.networkStyle,
                                            colorizeHighLoad: false, fahrenheit: model.settings.useFahrenheit)
         Button(action: action) {

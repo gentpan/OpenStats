@@ -243,10 +243,11 @@ enum MenuBarRenderer {
         let text = Format.percent(fraction)
         let alert = colorizeHighLoad && fraction <= Metrics.lowBatteryLevel
         let label = MenuBarItem.battery.menuBarLabel
-        let stacked = stackedText(label: label, value: text, sample: "100%", alert: alert)
+        let stacked = stackedText(label: label, value: text, sample: "100%", alert: alert,
+                                  centered: style == .stackedCenter)
         var segment: Segment
         switch style {
-        case .stacked: segment = stacked
+        case .stacked, .stackedCenter: segment = stacked
         case .inline: segment = inlineText(label: label, value: text, sample: "100%", alert: alert)
         case .icon:
             let symbol = reading.batteryCharging ? "battery.100.bolt" : batterySymbol(fraction)
@@ -283,10 +284,11 @@ enum MenuBarRenderer {
         let fraction = min(1, max(0, value ?? 0))
         let text = value.map { Format.percent($0) } ?? "—"
         let alert = colorizeHighLoad && fraction >= Metrics.highLevel
-        let stacked = stackedText(label: item.menuBarLabel, value: text, sample: "100%", alert: alert)
+        let stacked = stackedText(label: item.menuBarLabel, value: text, sample: "100%", alert: alert,
+                                  centered: style == .stackedCenter)
 
         switch style {
-        case .stacked:
+        case .stacked, .stackedCenter:
             return stacked
         case .inline:
             return inlineText(label: item.menuBarLabel, value: text, sample: "100%", alert: alert)
@@ -312,7 +314,8 @@ enum MenuBarRenderer {
         switch style {
         case .inline: inlineText(label: item.menuBarLabel, value: value, sample: sample, alert: false)
         case .icon: combine([symbolSegment(item.symbol), inlineValue(value, sample: sample, alert: false)])
-        default: stackedText(label: item.menuBarLabel, value: value, sample: sample, alert: false)
+        default: stackedText(label: item.menuBarLabel, value: value, sample: sample, alert: false,
+                             centered: style == .stackedCenter)
         }
     }
 
@@ -323,14 +326,24 @@ enum MenuBarRenderer {
     }
 
     /// 颜色保持动态（labelColor / secondaryLabelColor），在绘制时才按菜单栏外观解析
-    private static func stackedText(label: String, value: String, sample: String, alert: Bool) -> Segment {
+    /// 两行文字：宽度按标签、数值与样本里最宽的算，所以数值变长也不会挤动旁边的项目。
+    /// `centered` 时两行各自居中，标签比数值宽时（风扇、温度）数值不会贴在右边
+    private static func stackedText(label: String, value: String, sample: String, alert: Bool,
+                                    centered: Bool = false) -> Segment {
         let labelAttributes: [NSAttributedString.Key: Any] = [.font: Metrics.labelFont, .foregroundColor: NSColor.secondaryLabelColor]
         let valueAttributes: [NSAttributedString.Key: Any] = [.font: Metrics.stackedValueFont, .foregroundColor: foreground(alert)]
         let width = ceil(max(textWidth(label, labelAttributes), textWidth(value, valueAttributes), textWidth(sample, valueAttributes)))
         return Segment(width: width) { rect in
             let base = baselineOrigin(in: rect)
-            drawText(label, labelAttributes, rightEdge: rect.maxX, baseline: base + Metrics.upperBaseline)
-            drawText(value, valueAttributes, rightEdge: rect.maxX, baseline: base + Metrics.lowerBaseline)
+            let rows = [(label, labelAttributes, base + Metrics.upperBaseline),
+                        (value, valueAttributes, base + Metrics.lowerBaseline)]
+            for (text, attributes, baseline) in rows {
+                if centered {
+                    drawText(text, attributes, centerX: rect.midX, baseline: baseline)
+                } else {
+                    drawText(text, attributes, rightEdge: rect.maxX, baseline: baseline)
+                }
+            }
         }
     }
 
@@ -361,6 +374,13 @@ enum MenuBarRenderer {
         let string = NSAttributedString(string: text, attributes: attributes)
         let width = string.size().width
         string.draw(with: NSRect(x: rightEdge - width, y: baseline, width: width, height: 0))
+    }
+
+    /// 居中绘制：起点取整像素，文字才不会发虚
+    private static func drawText(_ text: String, _ attributes: [NSAttributedString.Key: Any], centerX: CGFloat, baseline: CGFloat) {
+        let string = NSAttributedString(string: text, attributes: attributes)
+        let width = string.size().width
+        string.draw(with: NSRect(x: (centerX - width / 2).rounded(), y: baseline, width: width, height: 0))
     }
 
     /// 刘海屏的菜单栏更高，两行内容整体在按钮内垂直居中

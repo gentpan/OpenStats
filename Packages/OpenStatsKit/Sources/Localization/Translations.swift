@@ -334,6 +334,7 @@ npm 缓存	npm Cache
 去批准	Approve
 去授权	Grant Access
 双行圆点	Dots
+双行居中	Stacked, Centered
 双行文字	Stacked Text
 双行箭头	Arrows
 反馈问题	Report a Problem
@@ -382,6 +383,7 @@ npm 缓存	npm Cache
 合盖运行时散热变差，请勿放入包中。使用电池且电量低于 {}% 时会自动关闭。	Cooling is worse with the lid closed, so don't put your Mac in a bag. Turns off automatically on battery below {}%.
 合盖运行设置	Lid Mode
 合盖运行需要修改系统睡眠设置，需安装辅助工具（管理员授权一次）。	Lid mode changes system sleep settings and needs the helper (one-time admin approval).
+同双行文字，但两行各自居中；标签比数值宽时（风扇、温度）不会偏到一边	Same as stacked, but both lines are centered, so a value narrower than its label (fan, temperature) is not pushed to one side
 同步	Sync
 同步失败	Sync failed
 同步的内容：菜单栏项目与风格、刷新频率、外观与语言、详情弹窗的区块、连接探测、通知、快捷键、风扇安全温度、合盖电量下限。当前页面、辅助工具与历史记录留在本机。	What syncs: menu bar items and styles, refresh rate, appearance and language, popover sections, connection probe, notifications, hotkeys, fan safety temperature and lid-mode battery floor. The current page, the helper and history stay on this Mac.
@@ -450,7 +452,7 @@ npm 缓存	npm Cache
 寿命按厂商估算的已用比例计算；写入量越大消耗越快，日常使用通常可用很多年	Life is based on the vendor's wear estimate. Heavy writes wear it faster; typical use lasts many years.
 将清理 {} 个项目，共 {}。{}	{} items, {} total, will be cleaned. {}
 将移到废纸篓	Will move to Trash
-小标签在上、数值在下，最紧凑	Small label above the value; most compact
+小标签在上、数值在下，两行靠右对齐，数值的右边不会跳	Small label on top, value below, both right-aligned so the value's right edge stays put
 尚未检查	Not checked yet
 屏幕保持常亮	Keep display on
 屏幕可按设置关闭，下载、编译等后台任务继续运行	The display can turn off as usual while downloads and builds keep running
