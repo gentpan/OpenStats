@@ -22,6 +22,7 @@ final class SpeedTestWindowController: NSObject, NSWindowDelegate {
         self.window = window
         if !isVisible {
             isVisible = true
+            model.speedTest.windowDidOpen()
             onVisibilityChange?(true)
         }
         NSApp.activate()

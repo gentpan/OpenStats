@@ -424,6 +424,10 @@ public final class AppSettings {
     public var speedTestBudget: SpeedTestBudget {
         didSet { defaults.set(speedTestBudget.rawValue, forKey: Keys.speedTestBudget) }
     }
+    /// 开着 VPN / 代理时网络测速走哪条线路：直连绕开它测本机宽带，或经它测代理线路
+    public var speedTestRoute: SpeedRoute {
+        didSet { defaults.set(speedTestRoute.rawValue, forKey: Keys.speedTestRoute) }
+    }
     /// 主窗口开着时在程序坞与 ⌘Tab 中显示图标；默认关闭，和其他菜单栏工具一样只在菜单栏运行
     public var showDockIcon: Bool {
         didSet { defaults.set(showDockIcon, forKey: Keys.showDockIcon) }
@@ -529,6 +533,7 @@ public final class AppSettings {
         appearance = defaults.string(forKey: Keys.appearance).flatMap(AppearanceMode.init(rawValue:)) ?? .system
         showDockIcon = defaults.bool(forKey: Keys.showDockIcon)
         speedTestBudget = defaults.string(forKey: Keys.speedTestBudget).flatMap(SpeedTestBudget.init(rawValue:)) ?? .full
+        speedTestRoute = defaults.string(forKey: Keys.speedTestRoute).flatMap(SpeedRoute.init(rawValue:)) ?? .direct
         cleanPrefersTrash = defaults.bool(forKey: Keys.cleanPrefersTrash)
         menuBarLayout = defaults.string(forKey: Keys.menuBarLayout).flatMap(MenuBarLayout.init(rawValue:)) ?? .separate
         expandedPopoverSections = Set((defaults.stringArray(forKey: Keys.expandedPopoverSections) ?? []).compactMap(PopoverSection.init(rawValue:)))
@@ -601,6 +606,7 @@ public final class AppSettings {
         static let appearance = "appearance"
         static let showDockIcon = "showDockIcon"
         static let speedTestBudget = "speedTestBudget"
+        static let speedTestRoute = "speedTestRoute"
         static let cleanPrefersTrash = "cleanPrefersTrash"
         static let menuBarLayout = "menuBarLayout"
         static let hiddenPopoverSections = "hiddenPopoverSections"

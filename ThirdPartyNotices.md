@@ -12,6 +12,11 @@
 `google.svg` 是 Google 的品牌标志，仅按其品牌规范用于“使用 Google 登录”按钮。Apple 标志使用系统 SF Symbols 的 `apple.logo`。
 GitHub、Google 与 Apple 的名称和标志均为各自公司的商标。
 
+## 运营商标志
+
+`Packages/OpenStatsKit/Sources/OpenStatsUI/Resources/Logos/carrier-*.svg` 是中国电信、中国联通、中国移动的标志，
+仅在网络测速里用来标明各列延迟对应的运营商。三家的名称和标志均为各自公司的商标。
+
 ## exelban/stats
 
 OpenStats 的以下部分移植自 [exelban/stats](https://github.com/exelban/stats)：

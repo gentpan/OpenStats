@@ -47,4 +47,33 @@ struct SpeedTestTests {
         #expect(Format.bandwidth(1_210_000_000) == "1.21 Gbps")
         #expect(Format.bandwidth(0) == "0 bps")
     }
+
+    @Test func 扣掉Cloudflare报的服务器处理时间() {
+        let headers = ["server-timing": "cfSpeedEdge;dur=3, cfSpeedWorker;dur=21, cfL4;desc=\"?proto=TCP&rtt=65767\""]
+        #expect(BroadbandTest.serverMilliseconds(headers) == 24)
+        #expect(BroadbandTest.serverMilliseconds([:]) == 0)
+    }
+
+    @Test func 物理网卡的DNS被代理接管时要自己解析() {
+        #expect(SpeedPath.isHijackedDNS("198.18.0.2"))
+        #expect(SpeedPath.isHijackedDNS("127.0.0.1"))
+        #expect(SpeedPath.isHijackedDNS("::1"))
+        #expect(!SpeedPath.isHijackedDNS("192.168.0.1"))
+        #expect(!SpeedPath.isHijackedDNS("223.5.5.5"))
+    }
+
+    @Test func 没有代理时两条线路一样() async {
+        let details = NetworkDetails(physical: nil, tunnel: nil, dnsServers: [])
+        for route in SpeedRoute.allCases {
+            let path = await SpeedPath.make(route: route, details: details, environment: ProxyEnvironment())
+            #expect(path.route == nil)
+            #expect(!path.isProxied)
+        }
+        // 经代理：延迟改用 HTTP 往返计时
+        let proxied = await SpeedPath.make(route: .proxy, details: details,
+                                           environment: ProxyEnvironment(proxies: [.init(kind: .http, host: "127.0.0.1", port: 6152)]))
+        #expect(proxied.isProxied)
+        #expect(proxied.route == .proxy)
+    }
 }
+
