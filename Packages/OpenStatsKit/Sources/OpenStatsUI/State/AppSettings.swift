@@ -141,15 +141,18 @@ public enum PopoverSection: String, CaseIterable, Identifiable, Sendable {
 public enum MenuBarLayout: String, CaseIterable, Identifiable, Sendable {
     /// 每个指标一个图标，点击弹出该项详情
     case separate
-    /// 所有指标合成一个图标，点击弹出状态总览，可切到各项详情
+    /// 所有指标合成一个图标，点击弹出完整面板
     case combined
+    /// 只显示 OpenStats 标志，不画任何数值，点击弹出完整面板
+    case iconOnly
 
     public var id: String { rawValue }
 
     var title: String {
         switch self {
         case .separate: tr("每项独立")
-        case .combined: tr("合并为一个")
+        case .combined: tr("合并显示")
+        case .iconOnly: tr("仅图标")
         }
     }
 }
@@ -562,6 +565,11 @@ public final class AppSettings {
     /// 按固定顺序返回已启用的菜单栏项目
     var orderedMenuBarItems: [MenuBarItem] {
         MenuBarItem.allCases.filter(menuBarItems.contains)
+    }
+
+    /// 菜单栏上实际画出来的项目：“仅图标”时一项都不画，开着的项目保留，切回其他布局时恢复
+    var drawnMenuBarItems: [MenuBarItem] {
+        menuBarLayout == .iconOnly ? [] : orderedMenuBarItems
     }
 
     func isEnabled(_ item: MenuBarItem) -> Bool { menuBarItems.contains(item) }

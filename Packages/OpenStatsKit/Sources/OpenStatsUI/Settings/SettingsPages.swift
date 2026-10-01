@@ -284,57 +284,65 @@ struct MenuBarSettings: View {
 
         SettingsGroup(caption: tr("布局")) {
             GroupRow(showsDivider: false) {
-                SettingRow(title: tr("菜单栏图标"),
-                           subtitle: settings.menuBarLayout == .separate
-                               ? tr("每个指标一个图标，点击弹出该项详情")
-                               : tr("所有指标合成一个图标，点击弹出完整面板：指标、进程与常用工具集中在一页")) {
+                SettingRow(title: tr("菜单栏图标"), subtitle: layoutSubtitle(settings.menuBarLayout)) {
                     SegmentedControl(selection: $settings.menuBarLayout,
                                      options: MenuBarLayout.allCases.map { ($0, $0.title) })
-                        .frame(width: DS.Size.sidebarWidth + DS.Space.s6)
+                        .frame(width: DS.Size.sidebarWidth + DS.Space.s16)
                 }
             }
         }
 
-        SettingsGroup(caption: tr("整体风格")) {
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)],
-                      spacing: DS.Space.s3) {
-                ForEach(MenuBarStyle.allCases) { style in
-                    StyleCard(style: style, isSelected: settings.menuBarStyle == style) {
-                        settings.menuBarStyle = style
-                    }
-                }
-            }
-            .padding(DS.Space.s3)
-            HairlineDivider()
-            Text(tr("整体风格套用到所有项目。想让某个项目不一样，在下面“显示项目”里给它单独选一种，比如 CPU 用圆环、风扇用数字。"))
-                .dsFont(.xs)
-                .foregroundStyle(DS.Palette.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, DS.Space.s4)
-                .padding(.vertical, DS.Space.s3)
+        let iconOnly = settings.menuBarLayout == .iconOnly
+        if iconOnly {
+            InfoBanner(icon: "info.circle",
+                       text: tr("仅图标模式下菜单栏不显示数值，下面的风格与显示项目暂不生效；切回其他布局后恢复。"))
         }
 
-        SettingsGroup(caption: tr("显示项目")) {
-            GroupRow(showsDivider: false) {
-                InfoBanner(icon: "hand.draw",
-                           text: tr("菜单栏里的图标可以调整顺序：按住 ⌘ 键拖动任意一个，松开后位置会一直保留。新开启的项目由系统安排位置，可能离其他图标较远，拖一下就能挪到一起。"))
-            }
-            ForEach(Array(MenuBarItem.allCases.enumerated()), id: \.element) { index, item in
-                GroupRow {
-                    VStack(alignment: .leading, spacing: DS.Space.s3) {
-                        SettingRow(title: item.title, subtitle: itemSubtitle(item), icon: item.symbol) {
-                            DSToggle(isOn: Binding(get: { settings.isEnabled(item) },
-                                                   set: { settings.setEnabled(item, $0) }),
-                                     label: item.title)
+        Group {
+        // 仅图标时菜单栏不画数值，风格与显示项目保留设置但暂不生效
+            SettingsGroup(caption: tr("整体风格")) {
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)],
+                          spacing: DS.Space.s3) {
+                    ForEach(MenuBarStyle.allCases) { style in
+                        StyleCard(style: style, isSelected: settings.menuBarStyle == style) {
+                            settings.menuBarStyle = style
                         }
-                        if settings.isEnabled(item) {
-                            ItemStyleRow(item: item)
-                            PopoverSectionPicker(item: item)
+                    }
+                }
+                .padding(DS.Space.s3)
+                HairlineDivider()
+                Text(tr("整体风格套用到所有项目。想让某个项目不一样，在下面“显示项目”里给它单独选一种，比如 CPU 用圆环、风扇用数字。"))
+                    .dsFont(.xs)
+                    .foregroundStyle(DS.Palette.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, DS.Space.s4)
+                    .padding(.vertical, DS.Space.s3)
+            }
+
+            SettingsGroup(caption: tr("显示项目")) {
+                GroupRow(showsDivider: false) {
+                    InfoBanner(icon: "hand.draw",
+                               text: tr("菜单栏里的图标可以调整顺序：按住 ⌘ 键拖动任意一个，松开后位置会一直保留。新开启的项目由系统安排位置，可能离其他图标较远，拖一下就能挪到一起。"))
+                }
+                ForEach(Array(MenuBarItem.allCases.enumerated()), id: \.element) { index, item in
+                    GroupRow {
+                        VStack(alignment: .leading, spacing: DS.Space.s3) {
+                            SettingRow(title: item.title, subtitle: itemSubtitle(item), icon: item.symbol) {
+                                DSToggle(isOn: Binding(get: { settings.isEnabled(item) },
+                                                       set: { settings.setEnabled(item, $0) }),
+                                         label: item.title)
+                            }
+                            if settings.isEnabled(item) {
+                                ItemStyleRow(item: item)
+                                PopoverSectionPicker(item: item)
+                            }
                         }
                     }
                 }
             }
         }
+        .disabled(iconOnly)
+        .opacity(iconOnly ? 0.5 : 1)
 
         SettingsGroup(caption: tr("其他")) {
             GroupRow(showsDivider: false) {
@@ -348,6 +356,14 @@ struct MenuBarSettings: View {
                     DSToggle(isOn: $settings.bluetoothLowBatteryInMenuBar, label: tr("蓝牙设备电量低时提示"))
                 }
             }
+        }
+    }
+
+    private func layoutSubtitle(_ layout: MenuBarLayout) -> String {
+        switch layout {
+        case .separate: tr("每个指标一个图标，点击弹出该项详情")
+        case .combined: tr("所有指标合成一个图标，点击弹出完整面板：指标、进程与常用工具集中在一页")
+        case .iconOnly: tr("只显示 OpenStats 标志，点击弹出完整面板")
         }
     }
 

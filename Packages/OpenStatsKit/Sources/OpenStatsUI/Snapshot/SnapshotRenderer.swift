@@ -89,16 +89,22 @@ enum SnapshotRenderer {
         }
 
         let menuBar = MenuBarRenderer.image(for: model)
-        for dark in [false, true] {
-            let preview = MenuBarRenderer.preview(menuBar, dark: dark)
-            // 垫上菜单栏底色，便于查看
-            let padded = NSImage(size: NSSize(width: preview.size.width + DS.Space.s4, height: preview.size.height), flipped: false) { rect in
-                NSColor(hex: dark ? 0x1F2937 : 0xE5E7EB).setFill()
-                rect.fill()
-                preview.draw(in: NSRect(x: DS.Space.s2, y: 0, width: preview.size.width, height: preview.size.height))
-                return true
+        let layout = settings.menuBarLayout
+        settings.menuBarLayout = .iconOnly
+        let iconOnly = MenuBarRenderer.image(for: model)
+        settings.menuBarLayout = layout
+        for (image, name) in [(menuBar, "menubar"), (iconOnly, "menubar-icon-only")] {
+            for dark in [false, true] {
+                let preview = MenuBarRenderer.preview(image, dark: dark)
+                // 垫上菜单栏底色，便于查看
+                let padded = NSImage(size: NSSize(width: preview.size.width + DS.Space.s4, height: preview.size.height), flipped: false) { rect in
+                    NSColor(hex: dark ? 0x1F2937 : 0xE5E7EB).setFill()
+                    rect.fill()
+                    preview.draw(in: NSRect(x: DS.Space.s2, y: 0, width: preview.size.width, height: preview.size.height))
+                    return true
+                }
+                writePNG(padded, scale: 2, to: outputDirectory.appendingPathComponent("\(name)-\(dark ? "dark" : "light").png"))
             }
-            writePNG(padded, scale: 2, to: outputDirectory.appendingPathComponent("menubar-\(dark ? "dark" : "light").png"))
         }
         print(tr("截图已输出到 \(outputDirectory.path)"))
     }

@@ -186,6 +186,8 @@ npm 缓存	npm Cache
 云端只保存邮箱、姓名与设置文档	The cloud only keeps your email, name and the settings document
 云端已有 {} 在 {} 保存的设置，和这台 Mac 上的不一样。要用哪一份？	{1} saved settings to the cloud {2}, and they differ from this Mac's. Which one should be used?
 交换区	Swap
+仅图标	Icon Only
+仅图标模式下菜单栏不显示数值，下面的风格与显示项目暂不生效；切回其他布局后恢复。	In Icon Only mode the menu bar shows no values, so the style and item settings below are paused. They come back when you switch to another layout.
 仅系统不休眠	Keep system awake
 介质错误	Media errors
 从左侧选择应用，或把应用拖到这里	Choose an app on the left, or drop one here
@@ -357,6 +359,7 @@ npm 缓存	npm Cache
 只在菜单栏显示 GPU 或打开 GPU 相关页面时记录	Recorded only when GPU is in the menu bar or a GPU page is open
 只在菜单栏显示温度、开启过热通知或打开温度页面时记录	Recorded only when temperature is in the menu bar, overheating alerts are on, or a temperature page is open
 只在菜单栏显示电池或打开电池页面时记录	Recorded only while Battery is in the menu bar or the Battery page is open
+只显示 OpenStats 标志，点击弹出完整面板	Shows only the OpenStats logo; click for the full panel
 只显示菜单栏时的采样间隔；打开弹窗或主窗口时为 1 秒（进程页 2 秒）	Sampling interval when only the menu bar is shown; 1 second with a popover or window open (2 seconds on Processes)
 只查找以该应用包名命名的文件，以及 Application Support、Logs 下与应用同名的目录；钥匙串与其他应用共享的数据不会动。程序坞里的图标会一并移除	Only files named after the app's bundle ID, plus folders with the app's name in Application Support and Logs, are included. Keychains and data shared with other apps are never touched. The Dock icon is removed as well
 只设置了系统代理：浏览器等应用走代理，命令行工具、游戏等不读代理设置的程序仍在直连。要接管全部流量，可以开启增强模式或 TUN 模式。	Only a system proxy is set: browsers and most apps use it, but command-line tools, games, and other programs that ignore proxy settings still connect directly. To route all traffic, turn on enhanced mode or TUN mode.
@@ -376,7 +379,7 @@ npm 缓存	npm Cache
 各核心负载	Core Load
 各项指标正常	Everything looks good
 合上屏幕时 Mac 不进入睡眠，下载、渲染、远程连接不中断。	Your Mac stays awake with the lid closed, so downloads, renders and remote sessions continue.
-合并为一个	Combined
+合并显示	Combined
 合盖后继续运行	Keep Running with Lid Closed
 合盖电量下限	Lid Mode Battery Floor
 合盖睡眠	Lid sleep

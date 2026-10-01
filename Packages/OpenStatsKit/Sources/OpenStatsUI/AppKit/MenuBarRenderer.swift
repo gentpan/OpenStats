@@ -125,6 +125,9 @@ enum MenuBarRenderer {
         static let upperBaseline: CGFloat = 13
         static let lowerBaseline: CGFloat = 3
         static let symbolSize: CGFloat = 11
+        /// OpenStats 标志的外框与线宽
+        static let logoSize = NSSize(width: 22, height: 14)
+        static let logoLine: CGFloat = 1.75
         static let itemGap = DS.Space.s3
         static let innerGap = DS.Space.s1
         static let historyCount = 10
@@ -154,7 +157,7 @@ enum MenuBarRenderer {
     static func image(for model: AppModel) -> NSImage {
         let settings = model.settings
         return image(reading: MenuBarReading(model: model),
-                     items: settings.orderedMenuBarItems,
+                     items: settings.drawnMenuBarItems,
                      style: { settings.style(for: $0) },
                      networkStyle: settings.networkStyle,
                      colorizeHighLoad: settings.colorizeHighLoad,
@@ -173,7 +176,8 @@ enum MenuBarRenderer {
             segments.append(segment(for: item, reading: reading, style: style(item), networkStyle: networkStyle,
                                     colorizeHighLoad: colorizeHighLoad, fahrenheit: fahrenheit))
         }
-        if segments.isEmpty { segments.append(symbolSegment("waveform.path.ecg")) }
+        // 仅图标或没有开启任何项目：画 OpenStats 标志；防休眠时杯子标记仍在左边
+        if items.isEmpty { segments.append(logoSegment()) }
 
         let width = segments.reduce(0) { $0 + $1.width } + CGFloat(segments.count - 1) * Metrics.itemGap
         let image = NSImage(size: NSSize(width: ceil(width), height: Metrics.barHeight), flipped: false) { rect in
@@ -505,6 +509,27 @@ enum MenuBarRenderer {
         }
         segment.colored = true
         return segment
+    }
+
+    /// OpenStats 标志：与 App 图标同一条脉搏折线，单色绘制，随菜单栏浅色 / 深色变化
+    private static func logoSegment() -> Segment {
+        let size = Metrics.logoSize
+        return Segment(width: size.width) { rect in
+            let box = NSRect(x: rect.minX, y: rect.midY - size.height / 2, width: size.width, height: size.height)
+                .insetBy(dx: Metrics.logoLine / 2, dy: Metrics.logoLine / 2)
+            // 折线顶点按 App 图标量取：横向 0…1 从左到右，纵向 0…1 从上到下
+            let vertices: [(x: CGFloat, y: CGFloat)] = [(0, 0.54), (0.2, 0.54), (0.41, 0), (0.51, 1), (0.7, 0.27), (0.8, 0.54), (1, 0.54)]
+            let path = NSBezierPath()
+            for (index, vertex) in vertices.enumerated() {
+                let point = NSPoint(x: box.minX + vertex.x * box.width, y: box.maxY - vertex.y * box.height)
+                if index == 0 { path.move(to: point) } else { path.line(to: point) }
+            }
+            path.lineWidth = Metrics.logoLine
+            path.lineCapStyle = .round
+            path.lineJoinStyle = .round
+            NSColor.labelColor.setStroke()
+            path.stroke()
+        }
     }
 
     private static func symbolSegment(_ name: String) -> Segment {

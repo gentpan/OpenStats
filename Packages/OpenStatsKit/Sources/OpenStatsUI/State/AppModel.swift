@@ -90,7 +90,7 @@ public final class AppModel {
         let tab = settings.panelTab
         let window = isMainWindowVisible
         let popover = openPopover
-        let menu = settings.menuBarItems
+        let menu = Set(settings.drawnMenuBarItems)
         let thermalPopover = popover == .temperature || popover == .fan
         // 主窗口仪表盘或合并面板的总览
         let overview = (window && tab == .overview) || (isCombinedPopoverOpen && combinedPopoverTab == nil)
@@ -129,7 +129,7 @@ public final class AppModel {
     /// 菜单栏开着电池项且要做低电量提示、或这台 Mac 没有电池时每 5 分钟
     var bluetoothDemand: BluetoothController.Demand {
         if (isMainWindowVisible && [.battery, .system].contains(settings.panelTab)) || openPopover == .battery { return .foreground }
-        if settings.menuBarItems.contains(.battery) && (settings.bluetoothLowBatteryInMenuBar || store.battery == nil) { return .background }
+        if settings.drawnMenuBarItems.contains(.battery) && (settings.bluetoothLowBatteryInMenuBar || store.battery == nil) { return .background }
         return .off
     }
 

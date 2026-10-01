@@ -26,8 +26,8 @@ final class MenuBarController: NSObject {
     /// 布局或显示项目变化时重建；否则只重绘图片
     func update() {
         let settings = model.settings
-        let enabled = settings.orderedMenuBarItems
-        // 没有任何项目时保留一个图标，确保仍能打开面板与主窗口
+        let enabled = settings.drawnMenuBarItems
+        // 没有任何项目时保留一个图标（OpenStats 标志），确保仍能打开面板与主窗口
         let signature: [MenuBarItem?] = settings.menuBarLayout == .separate && !enabled.isEmpty ? enabled : [nil]
         if signature != layoutSignature {
             rebuild(signature)
@@ -76,7 +76,7 @@ final class MenuBarController: NSObject {
         let settings = model.settings
         let reading = MenuBarReading(model: model)
         for (index, entry) in items.enumerated() {
-            let itemsToDraw = entry.key.map { [$0] } ?? settings.orderedMenuBarItems
+            let itemsToDraw = entry.key.map { [$0] } ?? settings.drawnMenuBarItems
             var entryReading = reading
             // 防休眠标记只画在最左侧的图标里
             entryReading.keepAwake = reading.keepAwake && index == 0
@@ -86,7 +86,7 @@ final class MenuBarController: NSObject {
                                                                   networkStyle: settings.networkStyle,
                                                                   colorizeHighLoad: settings.colorizeHighLoad,
                                                                   fahrenheit: settings.useFahrenheit)
-            entry.statusItem.button?.toolTip = reading.tooltip(items: itemsToDraw, fahrenheit: settings.useFahrenheit)
+            entry.statusItem.button?.toolTip = itemsToDraw.isEmpty ? "OpenStats" : reading.tooltip(items: itemsToDraw, fahrenheit: settings.useFahrenheit)
         }
     }
 

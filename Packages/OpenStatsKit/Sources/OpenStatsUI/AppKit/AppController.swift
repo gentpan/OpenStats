@@ -277,7 +277,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func updateNetworkVisibility() {
-        model.network.setVisibility(inMenuBar: model.settings.menuBarItems.contains(.network),
+        model.network.setVisibility(inMenuBar: model.settings.drawnMenuBarItems.contains(.network),
                                     detailVisible: model.isNetworkDetailVisible)
     }
 
