@@ -15,14 +15,18 @@ public struct FanState: Sendable, Equatable, Identifiable {
     public var maximum: Double
     public var target: Double
     public var isManual: Bool
+    /// 风扇从停转起步：Apple 芯片的固件先低速拖转约 5 秒，期间转速读数为 0
+    public var isStarting: Bool
 
-    public init(id: Int, current: Double, minimum: Double, maximum: Double, target: Double, isManual: Bool) {
+    public init(id: Int, current: Double, minimum: Double, maximum: Double, target: Double, isManual: Bool,
+                isStarting: Bool = false) {
         self.id = id
         self.current = current
         self.minimum = minimum
         self.maximum = maximum
         self.target = target
         self.isManual = isManual
+        self.isStarting = isStarting
     }
 
     /// 当前转速在 min...max 区间的占比
@@ -51,8 +55,10 @@ public final class FanControl {
             let maximum = smc.double(SMCKey("F\(id)Mx")) ?? 0
             let target = smc.double(SMCKey("F\(id)Tg")) ?? current
             let mode = smc.double(modeKey(id)) ?? 0
+            // F0St：3 停转、1 起步、5 运行；没有这个键的机型按“有目标转速但还没转起来”判断
+            let starting = smc.double(SMCKey("F\(id)St")).map { $0 == 1 } ?? (mode == 1 && target > 0)
             return FanState(id: id, current: current, minimum: minimum, maximum: maximum,
-                            target: target, isManual: mode == 1)
+                            target: target, isManual: mode == 1, isStarting: starting && current == 0)
         }
     }
 

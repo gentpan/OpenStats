@@ -751,7 +751,7 @@ struct ThermalPopover: View {
                     } else {
                         ForEach(fans) { fan in
                             VStack(spacing: DS.Space.s1) {
-                                InfoRow(label: tr("风扇 \(fan.id + 1)"), text: Format.rpm(fan.current))
+                                InfoRow(label: tr("风扇 \(fan.id + 1)"), text: fan.isStarting ? tr("启动中…") : Format.rpm(fan.current))
                                 ProgressTrack(fraction: fan.maximum > 0 ? fan.current / fan.maximum : 0, height: DS.Space.s1)
                             }
                         }
@@ -779,6 +779,7 @@ struct ThermalPopover: View {
 @MainActor
 func fanStatusText(fans: [FanState], mode: FanController.Mode) -> String {
     if fans.isEmpty { return tr("未检测到风扇") }
+    if fans.contains(where: \.isStarting) { return tr("正在启动风扇…") }
     guard fans.contains(where: \.isManual) else { return tr("由 macOS 调节") }
     return mode == .automatic ? tr("其他程序手动控制") : tr("OpenStats 控制中")
 }
