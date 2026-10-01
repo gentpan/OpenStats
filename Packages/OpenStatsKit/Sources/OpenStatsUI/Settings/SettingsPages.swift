@@ -287,7 +287,7 @@ struct MenuBarSettings: View {
                 SettingRow(title: tr("菜单栏图标"),
                            subtitle: settings.menuBarLayout == .separate
                                ? tr("每个指标一个图标，点击弹出该项详情")
-                               : tr("所有指标合成一个图标，点击弹出状态总览，可切到各项详情")) {
+                               : tr("所有指标合成一个图标，点击弹出完整面板：指标、进程与常用工具集中在一页")) {
                     SegmentedControl(selection: $settings.menuBarLayout,
                                      options: MenuBarLayout.allCases.map { ($0, $0.title) })
                         .frame(width: DS.Size.sidebarWidth + DS.Space.s6)

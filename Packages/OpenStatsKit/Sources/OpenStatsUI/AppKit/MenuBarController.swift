@@ -2,7 +2,7 @@ import AppKit
 import Localization
 import SwiftUI
 
-/// 菜单栏图标：每项独立时一个指标一个图标，点击弹出该项详情；合并时只有一个图标，点击弹出状态总览，
+/// 菜单栏图标：每项独立时一个指标一个图标，点击弹出该项详情；合并时只有一个图标，点击弹出完整面板，
 /// 总览顶部的标签可以切到各项的详情
 @MainActor
 final class MenuBarController: NSObject {
@@ -143,7 +143,7 @@ final class MenuBarController: NSObject {
 
     private func makeCombinedPanel() -> StatusPanel {
         let model = self.model
-        let panel = StatusPanel(width: DS.Size.popoverWidth, minHeight: DS.Size.panelMinHeight / 2,
+        let panel = StatusPanel(width: DS.Size.dashboardPopoverWidth, minHeight: DS.Size.panelMinHeight / 2,
                                 content: { CombinedPopoverView().environment(model) },
                                 measuring: { CombinedPopoverView().environment(model).environment(\.isSnapshot, true) })
         panel.onVisibilityChange = { [weak self] visible in

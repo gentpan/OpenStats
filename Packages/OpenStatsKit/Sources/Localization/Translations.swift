@@ -467,12 +467,14 @@ npm 缓存	npm Cache
 左侧风扇	Left Fan
 左耳	Left
 已{}“{}”	{} “{}”
+已优化	Optimized
 已使用 Developer ID 签名（团队 {}），辅助工具只接受同一团队签名的 OpenStats。	Signed with Developer ID (team {}); the helper only accepts OpenStats signed by the same team.
 已停用	Off
 已充满	Charged
 已删除 {} 个快照，腾出的空间稍后会反映在“可清除”里	Deleted {} snapshots; the freed space will show up under purgeable shortly
 已到设定时间，防休眠已关闭	Time's up; Keep Awake is off
 已加载	Loaded
+已卸载	Uninstalled
 已取消	Cancelled
 已取消登录	Sign-in cancelled
 已启用	Enabled
@@ -485,6 +487,7 @@ npm 缓存	npm Cache
 已拷贝	Copied
 已推出“{}”	Ejected “{}”
 已是最新版本	Up to date
+已清理	Cleaned
 已用	Used
 已用 {} · {}	{} used · {}
 已用内存占比	Memory used
@@ -566,7 +569,7 @@ npm 缓存	npm Cache
 截图已输出到 {}	Snapshots saved to {}
 所属应用：{}（{}）	App: {} ({})
 所有内容先移到废纸篓。	Everything goes to the Trash first.
-所有指标合成一个图标，点击弹出状态总览，可切到各项详情	All metrics in one icon; click for a status overview, with tabs for each metric's details
+所有指标合成一个图标，点击弹出完整面板：指标、进程与常用工具集中在一页	One icon for all metrics; click for a full panel with metrics, processes and tools on one page
 所有检测目标都连不上。请检查网络连接，或者代理软件是否正常运行。	None of the test targets could be reached. Check your network connection and whether your proxy app is running properly.
 所有用户	All Users
 所有用户与系统级的启动项需要管理员权限，请在系统设置的登录项中管理	All-users and system items need admin rights; manage them in Login Items in System Settings
@@ -618,6 +621,9 @@ npm 缓存	npm Cache
 推断	Inferred
 搜索名称、PID 或用户	Search name, PID or user
 搜索应用	Search apps
+摄像头、麦克风使用中	Camera and mic in use
+摄像头使用中	Camera in use
+摄像头未在使用	Camera not in use
 撤销	Undo
 收起	Collapse
 改回开机后累计	Back to since-boot totals
@@ -683,6 +689,7 @@ npm 缓存	npm Cache
 未使用代理	No Proxy in Use
 未保存的内容可能会丢失。强制退出会立即结束，不给应用保存的机会。	Unsaved work may be lost. Force Quit ends it immediately without letting it save.
 未发现	None found
+未在使用	Not in use
 未安装	Not Installed
 未完成的下载	Incomplete Downloads
 未开启，Mac 按系统设置休眠	Off; your Mac sleeps as usual
@@ -820,6 +827,7 @@ npm 缓存	npm Cache
 清理中…	Cleaning…
 清理可回收的缓存内存（需要管理员授权或辅助工具）	Frees reclaimable cached memory (needs admin approval or the helper)
 清理所选 {}	Clean Selected {}
+清理记录	Cleanup history
 清空废纸篓	Empty Trash
 清除	Clear
 清除…	Clear…
@@ -842,7 +850,6 @@ npm 缓存	npm Cache
 物理地址	Hardware address
 状态	Status
 状态圆点	Status Dot
-状态总览	Status Overview
 状态正常	Healthy
 状态良好	Healthy
 现在	Now
@@ -995,7 +1002,6 @@ npm 缓存	npm Cache
 菜单栏图标	Menu Bar Icons
 菜单栏布局	Menu Bar Layout
 菜单栏里的图标可以调整顺序：按住 ⌘ 键拖动任意一个，松开后位置会一直保留。新开启的项目由系统安排位置，可能离其他图标较远，拖一下就能挪到一起。	You can reorder the icons in the menu bar: hold ⌘ and drag any of them, and the position sticks. macOS picks where a newly enabled item first appears, sometimes away from the others; just drag it over.
-菜单栏里还没有开启任何项目。	No items are turned on in the menu bar yet.
 菜单栏项目	Menu Bar Items
 菜单栏风格	Menu bar style
 蓝牙设备	Bluetooth Devices
@@ -1088,7 +1094,6 @@ npm 缓存	npm Cache
 退出应用…	Quit App…
 退出登录	Sign out
 适中	Moderate
-选择显示项目	Choose Items
 通用	General
 通电时间	Power-on hours
 通电次数	Power cycles
@@ -1142,6 +1147,8 @@ npm 缓存	npm Cache
 高负载	Heavy load
 高负载时着色	Color High Load
 高风险	High risk
+麦克风使用中	Microphone in use
+麦克风未在使用	Microphone not in use
 默认只在菜单栏运行；打开后，主窗口开着时图标出现在程序坞与 ⌘Tab 中	OpenStats lives in the menu bar by default. Turn this on to show its icon in the Dock and ⌘Tab while the main window is open
 （{}）	 ({})
 ，	, 

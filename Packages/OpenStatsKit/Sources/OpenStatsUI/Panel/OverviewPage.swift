@@ -101,7 +101,8 @@ struct HealthReport {
     }
 }
 
-private struct HealthHeader: View {
+struct HealthHeader<Accessory: View>: View {
+    @ViewBuilder var accessory: Accessory
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -120,19 +121,32 @@ private struct HealthHeader: View {
                 Text(report.summary)
                     .dsFont(.base, weight: .medium)
                     .foregroundStyle(DS.Palette.textSecondary)
-                Spacer()
+                    .lineLimit(1)
+                Spacer(minLength: DS.Space.s2)
+                accessory
             }
-            FlowLayout(spacing: DS.Space.s2) {
-                Chip(text: chipName(store.topology.brand), icon: "apple.logo")
-                Chip(text: Format.bytes(ProcessInfo.processInfo.physicalMemory).replacingOccurrences(of: ".0 ", with: " "))
-                Chip(text: store.system.osVersion)
-                if let boot = store.system.bootDate {
-                    Chip(text: tr("已运行 ") + Format.uptime(since: boot))
-                }
-                Chip(text: shortModel(store.system.modelName))
+            // 始终一行：宽度不够时先去掉机型，再把运行时间缩成最大单位，最后去掉运行时间
+            ViewThatFits(in: .horizontal) {
+                chips(model: true, uptime: true, compactUptime: false)
+                chips(model: false, uptime: true, compactUptime: false)
+                chips(model: false, uptime: true, compactUptime: true)
+                chips(model: false, uptime: false, compactUptime: true)
             }
         }
         .padding(.horizontal, DS.Space.s1)
+    }
+
+    private func chips(model showsModel: Bool, uptime showsUptime: Bool, compactUptime: Bool) -> some View {
+        let store = model.store
+        return HStack(spacing: DS.Space.s2) {
+            Chip(text: chipName(store.topology.brand), icon: "apple.logo")
+            Chip(text: Format.bytes(ProcessInfo.processInfo.physicalMemory).replacingOccurrences(of: ".0 ", with: " "))
+            Chip(text: store.system.osVersion)
+            if showsUptime, let boot = store.system.bootDate {
+                Chip(text: tr("已运行 ") + Format.uptime(since: boot, compact: compactUptime))
+            }
+            if showsModel { Chip(text: shortModel(store.system.modelName)) }
+        }
     }
 
     /// “Apple M5 Max” → “M5 Max”，前面配 Apple 标志
@@ -152,6 +166,10 @@ private struct HealthHeader: View {
     }
 }
 
+extension HealthHeader where Accessory == EmptyView {
+    init() { self.init { EmptyView() } }
+}
+
 // MARK: - 指标卡片
 
 func loadLevel(_ value: Double) -> String {
@@ -163,7 +181,7 @@ private func splitRate(_ text: String) -> (String, String) {
     return (parts.first ?? text, parts.count > 1 ? parts[1] : "")
 }
 
-private struct CPUTile: View {
+struct CPUTile: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -183,7 +201,7 @@ private struct CPUTile: View {
     }
 }
 
-private struct GPUTile: View {
+struct GPUTile: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -202,7 +220,7 @@ private struct GPUTile: View {
     }
 }
 
-private struct MemoryTile: View {
+struct MemoryTile: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -227,7 +245,7 @@ private struct MemoryTile: View {
     }
 }
 
-private struct DiskTile: View {
+struct DiskTile: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -249,7 +267,7 @@ private struct DiskTile: View {
     }
 }
 
-private struct NetworkTile: View {
+struct NetworkTile: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -278,7 +296,7 @@ private struct NetworkTile: View {
     }
 }
 
-private struct FanTile: View {
+struct FanTile: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -344,7 +362,7 @@ private struct CoreLoadCard: View {
 
 // MARK: - 电池
 
-private struct BatteryCard: View {
+struct BatteryCard: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -405,7 +423,7 @@ private struct BatteryCard: View {
 
 // MARK: - 高占用进程
 
-private struct TopProcessesCard: View {
+struct TopProcessesCard: View {
     @Environment(AppModel.self) private var model
     @Environment(\.isSnapshot) private var isSnapshot
     private static let rowCount = 5

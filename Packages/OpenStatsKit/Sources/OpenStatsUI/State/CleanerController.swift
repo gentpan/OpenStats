@@ -18,11 +18,13 @@ public final class CleanerController {
     public var isConfirming = false
 
     @ObservationIgnored private let settings: AppSettings
+    @ObservationIgnored private let tally: CleanupTally
     @ObservationIgnored private let rules = RuleCatalog.rules()
     @ObservationIgnored private var task: Task<Void, Never>?
 
-    init(settings: AppSettings) {
+    init(settings: AppSettings, tally: CleanupTally) {
         self.settings = settings
+        self.tally = tally
         selection = Set(rules.filter(\.selectedByDefault).map(\.id))
     }
 
@@ -62,6 +64,7 @@ public final class CleanerController {
         task = Task {
             let result = await CleanEngine.clean(scans, selected: selection, preferTrash: preferTrash, environment: environment)
             report = result
+            tally.recordClean(bytes: result.freedBytes)
             phase = .finished
             // 清理后重新计算剩余可清理空间
             let rescanned = await CleanEngine.scan(rules, environment: Self.environment())

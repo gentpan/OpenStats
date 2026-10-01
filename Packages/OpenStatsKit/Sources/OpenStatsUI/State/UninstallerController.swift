@@ -18,6 +18,7 @@ public final class UninstallerController {
     public private(set) var isRemoving = false
     public private(set) var outcome: (text: String, isError: Bool)?
     var chosen: Set<String> = []
+    @ObservationIgnored var tally: CleanupTally?
     /// 有应用启动或退出时变化，让“正在运行”的提示跟着刷新
     private var runningRevision = 0
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
@@ -122,6 +123,7 @@ public final class UninstallerController {
                 }
                 // 应用已经进了废纸篓，程序坞里的图标只会变成问号，一并移除
                 let dock = Self.removeDockTile(for: app.url)
+                self.tally?.recordUninstall(bytes: freed)
                 Log.app.notice("卸载 \(app.bundleIdentifier, privacy: .public)，移到废纸篓 \(movedCount) 项")
                 let partial = movedCount < urls.count ? tr("，\(urls.count - movedCount) 项未能移动") : ""
                 self.outcome = (tr("已将 \(app.name) 与 \(movedCount - 1) 项残留移到废纸篓，约 \(Format.bytes(freed, base: .decimal))\(dock ? tr("，已从程序坞移除") : "")\(partial)。需要时可以在废纸篓里放回。"),

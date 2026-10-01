@@ -19,9 +19,11 @@ public final class MaintenanceController {
     public private(set) var dnsOutcome: Outcome?
 
     @ObservationIgnored private let helper: HelperClient
+    @ObservationIgnored private let tally: CleanupTally
 
-    init(helper: HelperClient) {
+    init(helper: HelperClient, tally: CleanupTally) {
         self.helper = helper
+        self.tally = tally
     }
 
     func run(_ command: MaintenanceCommand) async {
@@ -41,6 +43,7 @@ public final class MaintenanceController {
             outcomes[command] = Outcome(text: error, isError: error != Self.cancelled)
             return
         }
+        tally.recordOptimization()
         switch command {
         case .flushDNS:
             outcomes[command] = Outcome(text: tr("DNS 缓存已刷新"), isError: false)

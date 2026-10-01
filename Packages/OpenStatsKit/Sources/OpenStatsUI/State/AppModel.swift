@@ -16,6 +16,7 @@ public final class AppModel {
     public let keepAwake: KeepAwakeController
     public let cleaner: CleanerController
     public let maintenance: MaintenanceController
+    public let cleanupTally: CleanupTally
     public let network: NetworkController
     public let egress = EgressController()
     public let speedTest: SpeedTestController
@@ -37,7 +38,7 @@ public final class AppModel {
     /// 当前打开的菜单栏详情弹窗；合并模式的弹窗切到某一项时也是这一项
     public var openPopover: MenuBarItem?
     /// 合并模式下点击菜单栏图标弹出的面板正在显示。
-    /// 面板切到某一项的详情时 openPopover 就是这一项，按那一项的弹窗加采数据；总览只用菜单栏本来就在采的指标
+    /// 面板切到某一项的详情时 openPopover 就是这一项，按那一项的弹窗加采数据；总览与主窗口仪表盘采同样的数据
     public var isCombinedPopoverOpen = false {
         didSet {
             guard isCombinedPopoverOpen != oldValue else { return }
@@ -69,8 +70,11 @@ public final class AppModel {
         self.helper = helper
         fans = FanController(helper: helper, store: store, settings: settings)
         keepAwake = KeepAwakeController(helper: helper, settings: settings)
-        cleaner = CleanerController(settings: settings)
-        maintenance = MaintenanceController(helper: helper)
+        let cleanupTally = CleanupTally()
+        self.cleanupTally = cleanupTally
+        cleaner = CleanerController(settings: settings, tally: cleanupTally)
+        maintenance = MaintenanceController(helper: helper, tally: cleanupTally)
+        uninstaller.tally = cleanupTally
         network = NetworkController(settings: settings)
         updates = UpdateController(settings: settings)
         alerts = AlertController(settings: settings)
@@ -88,6 +92,8 @@ public final class AppModel {
         let popover = openPopover
         let menu = settings.menuBarItems
         let thermalPopover = popover == .temperature || popover == .fan
+        // 主窗口仪表盘或合并面板的总览
+        let overview = (window && tab == .overview) || (isCombinedPopoverOpen && combinedPopoverTab == nil)
 
         // 进程页要读全系统进程（启动 ps），每 2 秒刷新一次足够，也更省电
         demand.interval = window && tab == .processes && popover == nil ? .seconds(2)
@@ -95,17 +101,17 @@ public final class AppModel {
         demand.memory = true
         demand.network = true
         let showing = { (page: PanelTab, item: MenuBarItem) in (window && tab == page) || popover == item }
-        demand.gpu = (window && [.overview, .system].contains(tab)) || menu.contains(.gpu) || showing(.gpu, .gpu)
-        demand.disk = (window && [.overview, .system, .cleaner, .disk].contains(tab)) || menu.contains(.disk) || popover == .disk
+        demand.gpu = overview || (window && tab == .system) || menu.contains(.gpu) || showing(.gpu, .gpu)
+        demand.disk = overview || (window && [.system, .cleaner, .disk].contains(tab)) || menu.contains(.disk) || popover == .disk
         demand.diskDetail = showing(.disk, .disk)
-        demand.battery = (window && [.overview, .system, .keepAwake].contains(tab)) || keepAwake.lidClosedActive
+        demand.battery = overview || (window && [.system, .keepAwake].contains(tab)) || keepAwake.lidClosedActive
             || menu.contains(.battery) || showing(.battery, .battery)
-        demand.processes = (window && [.processes, .overview, .disk].contains(tab)) || showing(.cpu, .cpu) || showing(.memory, .memory)
+        demand.processes = overview || (window && [.processes, .disk].contains(tab)) || showing(.cpu, .cpu) || showing(.memory, .memory)
             || popover == .disk
         demand.systemProcesses = window && tab == .processes
 
         var groups = Set<TemperatureGroup>()
-        if window && tab == .overview { groups.formUnion([.cpu, .gpu]) }
+        if overview { groups.formUnion([.cpu, .gpu]) }
         if (window && tab == .thermal) || thermalPopover { groups.formUnion(TemperatureGroup.allCases) }
         if menu.contains(.temperature) || fans.mode != .automatic || showing(.cpu, .cpu) { groups.insert(.cpu) }
         if showing(.gpu, .gpu) { groups.insert(.gpu) }
@@ -114,7 +120,7 @@ public final class AppModel {
         demand.temperatures = groups
         demand.power = (window && tab == .thermal) || thermalPopover || showing(.battery, .battery)
         demand.cpuFrequency = showing(.cpu, .cpu)
-        demand.fans = (window && (tab == .thermal || tab == .overview)) || menu.contains(.fan)
+        demand.fans = overview || (window && tab == .thermal) || menu.contains(.fan)
             || fans.mode != .automatic || thermalPopover
         return demand
     }

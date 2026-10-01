@@ -129,11 +129,12 @@ public enum Format {
         return hours > 0 ? String(format: "%d:%02d:%02d", hours, minutes, secs) : String(format: "%d:%02d", minutes, secs)
     }
 
-    public static func uptime(since date: Date, now: Date = Date()) -> String {
+    /// `compact` 只保留最大的单位：“1 天 14 小时” → “1 天”
+    public static func uptime(since date: Date, now: Date = Date(), compact: Bool = false) -> String {
         let minutes = max(0, Int(now.timeIntervalSince(date) / 60))
         let days = minutes / (60 * 24)
         let hours = (minutes / 60) % 24
-        if days > 0 { return hours > 0 ? tr("\(days) 天 \(hours) 小时") : tr("\(days) 天") }
+        if days > 0 { return hours > 0 && !compact ? tr("\(days) 天 \(hours) 小时") : tr("\(days) 天") }
         if hours > 0 { return tr("\(hours) 小时") }
         return tr("\(minutes) 分钟")
     }
