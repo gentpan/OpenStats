@@ -133,7 +133,12 @@ public enum AppUninstaller {
 
         add(app.url, .application)
         scan("Application Support", .support) { $0 == app.name }
+        // 这些共享目录中的应用条目仍按包名匹配，只加入命中的子项，不移除共享父目录。
+        scan("Application Support/com.apple.sharedfilelist/com.apple.LSSharedFileList.ApplicationRecentDocuments", .support)
+        scan("Application Support/CrashReporter", .logs)
         scan("Caches", .caches)
+        scan("Caches/org.sparkle-project.Sparkle", .caches)
+        scan("Caches/SentryCrash", .caches)
         scan("HTTPStorages", .caches)
         scan("Preferences", .preferences)
         scan("Preferences/ByHost", .preferences)

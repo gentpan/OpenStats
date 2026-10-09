@@ -50,6 +50,47 @@ import Testing
         #expect(!found.contains("com.example.foobar"))
     }
 
+    @Test func findsNestedLeftoversWithoutSelectingSharedDirectories() throws {
+        let home = try makeHome()
+        defer { try? FileManager.default.removeItem(at: home) }
+        let lib = home.appendingPathComponent("Library")
+        let appURL = home.appendingPathComponent("Applications/Foo.app")
+        try touch(appURL, directory: true)
+        let app = InstalledApp(url: appURL, name: "Foo", bundleIdentifier: "com.example.foo", version: nil, teamIdentifier: nil)
+        let locations: [(path: String, target: String, kind: AppLeftover.Kind, directory: Bool)] = [
+            ("Application Support/com.apple.sharedfilelist/com.apple.LSSharedFileList.ApplicationRecentDocuments", "com.example.foo.sfl3", .support, false),
+            ("Application Support/CrashReporter", "com.example.foo.plist", .logs, false),
+            ("Caches/org.sparkle-project.Sparkle", "com.example.foo", .caches, true),
+            ("Caches/SentryCrash", "com.example.foo", .caches, true),
+        ]
+        var targets = Set([appURL.path])
+        var preserved: [URL] = []
+        for location in locations {
+            let sharedDirectory = lib.appendingPathComponent(location.path)
+            let target = sharedDirectory.appendingPathComponent(location.target)
+            try touch(target, directory: location.directory)
+            if location.directory { try touch(target.appendingPathComponent("data")) }
+            targets.insert(target.path)
+
+            // 名字相近的应用、其他应用和共享元数据都不能随目标应用一起选中。
+            let neighbors = ["com.example.foobar.plist", "com.other.app.plist", "metadata.plist"]
+                .map { sharedDirectory.appendingPathComponent($0) }
+            for neighbor in neighbors { try touch(neighbor) }
+            preserved += [sharedDirectory] + neighbors
+        }
+
+        let leftovers = AppUninstaller.leftovers(for: app, home: home.path)
+        #expect(Set(leftovers.map { $0.url.path }) == targets)
+        for location in locations {
+            let target = lib.appendingPathComponent(location.path).appendingPathComponent(location.target)
+            #expect(leftovers.first { $0.url == target }?.kind == location.kind)
+        }
+        for url in preserved {
+            #expect(!leftovers.contains { $0.url == url })
+            #expect(FileManager.default.fileExists(atPath: url.path))
+        }
+    }
+
     @Test func refusesSystemAndOutsideApps() {
         let system = InstalledApp(url: URL(fileURLWithPath: "/System/Applications/Notes.app"), name: "Notes",
                                   bundleIdentifier: "com.apple.Notes", version: nil, teamIdentifier: nil)
