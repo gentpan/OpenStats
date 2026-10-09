@@ -329,12 +329,13 @@ enum MenuBarRenderer {
         alert ? .systemRed : .labelColor
     }
 
-    /// 颜色保持动态（labelColor / secondaryLabelColor），在绘制时才按菜单栏外观解析
+    /// 标签与普通读数同用动态 labelColor；彩色合并图不用模板着色，
+    /// secondaryLabelColor 在菜单栏的 vibrancy 外观下会成为低对比度灰色。
     /// 两行文字：宽度按标签、数值与样本里最宽的算，所以数值变长也不会挤动旁边的项目。
     /// `centered` 时两行各自居中，标签比数值宽时（风扇、温度）数值不会贴在右边
     private static func stackedText(label: String, value: String, sample: String, alert: Bool,
                                     centered: Bool = false) -> Segment {
-        let labelAttributes: [NSAttributedString.Key: Any] = [.font: Metrics.labelFont, .foregroundColor: NSColor.secondaryLabelColor]
+        let labelAttributes: [NSAttributedString.Key: Any] = [.font: Metrics.labelFont, .foregroundColor: NSColor.labelColor]
         let valueAttributes: [NSAttributedString.Key: Any] = [.font: Metrics.stackedValueFont, .foregroundColor: foreground(alert)]
         let width = ceil(max(textWidth(label, labelAttributes), textWidth(value, valueAttributes), textWidth(sample, valueAttributes)))
         return Segment(width: width) { rect in
@@ -352,7 +353,7 @@ enum MenuBarRenderer {
     }
 
     private static func inlineText(label: String, value: String, sample: String, alert: Bool) -> Segment {
-        let labelAttributes: [NSAttributedString.Key: Any] = [.font: Metrics.inlineLabelFont, .foregroundColor: NSColor.secondaryLabelColor]
+        let labelAttributes: [NSAttributedString.Key: Any] = [.font: Metrics.inlineLabelFont, .foregroundColor: NSColor.labelColor]
         let labelWidth = ceil(textWidth(label, labelAttributes))
         let valueSegment = inlineValue(value, sample: sample, alert: alert)
         return Segment(width: labelWidth + Metrics.innerGap + valueSegment.width) { rect in
@@ -566,7 +567,7 @@ enum MenuBarRenderer {
                         NSBezierPath(ovalIn: NSRect(x: rect.minX, y: center - Metrics.dotSize / 2,
                                                     width: Metrics.dotSize, height: Metrics.dotSize)).fill()
                     } else {
-                        drawText(arrow, [.font: Metrics.networkFont, .foregroundColor: NSColor.secondaryLabelColor],
+                        drawText(arrow, [.font: Metrics.networkFont, .foregroundColor: NSColor.labelColor],
                                  rightEdge: rect.minX + markerWidth, baseline: baseline)
                     }
                     drawText(text, attributes, rightEdge: rect.maxX, baseline: baseline)

@@ -512,63 +512,80 @@ struct ScoreBand: View {
     private static let tickHeight: CGFloat = DS.Space.s3
 
     var body: some View {
-        let bands = DS.Grade.bands
         let clamped = min(100, max(0, score))
         GeometryReader { proxy in
             let width = proxy.size.width
             ZStack(alignment: .topLeading) {
                 VStack(spacing: DS.Space.s1 / 2) {
-                    HStack(spacing: 1) {
-                        ForEach(Array(bands.enumerated()), id: \.offset) { index, band in
-                            let lower = index == 0 ? 0 : bands[index - 1].upper
-                            let segmentWidth = width * CGFloat(band.upper - lower) / 100
-                            ZStack {
-                                Rectangle().fill(band.color)
-                                if segmentWidth >= DS.Space.s6 {
-                                    Text(verbatim: band.grade)
-                                        .dsFont(.xs, weight: .semibold)
-                                        .foregroundStyle(DS.Palette.onPrimary)
-                                }
-                            }
-                            .frame(width: max(0, segmentWidth - (index == bands.count - 1 ? 0 : 1)))
-                        }
-                    }
-                    .frame(height: height)
-                    ZStack(alignment: .topLeading) {
-                        // A 与 A+ 的分界太密，刻度上不标 95；弹窗那么窄时 85 也挤不下
-                        ForEach([0] + bands.map(\.upper).filter { $0 != 95 && ($0 != 85 || width >= DS.Size.panelWidth / 2) }, id: \.self) { tick in
-                            Text(verbatim: "\(tick)")
-                                .dsFont(.xs)
-                                .foregroundStyle(DS.Palette.textTertiary)
-                                .monospacedDigit()
-                                .fixedSize()
-                                .alignmentGuide(.leading) { dimensions in
-                                    // 0 靠左、100 靠右，其余居中对齐刻度
-                                    tick == 0 ? 0 : tick == 100 ? dimensions.width - width : dimensions.width / 2 - width * CGFloat(tick) / 100
-                                }
-                        }
-                    }
-                    .frame(width: width, height: Self.tickHeight, alignment: .topLeading)
+                    colorBands(width: width)
+                    tickLabels(width: width)
                 }
                 .padding(.top, Self.markerHeight)
-
-                // 得分标记：气泡里写等级，尖角指向色带
-                let color = DS.Grade.color(for: clamped)
-                VStack(spacing: 0) {
-                    Text(verbatim: DS.Grade.bands.first { clamped < $0.upper }?.grade ?? "A+")
-                        .dsFont(.xs, weight: .semibold)
-                        .foregroundStyle(DS.Palette.onPrimary)
-                        .padding(.horizontal, DS.Space.s1)
-                        .frame(height: DS.Size.iconInline)
-                        .background(color, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
-                    Triangle().fill(color).frame(width: DS.Space.s2, height: DS.Space.s1)
-                }
-                .fixedSize()
-                .alignmentGuide(.leading) { dimensions in dimensions.width / 2 - width * CGFloat(clamped) / 100 }
+                scoreMarker(width: width, score: clamped)
             }
         }
         .frame(height: height + Self.markerHeight + Self.tickHeight + DS.Space.s1 / 2)
         .accessibilityLabel(tr("纯净度 \(clamped) 分"))
+    }
+
+    private func colorBands(width: CGFloat) -> some View {
+        let bands = DS.Grade.bands
+        return HStack(spacing: 1) {
+            ForEach(Array(bands.enumerated()), id: \.offset) { index, band in
+                let lower = index == 0 ? 0 : bands[index - 1].upper
+                let segmentWidth = width * CGFloat(band.upper - lower) / 100
+                ZStack {
+                    Rectangle().fill(band.color)
+                    if segmentWidth >= DS.Space.s6 {
+                        Text(verbatim: band.grade)
+                            .dsFont(.xs, weight: .semibold)
+                            .foregroundStyle(DS.Palette.onPrimary)
+                    }
+                }
+                .frame(width: max(0, segmentWidth - (index == bands.count - 1 ? 0 : 1)))
+            }
+        }
+        .frame(height: height)
+    }
+
+    private func tickLabels(width: CGFloat) -> some View {
+        // A 与 A+ 的分界太密，刻度上不标 95；弹窗那么窄时 85 也挤不下
+        let ticks: [Int] = [0] + DS.Grade.bands.map(\.upper).filter {
+            $0 != 95 && ($0 != 85 || width >= DS.Size.panelWidth / 2)
+        }
+        return ZStack(alignment: .topLeading) {
+            ForEach(ticks, id: \.self) { tick in
+                Text(verbatim: "\(tick)")
+                    .dsFont(.xs)
+                    .foregroundStyle(DS.Palette.textTertiary)
+                    .monospacedDigit()
+                    .fixedSize()
+                    .alignmentGuide(.leading) { dimensions in
+                        // 0 靠左、100 靠右，其余居中对齐刻度
+                        if tick == 0 { return 0 }
+                        if tick == 100 { return dimensions.width - width }
+                        return dimensions.width / 2 - width * CGFloat(tick) / 100
+                    }
+            }
+        }
+        .frame(width: width, height: Self.tickHeight, alignment: .topLeading)
+    }
+
+    /// 得分标记：气泡里写等级，尖角指向色带
+    private func scoreMarker(width: CGFloat, score: Int) -> some View {
+        let color = DS.Grade.color(for: score)
+        let grade = DS.Grade.bands.first { score < $0.upper }?.grade ?? "A+"
+        return VStack(spacing: 0) {
+            Text(verbatim: grade)
+                .dsFont(.xs, weight: .semibold)
+                .foregroundStyle(DS.Palette.onPrimary)
+                .padding(.horizontal, DS.Space.s1)
+                .frame(height: DS.Size.iconInline)
+                .background(color, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+            Triangle().fill(color).frame(width: DS.Space.s2, height: DS.Space.s1)
+        }
+        .fixedSize()
+        .alignmentGuide(.leading) { dimensions in dimensions.width / 2 - width * CGFloat(score) / 100 }
     }
 }
 

@@ -27,9 +27,12 @@ struct ActivityRanking: Equatable {
     }
 
     func ranked(limit: Int) -> [Entry] {
-        Array(scores.map { Entry(id: $0.key, score: $0.value) }
-            .sorted { $0.score == $1.score ? $0.id < $1.id : $0.score > $1.score }
-            .prefix(limit))
+        let entries: [Entry] = scores.map { Entry(id: $0.key, score: $0.value) }
+        let sorted = entries.sorted { lhs, rhs in
+            if lhs.score == rhs.score { return lhs.id < rhs.id }
+            return lhs.score > rhs.score
+        }
+        return Array(sorted.prefix(limit))
     }
 
     var isEmpty: Bool { scores.isEmpty }

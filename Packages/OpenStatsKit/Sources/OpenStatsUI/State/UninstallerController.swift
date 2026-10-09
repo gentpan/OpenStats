@@ -5,6 +5,28 @@ import Localization
 import Metrics
 import Observation
 
+/// 回收结果只以系统返回的源路径为准，不把未成功的项目计入清理记录。
+struct UninstallResultSummary: Sendable {
+    let successfulItems: [AppLeftover]
+    let failedItems: [AppLeftover]
+    let applicationWasRequested: Bool
+    let applicationMoved: Bool
+
+    init(app: InstalledApp, requested: [AppLeftover], movedSources: Set<URL>) {
+        let movedPaths = Set(movedSources.map { $0.standardizedFileURL.path })
+        let appPath = app.url.standardizedFileURL.path
+        successfulItems = requested.filter { movedPaths.contains($0.url.standardizedFileURL.path) }
+        failedItems = requested.filter { !movedPaths.contains($0.url.standardizedFileURL.path) }
+        applicationWasRequested = requested.contains { $0.url.standardizedFileURL.path == appPath }
+        applicationMoved = successfulItems.contains { $0.url.standardizedFileURL.path == appPath }
+    }
+
+    var movedCount: Int { successfulItems.count }
+    var leftoverCount: Int { movedCount - (applicationMoved ? 1 : 0) }
+    var freedBytes: UInt64 { successfulItems.reduce(0) { $0 + $1.size } }
+    var isPartial: Bool { !failedItems.isEmpty }
+}
+
 /// 卸载应用：列出已安装的应用，查找残留文件，连同残留一起移到废纸篓，并从程序坞移除图标
 @MainActor
 @Observable
@@ -63,9 +85,13 @@ public final class UninstallerController {
             let found = await Task.detached { AppUninstaller.leftovers(for: app) }.value
             guard selected == app else { return }
             leftovers = found
-            chosen = Set(found.map(\.id))
+            chosen = Self.initialSelection(for: found)
             isScanning = false
         }
+    }
+
+    static func initialSelection(for items: [AppLeftover]) -> Set<String> {
+        Set(items.filter { !$0.requiresReview }.map(\.id))
     }
 
     /// 拖进来的 .app
@@ -99,38 +125,63 @@ public final class UninstallerController {
 
     func uninstall() {
         guard let app = selected, !isRemoving else { return }
+        let requested = leftovers.filter { chosen.contains($0.id) }
         do {
             try AppUninstaller.validate(app)
             guard !isRunning(app) else { throw AppUninstallError.running }
+            for item in requested { try AppUninstaller.validateLeftover(item.url, for: app) }
         } catch {
             outcome = ("\(error)", true)
             return
         }
-        let urls = leftovers.filter { chosen.contains($0.id) }.map(\.url)
-        let freed = chosenSize
+        guard !requested.isEmpty else {
+            outcome = (tr("请先选择要移到废纸篓的项目。"), true)
+            return
+        }
+        let urls = requested.map(\.url)
         isRemoving = true
         outcome = nil
         // NSWorkspace 负责需要管理员权限的情况（例如 root 拥有的应用），并能在废纸篓中“放回原处”
         NSWorkspace.shared.recycle(urls) { [weak self] moved, error in
-            let movedCount = moved.count
+            let summary = UninstallResultSummary(app: app, requested: requested, movedSources: Set(moved.keys))
             let message = error?.localizedDescription
             Task { @MainActor in
                 guard let self else { return }
                 self.isRemoving = false
-                if movedCount == 0 {
-                    self.outcome = (tr("没有移动任何文件\(message.map { tr("：\($0)") } ?? "")"), true)
+                if summary.movedCount == 0 {
+                    if self.selected == app {
+                        self.outcome = (tr("没有移动任何文件\(message.map { tr("：\($0)") } ?? "")"), true)
+                    }
                     return
                 }
-                // 应用已经进了废纸篓，程序坞里的图标只会变成问号，一并移除
-                let dock = Self.removeDockTile(for: app.url)
-                self.tally?.recordUninstall(bytes: freed)
-                Log.app.notice("卸载 \(app.bundleIdentifier, privacy: .public)，移到废纸篓 \(movedCount) 项")
-                let partial = movedCount < urls.count ? tr("，\(urls.count - movedCount) 项未能移动") : ""
-                self.outcome = (tr("已将 \(app.name) 与 \(movedCount - 1) 项残留移到废纸篓，约 \(Format.bytes(freed, base: .decimal))\(dock ? tr("，已从程序坞移除") : "")\(partial)。需要时可以在废纸篓里放回。"),
-                                message != nil)
-                self.selected = nil
-                self.leftovers = []
-                self.apps.removeAll { $0 == app }
+                let dock: Bool
+                if summary.applicationMoved {
+                    // 只有本体已进废纸篓时，才移除列表与程序坞图标并计一次卸载。
+                    dock = Self.removeDockTile(for: app.url)
+                    self.apps.removeAll { $0 == app }
+                    self.sizes.removeValue(forKey: app.id)
+                    self.tally?.recordUninstall(bytes: summary.freedBytes)
+                } else {
+                    dock = false
+                    self.tally?.recordClean(bytes: summary.freedBytes)
+                }
+                Log.app.notice("回收 \(app.bundleIdentifier, privacy: .public)，移到废纸篓 \(summary.movedCount) 项，未移动 \(summary.failedItems.count) 项")
+                // 回收期间可能已选择其他应用，完成旧操作不覆盖新应用的详情。
+                guard self.selected == app else { return }
+                let partial = summary.isPartial ? tr("，\(summary.failedItems.count) 项未能移动") : ""
+                let freed = Format.bytes(summary.freedBytes, base: .decimal)
+                let text: String
+                if summary.applicationMoved {
+                    text = tr("已将 \(app.name) 与 \(summary.leftoverCount) 项残留移到废纸篓，约 \(freed)\(dock ? tr("，已从程序坞移除") : "")\(partial)。需要时可以在废纸篓里放回。")
+                } else {
+                    let appFailure = summary.applicationWasRequested ? "\n" + tr("应用本体未能移动，仍保留在原处，可重试。") : ""
+                    text = tr("已将 \(app.name) 的 \(summary.leftoverCount) 项残留移到废纸篓，约 \(freed)\(partial)。需要时可以在废纸篓里放回。") + appFailure
+                }
+                self.outcome = (text, summary.isPartial || message != nil)
+                let movedIDs = Set(summary.successfulItems.map(\.id))
+                self.leftovers.removeAll { movedIDs.contains($0.id) }
+                self.chosen.subtract(movedIDs)
+                if self.leftovers.isEmpty { self.selected = nil }
             }
         }
     }
