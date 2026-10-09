@@ -1,5 +1,10 @@
 # 第三方声明
 
+## Pearcleaner
+
+应用卸载器的残留目录覆盖、容器元数据识别和应用组查找思路参考
+[alienator88/Pearcleaner](https://github.com/alienator88/Pearcleaner)。OpenStats 的扫描、安全校验及回收逻辑由本项目独立实现。
+
 ## flag-icons
 
 `Assets/flags-svg/` 中的国旗 SVG（应用内为 `Scripts/render_flags.sh` 渲染的 PNG）来自

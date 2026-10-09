@@ -10,7 +10,8 @@
 #### 修复
 
 - 合并显示时菜单栏的小标签颜色过淡：图标中带有彩色网速圆点时，CPU、内存等标签会直接画成灰色，在深色菜单栏上不容易看清。标签和网速箭头现在与数值使用同一种前景色，仍通过字号区分标签与读数。跟进 [Issue #5](https://github.com/gentpan/OpenStats/issues/5)。
-- 应用卸载补查已知二级目录中的残留：最近文档记录、CrashReporter 数据、Sparkle 更新缓存与 SentryCrash 缓存。只匹配目标应用的包名及带点号的派生名称，保留共享目录和相似名称的其他应用文件。跟进 [Issue #4](https://github.com/gentpan/OpenStats/issues/4)，其他漏扫位置仍需具体应用与路径来核对。
+- 应用卸载的残留查找增强：读取应用真实名称、内嵌辅助组件的包名和签名中的应用组，按容器元数据识别 UUID 命名的沙盒数据；最近文档、CrashReporter、Sparkle、SentryCrash 和厂商目录内的应用子项也会检查。补上 VS Code、Insiders、Arc、Chrome 的明确数据位置。共享容器、按名称找到的 Sentry 数据和可能共用的辅助组件数据会标明并默认不勾选，厂商共享父目录始终保留。扫描及回收前重查路径，跳过符号链接重定向。参考 Pearcleaner 的查找思路，跟进 [Issue #4](https://github.com/gentpan/OpenStats/issues/4)。
+- 应用卸载有部分文件未能移到废纸篓时，只统计实际成功的项目与空间，保留失败项供重试；只有应用本体成功移除才清除程序坞图标和累计卸载次数。
 
 ### 2026-10-01
 

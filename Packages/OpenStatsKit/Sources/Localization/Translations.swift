@@ -206,7 +206,7 @@ npm 缓存	npm Cache
 仪表盘	Dashboard
 企业 IP	Business IP
 企业网络	Business network
-会一并找出它留在资源库里的缓存、偏好设置、容器与登录启动项，全部移到废纸篓，可以放回	Also finds its caches, preferences, containers and launch agents in your Library and moves them all to the Trash, where you can restore them
+找出应用留下的数据、缓存、容器与登录启动项，勾选后移到废纸篓，可以放回	Finds the app's data, caches, containers, and login items. Select items to move to the Trash; you can put them back.
 会结束这个应用的 {} 个进程，未保存的内容可能会丢失。强制退出会立即结束，不给应用保存的机会。	This ends {} processes of the app and unsaved work may be lost. Force Quit ends them immediately without letting the app save.
 传输速率	Link rate
 位置	Location
@@ -361,7 +361,14 @@ npm 缓存	npm Cache
 只在菜单栏显示电池或打开电池页面时记录	Recorded only while Battery is in the menu bar or the Battery page is open
 只显示 OpenStats 标志，点击弹出完整面板	Shows only the OpenStats logo; click for the full panel
 只显示菜单栏时的采样间隔；打开弹窗或主窗口时为 1 秒（进程页 2 秒）	Sampling interval when only the menu bar is shown; 1 second with a popover or window open (2 seconds on Processes)
-只查找以该应用包名命名的文件，以及 Application Support、Logs 下与应用同名的目录；钥匙串与其他应用共享的数据不会动。程序坞里的图标会一并移除	Only files named after the app's bundle ID, plus folders with the app's name in Application Support and Logs, are included. Keychains and data shared with other apps are never touched. The Dock icon is removed as well
+查找应用数据、辅助组件和沙盒容器；可能共用的数据默认不勾选。所选项目会移到废纸篓，程序坞图标只在应用成功移除后清除。	Finds app data, bundled helpers, and sandbox containers. Potentially shared data is left unchecked. Selected items move to the Trash; the Dock icon is removed only after the app is successfully moved.
+可能与其他应用共用，默认保留	May be shared with other apps; kept by default
+请先选择要移到废纸篓的项目。	Select items to move to the Trash first.
+应用本体未能移动，仍保留在原处，可重试。	The app could not be moved. It remains in its original location; you can try again.
+已将 {} 的 {} 项残留移到废纸篓，约 {}{}。需要时可以在废纸篓里放回。	Moved {2} leftovers for {1} to the Trash, about {3}{4}. You can put them back from the Trash.
+清理“{}”的残留？	Clean up leftovers for “{}”?
+勾选的 {} 项残留会移到废纸篓，约 {}。清空废纸篓前都可以放回。	The {} selected leftovers will move to the Trash, about {}. You can restore them until you empty the Trash.
+清理残留	Clean up leftovers
 只设置了系统代理：浏览器等应用走代理，命令行工具、游戏等不读代理设置的程序仍在直连。要接管全部流量，可以开启增强模式或 TUN 模式。	Only a system proxy is set: browsers and most apps use it, but command-line tools, games, and other programs that ignore proxy settings still connect directly. To route all traffic, turn on enhanced mode or TUN mode.
 可以恢复，但清空废纸篓前不会释放空间	Recoverable, but space isn't freed until the Trash is emptied
 可执行文件：{}	Executable: {}
