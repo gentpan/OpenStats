@@ -30,7 +30,7 @@ jobs:
         run: make test
 
       - name: Build app
-        run: make build CONFIG=Release
+        run: make build CONFIG=Release BUMP=0 INSTALL=0
 
       - name: Verify bundle
         run: |

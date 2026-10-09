@@ -47,4 +47,4 @@ fi
 
 open "$TARGET"
 version="$(defaults read "$TARGET/Contents/Info" CFBundleShortVersionString) ($(defaults read "$TARGET/Contents/Info" CFBundleVersion))"
-echo "✅ 已安装并启动 OpenStats $version：$TARGET"
+echo "✅ 已安装并启动 OpenStats ${version}：$TARGET"
