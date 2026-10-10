@@ -21,6 +21,7 @@ MAX_LENGTH = 48
 def summarize(line: str) -> str:
     text = re.sub(r"`([^`]*)`", r"\1", line).strip()
     text = re.sub(r"\*\*([^*]*)\*\*", r"\1", text)
+    text = re.sub(r"\[([^\]]+)\]\(https?://[^)\s]+\)", r"\1", text)
     head = re.split(r"[：。；]", text, maxsplit=1)[0]
     # 冒号前只是个标题（如“主窗口”）时带上后面的内容，否则摘要看不出改了什么
     text = head if len(head) >= 10 else text.split("。", 1)[0]

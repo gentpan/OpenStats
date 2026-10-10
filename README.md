@@ -6,7 +6,7 @@
 
 **Your Mac at a glance — CPU, GPU, memory, network and temperatures in the menu bar, with fan control, keep-awake, one-click cleanup, an app uninstaller and an IP cleanliness check.**
 
-[![Release](https://img.shields.io/badge/release-0.6.3-6ee02b)](https://getopenstats.com/#download)
+[![Release](https://img.shields.io/badge/release-0.6.4-6ee02b)](https://getopenstats.com/#download)
 [![Stars](https://img.shields.io/github/stars/gentpan/OpenStats?style=flat&color=f5c518&label=stars)](https://github.com/gentpan/OpenStats/stargazers)
 [![Last commit](https://img.shields.io/github/last-commit/gentpan/OpenStats?color=black&label=last%20commit)](https://github.com/gentpan/OpenStats/commits/main)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/gentpan/OpenStats?color=black&label=commits)](https://github.com/gentpan/OpenStats/graphs/commit-activity)
@@ -34,13 +34,13 @@ Everything is read on your own Mac, and there is no telemetry. An account is opt
 
 ## Install
 
-Download OpenStats 0.6.3 from the website (signed with a Developer ID certificate and notarized by Apple) —
+Download OpenStats 0.6.4 from the website (signed with a Developer ID certificate and notarized by Apple) —
 pick the build for your Mac's chip:
 
 | Chip | Download |
 |---|---|
-| Apple silicon (M1, M2, M3, M4, M5) | [OpenStats-0.6.3-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.6.3-AppleSilicon.dmg) |
-| Intel | [OpenStats-0.6.3-Intel.dmg](https://getopenstats.com/download/OpenStats-0.6.3-Intel.dmg) |
+| Apple silicon (M1, M2, M3, M4, M5) | [OpenStats-0.6.4-AppleSilicon.dmg](https://getopenstats.com/download/OpenStats-0.6.4-AppleSilicon.dmg) |
+| Intel | [OpenStats-0.6.4-Intel.dmg](https://getopenstats.com/download/OpenStats-0.6.4-Intel.dmg) |
 
 Not sure? Apple menu › About This Mac says "Chip Apple M…" on Apple silicon and "Processor Intel…" on Intel.
 Homebrew picks the right build for you. Recent Homebrew refuses to load casks from an untrusted third-party
@@ -62,17 +62,17 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.6.3** (2026-10-09) · **5** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.6.4** (2026-10-10) · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
-<summary><b>2026-10-10</b> · Unreleased · 2 fixed · 2 改进 · 1 added</summary>
+<summary><b>2026-10-10</b> · 0.6.4 · 2 fixed · 2 improved · 1 added</summary>
 
 **Fixed**
 
 - 卸载扫描不会再把磁盘路径的大小写规范化误当成符号链接：实际资源库目录为 `library` 时，0.6.3 会漏掉所有资源库残留，只显示应用本体。现在逐级检查真实链接，恢复扫描并保留路径保护；无法读取或被链接阻挡的目录会显示提示。跟进 [Issue #4](https://github.com/gentpan/OpenStats/issues/4)。
 - 卸载后部分残留移动失败时，可继续重试；同一应用有其他安装副本时，只移除所选应用，保留其他副本仍在使用的数据，回收前也会重新检查。
 
-**改进**
+**Improved**
 
 - 参考 [Mole](https://github.com/tw93/Mole) 的公开卸载规则，独立实现更多残留识别：登录项组件的真实标识、完整产品名称变体、可执行文件名对应的崩溃报告、WebKit 与 NSURLSession 的应用子缓存，以及当前用户的临时缓存。共享父目录保留，名称匹配项默认不勾选。
 - OpenCode 增加 `.config/opencode` 与 `.cache/opencode` 候选；这些目录可能与命令行共用，默认保留，供用户逐项选择。

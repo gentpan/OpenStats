@@ -341,16 +341,16 @@
         <li class="download__option">
           <h3>Apple 芯片</h3>
           <p>M1、M2、M3、M4、M5 系列的 Mac</p>
-          <a class="btn btn--primary" href="download/OpenStats-0.6.3-AppleSilicon.dmg">下载 Apple 芯片版</a>
+          <a class="btn btn--primary" href="download/OpenStats-0.6.4-AppleSilicon.dmg">下载 Apple 芯片版</a>
         </li>
         <li class="download__option">
           <h3>Intel 芯片</h3>
           <p>能升级到 macOS 14 的 Intel Mac（大多为 2018 年及以后的机型）</p>
-          <a class="btn btn--primary" href="download/OpenStats-0.6.3-Intel.dmg">下载 Intel 版</a>
+          <a class="btn btn--primary" href="download/OpenStats-0.6.4-Intel.dmg">下载 Intel 版</a>
         </li>
       </ul>
       <p class="download__hint">不确定是哪种？打开苹果菜单 › 关于本机，看“芯片”或“处理器”那一行。</p>
-      <p class="hero__meta">版本 0.6.3 · macOS 14 Sonoma 及以上 · 简体中文与 English 界面 · <a href="#changelog">这个版本更新了什么</a></p>
+      <p class="hero__meta">版本 0.6.4 · macOS 14 Sonoma 及以上 · 简体中文与 English 界面 · <a href="#changelog">这个版本更新了什么</a></p>
       <p class="download__brew">也可以用 Homebrew 安装：<code>brew tap gentpan/tap &amp;&amp; brew trust gentpan/tap &amp;&amp; brew install --cask openstats</code></p>
     </div>
   </section>
@@ -364,6 +364,17 @@
       <!-- changelog:start -->
       <!-- 由 Scripts/sync_changelog.py 从 CHANGELOG.md 生成，请勿手改。 -->
       <div class="log">
+        <article class="log__day">
+          <div class="log__head"><time datetime="2026-10-10">2026-10-10</time><span class="log__tag">0.6.4</span></div>
+          <p class="log__counts">修复 2 · 改进 2 · 新增 1</p>
+          <ul class="log__list">
+            <li><span class="log__kind">修复</span>卸载扫描不会再把磁盘路径的大小写规范化误当成符号链接：实际资源库目录为 <code>library</code> 时，0.6.3 会漏掉所有资源库残留，只显示应用本体。现在逐级检查真实链接，恢复扫描并保留路径保护；无法读取或被链接阻挡的目录会显示提示。跟进 <a href="https://github.com/gentpan/OpenStats/issues/4">Issue #4</a>。</li>
+            <li><span class="log__kind">修复</span>卸载后部分残留移动失败时，可继续重试；同一应用有其他安装副本时，只移除所选应用，保留其他副本仍在使用的数据，回收前也会重新检查。</li>
+            <li><span class="log__kind">改进</span>参考 <a href="https://github.com/tw93/Mole">Mole</a> 的公开卸载规则，独立实现更多残留识别：登录项组件的真实标识、完整产品名称变体、可执行文件名对应的崩溃报告、WebKit 与 NSURLSession 的应用子缓存，以及当前用户的临时缓存。共享父目录保留，名称匹配项默认不勾选。</li>
+            <li><span class="log__kind">改进</span>OpenCode 增加 <code>.config/opencode</code> 与 <code>.cache/opencode</code> 候选；这些目录可能与命令行共用，默认保留，供用户逐项选择。</li>
+            <li><span class="log__kind">新增</span>合并菜单栏可在「设置 · 菜单栏 · 显示项目」用上移、下移按钮调整图标顺序，立即更新，并保存和同步设置；关闭项目后再开启仍记住位置。回应 <a href="https://github.com/gentpan/OpenStats/issues/7">Issue #7</a>。</li>
+          </ul>
+        </article>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-10-09">2026-10-09</time><span class="log__tag">0.6.3</span></div>
           <p class="log__counts">修复 3</p>
@@ -384,6 +395,8 @@
             <li><span class="log__kind">调整</span>仪表盘的芯片、内存、系统、运行时间、机型标签始终排成一行，放不下时依次省去机型、把运行时间缩成最大单位。</li>
           </ul>
         </article>
+        <details class="log__older">
+          <summary>更早的更新（14 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-09-24">2026-09-24</time><span class="log__tag">0.6.3</span></div>
           <p class="log__counts">新增 2 · 修复 4</p>
@@ -396,8 +409,6 @@
             <li><span class="log__kind">修复</span>绕开代理解析域名时，Cloudflare DoH 连不上就换 Google、阿里的 DoH，出口与分流窗口的原始出口归属地也因此更容易查到。</li>
           </ul>
         </article>
-        <details class="log__older">
-          <summary>更早的更新（13 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-09-21">2026-09-21</time><span class="log__tag">0.6.3</span></div>
           <p class="log__counts">新增 1</p>

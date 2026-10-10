@@ -27,7 +27,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 RECENT_DAYS = 3
 WEEKS = 26
 
-KIND_EN = {"新增": "Added", "样式": "Style", "调整": "Changed", "修复": "Fixed"}
+KIND_EN = {"新增": "Added", "样式": "Style", "调整": "Changed", "修复": "Fixed", "改进": "Improved"}
 WEB_ITEMS_PER_DAY = 8
 
 
