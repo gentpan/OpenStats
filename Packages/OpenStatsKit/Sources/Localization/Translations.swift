@@ -7,6 +7,11 @@ extension Translations {
     }
 
     static let english = #"""
+合并显示时，用每项右侧的上移、下移按钮调整菜单栏顺序。顺序会保存，关闭再开启项目也会保持。	In combined mode, use the up and down buttons next to each item to change the menu bar order. The order is saved, including when items are turned off and back on.
+将{}向前移动	Move {} earlier
+将{}向后移动	Move {} later
+检测到相同应用的其他安装副本；本次只移除所选应用，共用的数据会保留。	Another copy of this app is installed. Only the selected app will be removed; shared data will be kept.
+部分目录无法读取或为符号链接，残留扫描可能不完整。可检查权限后重新扫描。	Some folders are unreadable or are symbolic links, so the scan may be incomplete. Check access permissions and scan again.
  {} 英寸	 {}-inch
  · {} 项使用中	 · {} in use
  · 移到废纸篓	 · Moves to Trash

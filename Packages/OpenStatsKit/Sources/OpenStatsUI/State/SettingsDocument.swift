@@ -7,6 +7,7 @@ import Localization
 public struct SettingsDocument: Codable, Equatable, Sendable {
     public var schema: Int? = 1
     public var menuBarItems: [String]?
+    public var menuBarOrder: [String]?
     public var menuBarStyle: String?
     public var networkStyle: String?
     public var styleOverrides: [String: String]?
@@ -41,6 +42,7 @@ extension AppSettings {
     public func exportDocument() -> SettingsDocument {
         var doc = SettingsDocument()
         doc.menuBarItems = menuBarItems.map(\.rawValue).sorted()
+        doc.menuBarOrder = menuBarOrder.map(\.rawValue)
         doc.menuBarStyle = menuBarStyle.rawValue
         doc.networkStyle = networkStyle.rawValue
         doc.styleOverrides = Dictionary(uniqueKeysWithValues: styleOverrides.map { ($0.key.rawValue, $0.value.rawValue) })
@@ -80,6 +82,7 @@ extension AppSettings {
         }
 
         assign(\.menuBarItems, doc.menuBarItems.map { Set($0.compactMap(MenuBarItem.init(rawValue:))) })
+        if let order = doc.menuBarOrder { setMenuBarOrder(order.compactMap(MenuBarItem.init(rawValue:))) }
         assign(\.menuBarStyle, doc.menuBarStyle.flatMap(MenuBarStyle.init(rawValue:)))
         assign(\.networkStyle, doc.networkStyle.flatMap(NetworkMenuStyle.init(rawValue:)))
         assign(\.styleOverrides, doc.styleOverrides.map { overrides in

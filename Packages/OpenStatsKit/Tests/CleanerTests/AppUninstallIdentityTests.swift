@@ -9,11 +9,12 @@ import Testing
         return url.resolvingSymlinksInPath()
     }
 
-    private func makeBundle(at url: URL, identifier: String, name: String, displayName: String? = nil) throws {
+    private func makeBundle(at url: URL, identifier: String, name: String, displayName: String? = nil, executable: String? = nil) throws {
         let contents = url.appendingPathComponent("Contents")
         try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true)
         var plist: [String: Any] = ["CFBundleIdentifier": identifier, "CFBundleName": name]
         if let displayName { plist["CFBundleDisplayName"] = displayName }
+        if let executable { plist["CFBundleExecutable"] = executable }
         // 未签名的 Info.plist 中宣称的 entitlement 不能用来选择共享容器。
         plist["com.apple.security.application-groups"] = ["group.untrusted.plist"]
         let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
@@ -28,11 +29,12 @@ import Testing
         let directory = try makeDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         let root = directory.appendingPathComponent("File Name.app")
-        try makeBundle(at: root, identifier: "com.example.foo", name: "Sentry Name", displayName: "Localized Name")
+        try makeBundle(at: root, identifier: "com.example.foo", name: "Sentry Name", displayName: "Localized Name", executable: "Main Process")
         let bundles = [
             ("Contents/Frameworks/Widget.framework/Versions/A/Helpers/Worker.app", "com.example.worker", "CrashHandler"),
             ("Contents/XPCServices/Service.xpc", "com.example.service", "Service"),
             ("Contents/PlugIns/Extension.appex", "com.example.extension", "Extension"),
+            ("Contents/Library/LoginItems/Launcher.app", "com.vendor.loginlauncher", "Login Helper"),
         ]
         for (path, identifier, name) in bundles {
             try makeBundle(at: root.appendingPathComponent(path), identifier: identifier, name: name)
@@ -41,8 +43,10 @@ import Testing
         try makeBundle(at: root.appendingPathComponent("Contents/Resources/Other.app"), identifier: "com.other.resource", name: "Other")
 
         let identity = AppUninstallIdentity(app: app(at: root))
-        #expect(identity.identifiers == ["com.example.foo", "com.example.worker", "com.example.service", "com.example.extension"])
-        #expect(identity.names == ["Displayed App", "File Name", "Sentry Name", "Localized Name"])
+        #expect(identity.identifiers == ["com.example.foo", "com.example.worker", "com.example.service", "com.example.extension", "com.vendor.loginlauncher"])
+        #expect(identity.names == ["Displayed App", "File Name", "Sentry Name", "Localized Name", "Main Process"])
+        #expect(identity.matchesName("main-process"))
+        #expect(!identity.matchesName("login-helper"))
         #expect(identity.applicationGroups.isEmpty)
         #expect(identity.teamIdentifier == nil)
     }
@@ -81,6 +85,11 @@ import Testing
         try makeBundle(at: externalServices.appendingPathComponent("Other.xpc"), identifier: "com.other.service", name: "Other")
         try manager.createSymbolicLink(at: root.appendingPathComponent("Contents/XPCServices"), withDestinationURL: externalServices)
 
+        let externalLoginItems = directory.appendingPathComponent("ExternalLoginItems")
+        try makeBundle(at: externalLoginItems.appendingPathComponent("Launcher.app"), identifier: "com.other.launcher", name: "Launcher")
+        try manager.createDirectory(at: root.appendingPathComponent("Contents/Library"), withIntermediateDirectories: true)
+        try manager.createSymbolicLink(at: root.appendingPathComponent("Contents/Library/LoginItems"), withDestinationURL: externalLoginItems)
+
         let linkedMetadata = root.appendingPathComponent("Contents/PlugIns/Linked.appex/Contents")
         try manager.createDirectory(at: linkedMetadata, withIntermediateDirectories: true)
         try manager.createSymbolicLink(at: linkedMetadata.appendingPathComponent("Info.plist"),
@@ -91,6 +100,92 @@ import Testing
         #expect(AppUninstallIdentity.embeddedBundles(in: root).isEmpty)
         #expect(!AppUninstallIdentity.isSafeURL(outside, inside: root))
         #expect(!AppUninstallIdentity.isSafeURL(frameworks.appendingPathComponent("Linked.app"), inside: root))
+    }
+
+    @Test func recognizesWholeNameFormatsWithoutDroppingChannelsOrProductBoundaries() {
+        let identity = AppUninstallIdentity(identifiers: ["com.example.studio"], names: ["Maestro Studio", "Zed Nightly", "QQ", "微信"])
+
+        for name in ["Maestro Studio", "maestro studio", "MAESTROSTUDIO", "maestro-studio", "Maestro_Studio"] {
+            #expect(identity.matchesName(name))
+        }
+        #expect(identity.matchesName("zed-nightly"))
+        #expect(!identity.matchesName("Zed"))
+        #expect(!identity.matchesName("Maestro Studio Beta"))
+        #expect(!identity.matchesName("MaestroStudioOther"))
+        #expect(identity.matchesName("QQ"))
+        #expect(identity.matchesName("微信"))
+        #expect(!identity.matchesName("../Maestro Studio"))
+    }
+
+    @Test func reportNamesRequireACompleteProductNameOrAnExplicitBoundary() {
+        let identity = AppUninstallIdentity(identifiers: ["com.example.foo"], names: ["Foo App"])
+
+        #expect(identity.matchesReportName("Foo App"))
+        #expect(identity.matchesReportName("FooApp_12345678-1234-1234-1234-123456789ABC"))
+        #expect(identity.matchesReportName("FOO-APP-2026-10-10"))
+        #expect(!identity.matchesReportName("FooApplication_2026-10-10"))
+        #expect(!identity.matchesReportName("Foo AppOther_2026-10-10"))
+        #expect(!identity.matchesReportName("Other Foo App_2026-10-10"))
+        #expect(!identity.matchesReportName("Foo App/Outside"))
+    }
+
+    @Test func rejectsGenericRuntimeAndSharedRootNamesBeforeGeneratingVariants() {
+        let identity = AppUninstallIdentity(identifiers: ["com.example.foo"],
+            names: ["A", "X", "Helper", "Runner", "Electron", "Electron Helper", "Application Support", "Group Containers", "Code", "Foo"])
+
+        #expect(identity.nameVariants == ["foo"])
+        #expect(!identity.matchesReportName("Helper_1234"))
+        #expect(!identity.matchesName("electronhelper"))
+        #expect(!identity.matchesName("application-support"))
+        #expect(AppUninstallIdentity.safeNameVariants(for: "crash-handler").isEmpty)
+        #expect(AppUninstallIdentity.safeNameVariants(for: "../Outside").isEmpty)
+        #expect(AppUninstallIdentity.safeNameVariants(for: "Foo\nBar").isEmpty)
+    }
+
+    @Test func mainExecutableNamesRejectPathsAndGenericProcessNames() throws {
+        let directory = try makeDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let root = directory.appendingPathComponent("Foo.app")
+        try makeBundle(at: root, identifier: "com.example.foo", name: "Foo", executable: "../Outside")
+        #expect(!AppUninstallIdentity(app: app(at: root, name: "Foo")).names.contains("../Outside"))
+
+        try makeBundle(at: root, identifier: "com.example.foo", name: "Foo", executable: "Electron")
+        let identity = AppUninstallIdentity(app: app(at: root, name: "Foo"))
+        #expect(identity.names.contains("Electron"))
+        #expect(!identity.matchesName("electron"))
+        #expect(identity.matchesName("Foo"))
+    }
+
+    @Test func readsLowercaseBundleMetadataAndLoginItemsOnCaseInsensitiveVolumes() throws {
+        let directory = try makeDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let root = directory.appendingPathComponent("Foo.app")
+        let contents = root.appendingPathComponent("contents")
+        let loginHelper = contents.appendingPathComponent("library/loginitems/Startup.app")
+        let helperContents = loginHelper.appendingPathComponent("contents")
+        try FileManager.default.createDirectory(at: helperContents, withIntermediateDirectories: true)
+        let metadata: [String: Any] = [
+            "CFBundleIdentifier": "com.example.foo",
+            "CFBundleName": "Product Name",
+            "CFBundleExecutable": "Main Product",
+        ]
+        try PropertyListSerialization.data(fromPropertyList: metadata, format: .xml, options: 0)
+            .write(to: contents.appendingPathComponent("info.plist"))
+        try PropertyListSerialization.data(fromPropertyList: [
+            "CFBundleIdentifier": "com.vendor.startup",
+            "CFBundleName": "Shared Helper",
+        ], format: .xml, options: 0).write(to: helperContents.appendingPathComponent("info.plist"))
+        let usualMetadataPath = root.appendingPathComponent("Contents/Info.plist")
+        // 此回归针对 macOS 默认大小写不敏感卷；其他卷没有这个等价路径。
+        guard FileManager.default.fileExists(atPath: usualMetadataPath.path) else { return }
+
+        let identity = AppUninstallIdentity(app: app(at: root, name: "Foo"))
+
+        #expect(AppUninstallIdentity.isSafeURL(usualMetadataPath, inside: root))
+        #expect(identity.identifiers == ["com.example.foo", "com.vendor.startup"])
+        #expect(identity.names.contains("Product Name"))
+        #expect(identity.matchesName("main-product"))
+        #expect(!identity.names.contains("Shared Helper"))
     }
 
     @Test func refusesLinkedMainBundleButPreservesSuppliedBasicIdentity() throws {

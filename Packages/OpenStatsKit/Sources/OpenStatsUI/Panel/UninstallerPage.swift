@@ -179,6 +179,20 @@ private struct AppDetailCard: View {
                 }
             }
 
+            if !uninstaller.otherInstalledCopies.isEmpty {
+                InfoBanner(icon: "doc.on.doc", text: tr("检测到相同应用的其他安装副本；本次只移除所选应用，共用的数据会保留。"), tone: .neutral)
+                    .help(uninstaller.otherInstalledCopies.map(\.path).joined(separator: "\n"))
+            }
+            if !uninstaller.unreadableDirectories.isEmpty {
+                InfoBanner(icon: "exclamationmark.triangle", text: tr("部分目录无法读取或为符号链接，残留扫描可能不完整。可检查权限后重新扫描。"), tone: .warning) {
+                    Button(tr("去授权")) { uninstaller.openFullDiskAccessSettings() }
+                        .buttonStyle(DSButtonStyle(kind: .secondary))
+                    Button(tr("重新扫描")) { uninstaller.select(app) }
+                        .buttonStyle(DSButtonStyle(kind: .secondary))
+                }
+                .help(uninstaller.unreadableDirectories.map(\.path).joined(separator: "\n"))
+            }
+
             HairlineDivider()
             HStack {
                 Text(tr("将移到废纸篓")).dsFont(.sm, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
