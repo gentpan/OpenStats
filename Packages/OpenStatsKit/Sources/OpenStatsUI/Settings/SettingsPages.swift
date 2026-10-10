@@ -321,16 +321,20 @@ struct MenuBarSettings: View {
 
             SettingsGroup(caption: tr("显示项目")) {
                 GroupRow(showsDivider: false) {
-                    InfoBanner(icon: "hand.draw",
-                               text: tr("菜单栏里的图标可以调整顺序：按住 ⌘ 键拖动任意一个，松开后位置会一直保留。新开启的项目由系统安排位置，可能离其他图标较远，拖一下就能挪到一起。"))
+                    if settings.menuBarLayout == .combined {
+                        InfoBanner(icon: "arrow.up.arrow.down",
+                                   text: tr("合并显示时，用每项右侧的上移、下移按钮调整菜单栏顺序。顺序会保存，关闭再开启项目也会保持。"))
+                    } else {
+                        InfoBanner(icon: "hand.draw",
+                                   text: tr("菜单栏里的图标可以调整顺序：按住 ⌘ 键拖动任意一个，松开后位置会一直保留。新开启的项目由系统安排位置，可能离其他图标较远，拖一下就能挪到一起。"))
+                    }
                 }
-                ForEach(Array(MenuBarItem.allCases.enumerated()), id: \.element) { index, item in
+                let order = settings.menuBarLayout == .combined ? settings.menuBarOrder : MenuBarItem.allCases
+                ForEach(Array(order.enumerated()), id: \.element) { index, item in
                     GroupRow {
                         VStack(alignment: .leading, spacing: DS.Space.s3) {
                             SettingRow(title: item.title, subtitle: itemSubtitle(item), icon: item.symbol) {
-                                DSToggle(isOn: Binding(get: { settings.isEnabled(item) },
-                                                       set: { settings.setEnabled(item, $0) }),
-                                         label: item.title)
+                                MenuBarItemControls(item: item, index: index)
                             }
                             if settings.isEnabled(item) {
                                 ItemStyleRow(item: item)
@@ -374,6 +378,32 @@ struct MenuBarSettings: View {
             : item.subtitle
     }
 
+}
+
+/// 合并显示的顺序在设置里调整；独立图标仍由系统的 ⌘ 拖动调整位置。
+private struct MenuBarItemControls: View {
+    @Environment(AppModel.self) private var model
+    let item: MenuBarItem
+    let index: Int
+
+    var body: some View {
+        let settings = model.settings
+        HStack(spacing: DS.Space.s2) {
+            if settings.menuBarLayout == .combined {
+                MiniIconButton(systemName: "arrow.up", help: tr("将\(item.title)向前移动")) {
+                    settings.moveMenuBarItem(item, by: -1)
+                }
+                .disabled(index == 0)
+                MiniIconButton(systemName: "arrow.down", help: tr("将\(item.title)向后移动")) {
+                    settings.moveMenuBarItem(item, by: 1)
+                }
+                .disabled(index == settings.menuBarOrder.count - 1)
+            }
+            DSToggle(isOn: Binding(get: { settings.isEnabled(item) },
+                                  set: { settings.setEnabled(item, $0) }),
+                     label: item.title)
+        }
+    }
 }
 
 /// 单个项目自己的菜单栏风格：网速有自己的三种样式；其他项目默认跟随整体，也可以单独选一种。

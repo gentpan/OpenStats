@@ -383,6 +383,10 @@ public final class AppSettings {
     public var menuBarItems: Set<MenuBarItem> {
         didSet { defaults.set(menuBarItems.map(\.rawValue).sorted(), forKey: Keys.menuBarItems) }
     }
+    /// 合并显示时的指标顺序，保留未开启项目的位置，重新开启后仍在原处。
+    public private(set) var menuBarOrder: [MenuBarItem] {
+        didSet { defaults.set(menuBarOrder.map(\.rawValue), forKey: Keys.menuBarOrder) }
+    }
     public var menuBarStyle: MenuBarStyle {
         didSet { defaults.set(menuBarStyle.rawValue, forKey: Keys.menuBarStyle) }
     }
@@ -516,6 +520,8 @@ public final class AppSettings {
         self.defaults = defaults
         let items = defaults.stringArray(forKey: Keys.menuBarItems)?.compactMap(MenuBarItem.init(rawValue:))
         menuBarItems = Set(items ?? [.cpu, .memory, .network])
+        let order = defaults.stringArray(forKey: Keys.menuBarOrder)?.compactMap(MenuBarItem.init(rawValue:)) ?? []
+        menuBarOrder = Self.normalizedMenuBarOrder(order)
         menuBarStyle = defaults.string(forKey: Keys.menuBarStyle).flatMap(MenuBarStyle.init(rawValue:)) ?? .stacked
         networkStyle = defaults.string(forKey: Keys.networkStyle).flatMap(NetworkMenuStyle.init(rawValue:)) ?? .dots
         let storedOverrides = defaults.dictionary(forKey: Keys.styleOverrides) as? [String: String] ?? [:]
@@ -562,9 +568,30 @@ public final class AppSettings {
             ? defaults.integer(forKey: Keys.cpuChartSeconds) : 60
     }
 
-    /// 按固定顺序返回已启用的菜单栏项目
+    /// 合并显示用自定义顺序；每项独立的位置由 macOS 的 ⌘ 拖动与 autosaveName 记住。
     var orderedMenuBarItems: [MenuBarItem] {
-        MenuBarItem.allCases.filter(menuBarItems.contains)
+        let order = menuBarLayout == .combined ? menuBarOrder : MenuBarItem.allCases
+        return order.filter(menuBarItems.contains)
+    }
+
+    /// 旧设置或云端只带部分项目时补齐，重复项只保留第一次出现的位置。
+    private static func normalizedMenuBarOrder(_ order: [MenuBarItem]) -> [MenuBarItem] {
+        var seen: Set<MenuBarItem> = []
+        return (order + MenuBarItem.allCases).filter { seen.insert($0).inserted }
+    }
+
+    func setMenuBarOrder(_ order: [MenuBarItem]) {
+        let normalized = Self.normalizedMenuBarOrder(order)
+        if menuBarOrder != normalized { menuBarOrder = normalized }
+    }
+
+    func moveMenuBarItem(_ item: MenuBarItem, by offset: Int) {
+        guard offset == -1 || offset == 1, let index = menuBarOrder.firstIndex(of: item) else { return }
+        let destination = index + offset
+        guard menuBarOrder.indices.contains(destination) else { return }
+        var order = menuBarOrder
+        order.swapAt(index, destination)
+        setMenuBarOrder(order)
     }
 
     /// 菜单栏上实际画出来的项目：“仅图标”时一项都不画，开着的项目保留，切回其他布局时恢复
@@ -601,6 +628,7 @@ public final class AppSettings {
 
     private enum Keys {
         static let menuBarItems = "menuBarItems"
+        static let menuBarOrder = "menuBarOrder"
         static let menuBarStyle = "menuBarStyle"
         static let networkStyle = "networkStyle"
         static let styleOverrides = "styleOverrides"

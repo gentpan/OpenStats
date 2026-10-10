@@ -62,9 +62,28 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.6.3** (2026-10-09) · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.6.3** (2026-10-09) · **5** changes in development · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
+<summary><b>2026-10-10</b> · Unreleased · 2 fixed · 2 改进 · 1 added</summary>
+
+**Fixed**
+
+- 卸载扫描不会再把磁盘路径的大小写规范化误当成符号链接：实际资源库目录为 `library` 时，0.6.3 会漏掉所有资源库残留，只显示应用本体。现在逐级检查真实链接，恢复扫描并保留路径保护；无法读取或被链接阻挡的目录会显示提示。跟进 [Issue #4](https://github.com/gentpan/OpenStats/issues/4)。
+- 卸载后部分残留移动失败时，可继续重试；同一应用有其他安装副本时，只移除所选应用，保留其他副本仍在使用的数据，回收前也会重新检查。
+
+**改进**
+
+- 参考 [Mole](https://github.com/tw93/Mole) 的公开卸载规则，独立实现更多残留识别：登录项组件的真实标识、完整产品名称变体、可执行文件名对应的崩溃报告、WebKit 与 NSURLSession 的应用子缓存，以及当前用户的临时缓存。共享父目录保留，名称匹配项默认不勾选。
+- OpenCode 增加 `.config/opencode` 与 `.cache/opencode` 候选；这些目录可能与命令行共用，默认保留，供用户逐项选择。
+
+**Added**
+
+- 合并菜单栏可在「设置 · 菜单栏 · 显示项目」用上移、下移按钮调整图标顺序，立即更新，并保存和同步设置；关闭项目后再开启仍记住位置。回应 [Issue #7](https://github.com/gentpan/OpenStats/issues/7)。
+
+</details>
+
+<details>
 <summary><b>2026-10-09</b> · 0.6.3 · 3 fixed</summary>
 
 **Fixed**
@@ -88,23 +107,6 @@ Latest release **0.6.3** (2026-10-09) · [full changelog](CHANGELOG.md) (kept in
 
 - “合并为一个”改名为“合并显示”。
 - 仪表盘的芯片、内存、系统、运行时间、机型标签始终排成一行，放不下时依次省去机型、把运行时间缩成最大单位。
-
-</details>
-
-<details>
-<summary><b>2026-09-24</b> · 0.6.3 · 2 added · 4 fixed</summary>
-
-**Added**
-
-- 网络测速可以选线路：开着 Surge、Clash 等 VPN 或代理时，窗口顶部出现“直连 / 经 Surge”切换。直连绑定物理网卡、绕开代理，测的是本机宽带；经代理测的是代理线路。下载、上传与延迟都按选的线路走，每张卡片标出这次走的是哪条。
-- 国内分省三网延迟改用电信、联通、移动的标志，不再用“电 / 联 / 移”字块。
-
-**Fixed**
-
-- 开着 VPN 时网络测速的延迟全是假的（零点几到十几毫秒）：TCP 建连被本机代理当场应答，测到的只是本机到代理这一段，与节点远近无关。现在直连时绕开代理计时；经代理时改用同一条连接上的 HTTP 往返，每次都要等目标真的回应。国内三网节点只允许测建连，始终直连测，VPN 不让绕开时直接提示，不再给出假数字。远距离线路偶尔丢握手包，国内节点多测一次、超时放宽到 4 秒。
-- 本机宽带的延迟扣掉 Cloudflare 响应头里报的服务器处理时间，与 Cloudflare 官方测速的算法一致。
-- 测速后顶栏出现“本次用掉”时，标题“网络测速”被挤成竖排。
-- 绕开代理解析域名时，Cloudflare DoH 连不上就换 Google、阿里的 DoH，出口与分流窗口的原始出口归属地也因此更容易查到。
 
 </details>
 

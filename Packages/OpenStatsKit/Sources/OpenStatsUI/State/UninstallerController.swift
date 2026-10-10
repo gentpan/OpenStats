@@ -38,14 +38,24 @@ public final class UninstallerController {
     public private(set) var leftovers: [AppLeftover] = []
     public private(set) var isScanning = false
     public private(set) var isRemoving = false
+    public private(set) var unreadableDirectories: [URL] = []
+    public private(set) var otherInstalledCopies: [URL] = []
     public private(set) var outcome: (text: String, isError: Bool)?
     var chosen: Set<String> = []
     @ObservationIgnored var tally: CleanupTally?
     /// 有应用启动或退出时变化，让“正在运行”的提示跟着刷新
     private var runningRevision = 0
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
+    @ObservationIgnored private let scanner: @Sendable (InstalledApp) -> AppUninstallScan
+    @ObservationIgnored private var selectedScan: AppUninstallScan?
+    private var scanGeneration = UUID()
 
-    public init() {
+    public convenience init() {
+        self.init(scanner: { AppUninstaller.scan(for: $0) })
+    }
+
+    init(scanner: @escaping @Sendable (InstalledApp) -> AppUninstallScan) {
+        self.scanner = scanner
         let center = NSWorkspace.shared.notificationCenter
         for name in [NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didTerminateApplicationNotification] {
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
@@ -75,23 +85,38 @@ public final class UninstallerController {
     }
 
     func select(_ app: InstalledApp?) {
+        let generation = UUID()
+        scanGeneration = generation
+        selectedScan = nil
         selected = app
         leftovers = []
         chosen = []
         outcome = nil
+        unreadableDirectories = []
+        otherInstalledCopies = []
+        isScanning = false
         guard let app else { return }
         isScanning = true
+        let scanner = self.scanner
         Task {
-            let found = await Task.detached { AppUninstaller.leftovers(for: app) }.value
-            guard selected == app else { return }
-            leftovers = found
-            chosen = Self.initialSelection(for: found)
+            let scan = await Task.detached { scanner(app) }.value
+            guard scanGeneration == generation else { return }
+            leftovers = scan.items
+            selectedScan = scan
+            unreadableDirectories = scan.unreadableDirectories
+            otherInstalledCopies = scan.otherInstalledCopies
+            chosen = Self.initialSelection(for: scan.items)
             isScanning = false
         }
     }
 
     static func initialSelection(for items: [AppLeftover]) -> Set<String> {
         Set(items.filter { !$0.requiresReview }.map(\.id))
+    }
+
+    func openFullDiskAccessSettings() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") else { return }
+        NSWorkspace.shared.open(url)
     }
 
     /// 拖进来的 .app
@@ -125,11 +150,23 @@ public final class UninstallerController {
 
     func uninstall() {
         guard let app = selected, !isRemoving else { return }
-        let requested = leftovers.filter { chosen.contains($0.id) }
+        var requested = leftovers.filter { chosen.contains($0.id) }
+        // 用户查看清单后可能又安装了一份副本，回收前重查，保留副本仍在使用的数据。
+        let installations = AppUninstaller.checkOtherInstallations(of: app)
+        otherInstalledCopies = installations.otherInstalledCopies
+        if installations.preservesSharedData {
+            unreadableDirectories = Array(Set(unreadableDirectories + installations.unreadableDirectories)).sorted { $0.path < $1.path }
+            requested.removeAll { $0.kind != .application }
+            leftovers.removeAll { $0.kind != .application }
+            chosen = Self.initialSelection(for: leftovers)
+        }
         do {
-            try AppUninstaller.validate(app)
+            if requested.contains(where: { $0.kind == .application }) { try AppUninstaller.validate(app) }
             guard !isRunning(app) else { throw AppUninstallError.running }
-            for item in requested { try AppUninstaller.validateLeftover(item.url, for: app) }
+            for item in requested {
+                if let selectedScan { try AppUninstaller.validateLeftover(item.url, for: app, scan: selectedScan) }
+                else { try AppUninstaller.validateLeftover(item.url, for: app) }
+            }
         } catch {
             outcome = ("\(error)", true)
             return
@@ -139,11 +176,12 @@ public final class UninstallerController {
             return
         }
         let urls = requested.map(\.url)
+        let requestedItems = requested
         isRemoving = true
         outcome = nil
         // NSWorkspace 负责需要管理员权限的情况（例如 root 拥有的应用），并能在废纸篓中“放回原处”
         NSWorkspace.shared.recycle(urls) { [weak self] moved, error in
-            let summary = UninstallResultSummary(app: app, requested: requested, movedSources: Set(moved.keys))
+            let summary = UninstallResultSummary(app: app, requested: requestedItems, movedSources: Set(moved.keys))
             let message = error?.localizedDescription
             Task { @MainActor in
                 guard let self else { return }
