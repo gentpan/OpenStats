@@ -71,7 +71,9 @@ public struct PublicAddresses: Sendable, Equatable, Codable {
         self.organization = organization
     }
 
-    /// 把 cleanip.io 查到的信息并进来；国家代码以 Cloudflare 给的为准，没有时才用 cleanip.io 的
+    /// 把 cleanip.io 查到的信息并进来。国家与省、城市同属一行归属地，必须出自同一个数据源：
+    /// 分流代理下 Cloudflare 与 cleanip.io 可能从不同出口出去（例如 Cloudflare 走代理节点、cleanip.io 直连），
+    /// IPv6 那份结果的国家也可能来自 IPv4 的 trace，混用会拼出“美国 · 塔什干”。所以国家以 cleanip.io 的为准，没有时才用 Cloudflare 的
     public mutating func apply(_ geo: PublicAddressLookup.GeoInfo) {
         city = geo.city
         region = geo.region
@@ -89,7 +91,7 @@ public struct PublicAddresses: Sendable, Equatable, Codable {
         purity = geo.purity
         risk = geo.risk
         reportURL = geo.reportURL
-        if countryCode == nil { countryCode = geo.countryCode }
+        if let code = geo.countryCode { countryCode = code }
     }
 }
 

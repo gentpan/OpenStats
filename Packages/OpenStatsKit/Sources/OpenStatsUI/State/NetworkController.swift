@@ -59,8 +59,9 @@ public final class NetworkController {
         var geoDates: [String: Date]
     }
     static let geoCacheLifetime: TimeInterval = 7 * 24 * 60 * 60
-    /// 第 4 版起只有 cleanip.io 一个数据源，旧版本缓存里可能是别的数据源的结果，不再读取
-    private static let cacheKey = "publicAddressCache4"
+    /// 第 4 版起只有 cleanip.io 一个数据源；第 5 版起国家也取 cleanip.io 的，第 4 版缓存里可能是 Cloudflare 的国家拼 cleanip.io 的城市，不再读取
+    private static let cacheKey = "publicAddressCache5"
+    private static let staleCacheKeys = ["publicAddressCache4"]
 
     /// 用户按过“重置统计”后的累计流量基线：界面显示 当前累计 − 基线。
     /// 随开机时间一起保存，重启后系统计数器归零、基线作废，自动回到开机后累计
@@ -80,6 +81,7 @@ public final class NetworkController {
 
     init(settings: AppSettings) {
         self.settings = settings
+        Self.staleCacheKeys.forEach { UserDefaults.standard.removeObject(forKey: $0) }
         if let data = UserDefaults.standard.data(forKey: Self.cacheKey),
            let cache = try? JSONDecoder().decode(PublicCache.self, from: data), settings.publicIPLookup {
             publicResults = Dictionary(uniqueKeysWithValues: cache.results.compactMap { key, value in IPFamily(rawValue: key).map { ($0, value) } })

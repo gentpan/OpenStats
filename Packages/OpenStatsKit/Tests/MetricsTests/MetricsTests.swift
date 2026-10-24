@@ -200,6 +200,22 @@ struct LiveSamplerTests {
         #expect(PublicAddressLookup.parseCleanIP(Data(#"{"ok":false,"error":"bad"}"#.utf8)) == nil)
     }
 
+    /// 分流代理：Cloudflare 走美国节点，cleanip.io 直连塔什干。国家要跟城市出自同一份数据，不能拼成“美国 · 塔什干”
+    @Test func countryFollowsCleanIPWhenExitsDiffer() {
+        var addresses = PublicAddresses(ipv4: "99.112.133.68", countryCode: "US")
+        var geo = PublicAddressLookup.GeoInfo()
+        geo.ip = "185.139.137.73"
+        geo.countryCode = "UZ"
+        geo.city = "塔什干"
+        addresses.apply(geo)
+        #expect(addresses.countryCode == "UZ" && addresses.city == "塔什干")
+
+        // cleanip.io 没给国家时才用 Cloudflare 的
+        var fallback = PublicAddresses(ipv4: "203.0.113.24", countryCode: "US")
+        fallback.apply(PublicAddressLookup.GeoInfo())
+        #expect(fallback.countryCode == "US")
+    }
+
     @Test func parsesHTTPResponses() throws {
         let plain = Data("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 11\r\n\r\n{\"ok\":true}".utf8)
         let (body, status) = AddressFamilyRequest.parse(plain)
