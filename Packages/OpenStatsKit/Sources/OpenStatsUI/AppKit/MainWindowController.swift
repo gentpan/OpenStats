@@ -6,6 +6,9 @@ import SwiftUI
 final class MainWindowController: NSObject, NSWindowDelegate {
     private let model: AppModel
     private var window: NSWindow?
+    private lazy var content = WindowContent { [model] in NSHostingView(rootView: MainWindowView().environment(model)) }
+    /// 从打开到关闭之间为真。应用被隐藏时 `window.isVisible` 也是假，不能拿它判断窗口还开没开着
+    private var isOpen = false
     var onVisibilityChange: ((Bool) -> Void)?
 
     init(model: AppModel) {
@@ -25,11 +28,13 @@ final class MainWindowController: NSObject, NSWindowDelegate {
         if let tab { model.settings.panelTab = tab }
         let window = self.window ?? makeWindow()
         self.window = window
+        content.install(in: window)
         if !window.isVisible {
             window.setFrame(initialFrame(for: window), display: false)
         }
         NSApp.activate()
         window.makeKeyAndOrderFront(nil)
+        isOpen = true
         model.isMainWindowVisible = true
         onVisibilityChange?(true)
     }
@@ -48,7 +53,6 @@ final class MainWindowController: NSObject, NSWindowDelegate {
         window.contentMinSize = NSSize(width: width, height: DS.Size.panelMinHeight * 1.5)
         // 默认尺寸调大后换一个保存名，旧的小窗口尺寸不再沿用
         window.setFrameAutosaveName("OpenStatsMainWindow.v2")
-        window.contentView = NSHostingView(rootView: MainWindowView().environment(model))
         return window
     }
 
@@ -68,8 +72,10 @@ final class MainWindowController: NSObject, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
+        isOpen = false
         model.isMainWindowVisible = false
         onVisibilityChange?(false)
+        if let window { content.release(from: window) }
     }
 
     func windowDidMiniaturize(_ notification: Notification) {
@@ -78,6 +84,47 @@ final class MainWindowController: NSObject, NSWindowDelegate {
 
     func windowDidDeminiaturize(_ notification: Notification) {
         model.isMainWindowVisible = true
+    }
+
+    /// 窗口被其他窗口完全挡住、切到别的桌面、应用被隐藏（⌘H）或锁屏时，按“没在看”处理，
+    /// 采样回到菜单栏需要的范围，网络页的探测与进程流量统计也随之停下；重新露出来时恢复
+    func windowDidChangeOcclusionState(_ notification: Notification) {
+        guard isOpen, let window, !window.isMiniaturized else { return }
+        let visible = window.occlusionState.contains(.visible)
+        if model.isMainWindowVisible != visible { model.isMainWindowVisible = visible }
+    }
+}
+
+/// 窗口里的 SwiftUI 内容只在窗口开着时存在：关窗后拆掉，下次打开再建。
+/// 只把窗口藏起来的话，整棵视图树仍随每次采样重算，页面里的 `.task` 循环也不会结束（`onDisappear` 不触发）。
+/// 窗口对象本身（位置、大小、工具栏）一直留着
+@MainActor
+final class WindowContent {
+    private let make: @MainActor () -> NSView
+    /// 装进窗口的那个视图，只由窗口持有，拆掉后自动变成 nil。新建的窗口自带一个空的 contentView，不能按“有没有内容”判断
+    private weak var installed: NSView?
+
+    init(_ make: @escaping @MainActor () -> NSView) {
+        self.make = make
+    }
+
+    /// 打开窗口前调用：还没装或已经拆掉就新建。返回是否新建了内容
+    @discardableResult
+    func install(in window: NSWindow) -> Bool {
+        if let installed, window.contentView === installed { return false }
+        let view = make()
+        window.contentView = view
+        installed = view
+        return true
+    }
+
+    /// `windowWillClose` 里调用：等窗口真正收起后再拆，关闭过程中不闪空白；这期间又打开了就不拆
+    func release(from window: NSWindow) {
+        DispatchQueue.main.async { [weak window, weak self] in
+            guard let window, !window.isVisible, !window.isMiniaturized else { return }
+            window.contentView = nil
+            self?.installed = nil
+        }
     }
 }
 

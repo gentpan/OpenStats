@@ -83,3 +83,48 @@ public struct CPUSampler {
                        loadAverage: loadCount > 0 ? Array(averages.prefix(Int(loadCount))) : [])
     }
 }
+
+/// 整机累计的 CPU 时钟滴答（各核相加），两次读数相减就是这段时间的平均占用。
+/// 小组件每次刷新记下一份，下次刷新时直接相减，不必为了两次采样停半秒
+public struct CPUTicks: Sendable, Codable, Equatable {
+    public var user: UInt32
+    public var system: UInt32
+    public var idle: UInt32
+    public var nice: UInt32
+    /// 开机时间：重启后计数从零开始，与重启前的读数不能相减
+    public var bootTime: Int
+
+    public init(user: UInt32, system: UInt32, idle: UInt32, nice: UInt32, bootTime: Int) {
+        self.user = user
+        self.system = system
+        self.idle = idle
+        self.nice = nice
+        self.bootTime = bootTime
+    }
+
+    public static func read() -> CPUTicks? {
+        var info = host_cpu_load_info()
+        var count = mach_msg_type_number_t(MemoryLayout<host_cpu_load_info>.stride / MemoryLayout<integer_t>.stride)
+        let host = mach_host_self()
+        defer { mach_port_deallocate(mach_task_self_, host) }
+        let result = withUnsafeMutablePointer(to: &info) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) { host_statistics(host, HOST_CPU_LOAD_INFO, $0, &count) }
+        }
+        guard result == KERN_SUCCESS else { return nil }
+        var boot = timeval()
+        var size = MemoryLayout<timeval>.size
+        let bootTime = sysctlbyname("kern.boottime", &boot, &size, nil, 0) == 0 ? Int(boot.tv_sec) : 0
+        return CPUTicks(user: info.cpu_ticks.0, system: info.cpu_ticks.1, idle: info.cpu_ticks.2, nice: info.cpu_ticks.3,
+                        bootTime: bootTime)
+    }
+
+    /// 从 `previous` 到这次的平均占用（0…1）。计数是 32 位的，按回绕一次计算；
+    /// 重启过、或间隔太短（不足一个核一秒的滴答，读数噪声大）时返回 nil
+    public func usage(since previous: CPUTicks) -> Double? {
+        guard bootTime == previous.bootTime else { return nil }
+        let busy = Double(user &- previous.user) + Double(system &- previous.system) + Double(nice &- previous.nice)
+        let total = busy + Double(idle &- previous.idle)
+        guard total >= 100 else { return nil }
+        return min(1, max(0, busy / total))
+    }
+}

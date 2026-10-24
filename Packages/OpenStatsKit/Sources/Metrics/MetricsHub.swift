@@ -14,8 +14,14 @@ public struct MetricsDemand: Sendable, Equatable {
     public var systemProcesses = false
     public var temperatures: Set<TemperatureGroup> = []
     public var fans = false
-    /// 整机功耗与 GPU 功耗
+    /// 风扇的目标转速、模式与起步状态；为假时只读转速（菜单栏只显示转速）
+    public var fanDetail = false
+    /// 整机、电源与电池功率（SMC，几乎没有开销）
     public var power = false
+    /// GPU 功耗（IOReport 能耗计数）
+    public var gpuPower = false
+    /// GPU 工作频率（IOReport 性能状态）
+    public var gpuFrequency = false
     /// 各类核心的频率
     public var cpuFrequency = false
     /// 磁盘读写速率与 SMART 健康信息
@@ -59,7 +65,8 @@ public actor MetricsHub {
             || (newDemand.processes && !demand.processes)
             || (newDemand.disk && !demand.disk)
             || (newDemand.diskDetail && !demand.diskDetail)
-        if (newDemand.power && !demand.power) || (newDemand.cpuFrequency && !demand.cpuFrequency) {
+        if (newDemand.power && !demand.power) || (newDemand.gpuPower && !demand.gpuPower)
+            || (newDemand.gpuFrequency && !demand.gpuFrequency) || (newDemand.cpuFrequency && !demand.cpuFrequency) {
             lastPower = .distantPast
         }
         demand = newDemand
@@ -102,6 +109,7 @@ public actor MetricsHub {
         demand.processes = true
         demand.temperatures = Set(TemperatureGroup.allCases)
         demand.fans = true
+        demand.fanDetail = true
         demand.power = true
         demand.cpuFrequency = true
         demand.diskDetail = true
@@ -143,7 +151,8 @@ public actor MetricsHub {
         }
         if demand.gpu { snapshot.gpu = GPUSampler.sample() }
         if demand.disk, now.timeIntervalSince(lastDisk) > 30 {
-            snapshot.disk = DiskSampler.sample()
+            // 磁盘页开着时每次都重新统计可清除空间，其余时候沿用 5 分钟内的结果
+            snapshot.disk = DiskSampler.sample(fresh: demand.diskDetail, now: now)
             lastDisk = now
         }
         if demand.battery, now.timeIntervalSince(lastBattery) > 10 {
@@ -155,7 +164,7 @@ public actor MetricsHub {
             snapshot.systemCounts = SystemCounts.read()
         }
         if !demand.temperatures.isEmpty || demand.fans {
-            snapshot.sensors = sensors.sample(groups: demand.temperatures, includeFans: demand.fans)
+            snapshot.sensors = sensors.sample(groups: demand.temperatures, includeFans: demand.fans, fanDetail: demand.fanDetail)
         }
         if demand.diskDetail {
             snapshot.diskActivity = diskActivity.sample(now: now)
@@ -165,8 +174,10 @@ public actor MetricsHub {
             }
         }
         // IOReport 采样有一定开销，至少间隔 2 秒
-        if demand.power || demand.cpuFrequency, now.timeIntervalSince(lastPower) >= 1.9 {
-            snapshot.power = power.sample(gpu: demand.power, frequency: demand.cpuFrequency, now: now)
+        if demand.power || demand.gpuPower || demand.gpuFrequency || demand.cpuFrequency,
+           now.timeIntervalSince(lastPower) >= 1.9 {
+            snapshot.power = power.sample(gpu: demand.gpuPower, gpuFrequency: demand.gpuFrequency,
+                                          frequency: demand.cpuFrequency, now: now)
             lastPower = now
         }
         return snapshot

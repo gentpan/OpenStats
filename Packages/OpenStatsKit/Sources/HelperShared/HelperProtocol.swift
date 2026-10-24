@@ -6,7 +6,10 @@ public enum HelperConstants {
     public static let launchdPlistName = "com.openstats.helper.plist"
     public static let appBundleIdentifier = "com.openstats.app"
     /// 与 App 版本同步；App 发现辅助工具版本不一致时提示重新安装
-    public static let protocolVersion = 4
+    public static let protocolVersion = 5
+    /// 从这一版起，连接断开时辅助工具只恢复自己改过的风扇与睡眠设置，应用可以在用不着时断开连接、让它空闲退出。
+    /// 更旧的辅助工具一断开就把所有风扇写回自动，对它们保持常连
+    public static let idleDisconnectVersion = 5
 
     /// 辅助工具对调用方的签名要求：与辅助工具自身同一团队签名的 OpenStats。
     /// ad-hoc 签名的开发构建没有团队，只能校验 bundle identifier。

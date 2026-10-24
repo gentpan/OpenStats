@@ -61,8 +61,12 @@ team at run time, so no team ID is hard-coded.
 `MetricsHub` is an actor that runs one loop. `AppModel.demand` describes what is on screen —
 which menu-bar items are enabled, whether the panel is open and on which tab — and the hub
 samples only that: CPU always; memory and network cheaply; GPU, disk, processes, sensors and
-fans only when a visible surface needs them. Disk is read at most every 30 s, battery every
-10 s. The loop pauses on screen sleep, system sleep and session switch.
+fans only when a visible surface needs them. Disk is read at most every 30 s (the purgeable part
+of free space is expensive to compute and is reused for 5 minutes unless the disk page is open),
+battery every 10 s. When only the menu bar shows fans, only their current speed is read; fan count
+and limits are cached. The loop pauses on screen sleep, system sleep and session switch. A window
+that is fully covered, on another Space, hidden with ⌘H or behind the lock screen counts as not
+visible, so sampling falls back to what the menu bar needs.
 
 Things that are easy to get wrong and are handled on purpose:
 
@@ -94,8 +98,10 @@ Registered with `SMAppService.daemon`; `RunAtLoad` so that an unclean exit is re
 boot. The XPC interface is a fixed list of operations — no arbitrary commands — and each
 connection gets `setCodeSigningRequirement`. State that must be undone (manual fans, disabled
 sleep) is persisted to `/Library/Application Support/OpenStats/helper-state.plist` and
-reverted when the last client disconnects or at the next start. The helper exits after 30 s
-without clients.
+reverted when the last client disconnects or at the next start; a fan that the helper did not
+set to manual is left alone, so other fan tools are not overridden. The app keeps the connection
+open only while the helper holds state for it (manual fans, lid-closed mode) and otherwise closes it
+10 s after the last call (protocol 5 and later), so the helper exits after its 30 s idle timeout.
 
 ## Cleanup
 
@@ -141,10 +147,16 @@ overview with one row per enabled metric, plus tabs that switch to each metric's
 is set to that metric so sampling matches the standalone popover.
 
 Popovers are borderless, non-activating `NSPanel`s. The SwiftUI tree is created on open and
-destroyed on close, so a hidden popover costs nothing. Height comes from measuring a flat,
+destroyed on close, so a hidden popover costs nothing; the main, egress, speed-test and update
+windows do the same (`WindowContent`), so a closed window no longer re-evaluates on every sample or
+keeps its `.task` loops running. Height comes from measuring a flat,
 scroll-free copy of the same view; placeholders keep that height stable until data arrives, and
 the window is resized without animation because animating it makes SwiftUI re-lay out every
-frame. Charts are drawn with `Canvas`, not Swift Charts.
+frame. Charts are drawn with `Shape` paths, one shape per colour, not with Swift Charts and not
+with `Canvas`: while any `Canvas` keeps redrawing, SwiftUI holds about 190 MB of graphics memory
+regardless of how many or how large the canvases are. Menu-bar images are rasterised to a small
+bitmap and only assigned when it differs from the last one, because every assignment redraws the
+item on every display's menu bar.
 
 The main window reuses the popover content with `isDetailPage` set (all sections, taller charts)
 next to the dashboard and tool pages. Windows use a transparent, full-size-content title bar with
@@ -220,7 +232,7 @@ current tab, helper status, the history database or the GeoIP files. Enums are s
 field is optional, so old and new builds can read each other's documents; `apply` validates each value and
 skips what it does not know. `exportDocument()` reads every synced property, which is also how the
 controller observes changes (`withObservationTracking`). A change is pushed whole after a 2 s debounce; the
-cloud is pulled at launch, on wake and every 15 minutes, and applied when its version differs from the last
+cloud is pulled at launch, on wake, when the account page opens and every hour, and applied when its version differs from the last
 one seen. The last pushed or applied document is remembered so applying the cloud copy does not echo back
 as a push. On first sign-in: no cloud copy → upload; local still at defaults → apply cloud; both present and
 different → the account page asks which to keep. After that the last write wins.
@@ -235,8 +247,9 @@ deletes everything on `DELETE /account`.
   IOReport *Energy Model* `GPU Energy` counter; CPU energy counters on recent chips barely update,
   so CPU power is not shown. Cluster frequencies are residency-weighted averages of *CPU Complex
   Performance States*, using the `voltage-states*-sram` tables of `pmgr` (Hz on older chips, MHz on
-  newer ones). Each IOReport sample costs about 5 ms of CPU, so it runs at most every 2 s and only
-  while a page shows it.
+  newer ones). The *Energy Model* subscription is filtered to the single `GPU Energy` channel (the
+  whole group has hundreds and cost about 5 ms per sample). IOReport runs at most every 2 s, and
+  GPU power, GPU frequency and cluster frequency are each read only while a page shows them.
 - Disk activity diffs `IOBlockStorageDriver` statistics; SSD health reads the NVMe SMART log
   through the system `NVMeSMARTLib` plug-in (no root).
 - `HistoryRecorder` folds each sample into a per-minute record (averages, CPU and temperature

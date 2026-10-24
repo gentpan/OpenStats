@@ -54,6 +54,15 @@ public final class EgressController {
         watchTask = nil
     }
 
+    /// 窗口看不见时不再每 3 秒读网络环境；重新看得见时接着盯，期间网络变了或结果过期就重测
+    func windowOcclusionChanged(visible: Bool) {
+        if !visible {
+            windowDidClose()
+        } else if watchTask == nil {
+            startWatching()
+        }
+    }
+
     func check() {
         guard !isChecking else { return }
         isChecking = true

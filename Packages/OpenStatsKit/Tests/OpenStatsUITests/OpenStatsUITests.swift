@@ -1,4 +1,5 @@
 import AccountSync
+import AppKit
 import Foundation
 @testable import Metrics
 import Testing
@@ -436,5 +437,40 @@ private func isolatedDefaults() -> UserDefaults {
             Issue.record("回调之后 phase 应为 failed，实际是 \(controller.phase)")
             return
         }
+    }
+}
+
+@Suite("菜单栏图标重绘")
+@MainActor
+struct MenuBarFingerprintTests {
+    private func image(cpu: Double) -> NSImage {
+        var reading = MenuBarReading()
+        reading.cpu = cpu
+        reading.cpuHistory = [0.1, 0.2, cpu]
+        return MenuBarRenderer.image(reading: reading, items: [.cpu], style: { _ in .stacked },
+                                     networkStyle: .arrows, colorizeHighLoad: true, fahrenheit: false)
+    }
+
+    @Test func sameDrawingHasSameFingerprint() throws {
+        // 0.121 与 0.124 都显示 12%，画出来一样，不必重新赋图
+        let first = try #require(MenuBarRenderer.fingerprint(of: image(cpu: 0.121)))
+        #expect(MenuBarRenderer.fingerprint(of: image(cpu: 0.124)) == first)
+        #expect(MenuBarRenderer.fingerprint(of: image(cpu: 0.47)) != first)
+    }
+}
+
+@Suite("磁盘排行的行号")
+@MainActor
+struct ProcessRowIDTests {
+    @Test func idMatchesGroupedRows() {
+        let processes = [
+            ProcessUsage(pid: 10, name: "Safari", executablePath: nil, appBundlePath: "/Applications/Safari.app", cpu: 0, memory: 1),
+            ProcessUsage(pid: 11, name: "Safari Web Content", executablePath: nil, appBundlePath: "/Applications/Safari.app", cpu: 0, memory: 1),
+            ProcessUsage(pid: 12, name: "Notes", executablePath: nil, appBundlePath: "/System/Applications/Notes.app", cpu: 0, memory: 1),
+            ProcessUsage(pid: 13, name: "launchd", executablePath: nil, appBundlePath: nil, cpu: 0, memory: 1),
+        ]
+        let grouped = Set(ProcessRowModel.grouped(processes).map(\.id))
+        #expect(Set(processes.map(ProcessRowModel.id(for:))) == grouped)
+        #expect(grouped.count == 3)
     }
 }

@@ -45,7 +45,10 @@ enum SnapshotRenderer {
         demand.processes = true
         demand.temperatures = Set(TemperatureGroup.allCases)
         demand.fans = true
+        demand.fanDetail = true
         demand.power = true
+        demand.gpuPower = true
+        demand.gpuFrequency = true
         demand.cpuFrequency = true
         demand.diskDetail = true
         await model.hub.update(demand)

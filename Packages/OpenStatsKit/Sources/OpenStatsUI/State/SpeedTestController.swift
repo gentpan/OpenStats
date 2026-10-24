@@ -97,7 +97,18 @@ public final class SpeedTestController {
     /// 关窗时停掉所有还在跑的测试，别让它继续占带宽
     func windowDidClose() {
         watchTask?.cancel()
+        watchTask = nil
         cancelAll()
+    }
+
+    /// 窗口看不见时只停掉读代理环境的轮询，正在跑的测试照常跑完；重新看得见时恢复
+    func windowOcclusionChanged(visible: Bool) {
+        if !visible {
+            watchTask?.cancel()
+            watchTask = nil
+        } else if watchTask == nil {
+            windowDidOpen()
+        }
     }
 
     /// 换了线路，之前的结果属于另一条线路，全部清掉并停下正在跑的测试

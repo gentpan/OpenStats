@@ -120,11 +120,15 @@ public final class AppModel {
         if showing(.battery, .battery) { groups.insert(.battery) }
         if settings.enabledAlerts.contains(.cpuTemperature) { groups.insert(.cpu) }
         demand.temperatures = groups
-        // GPU 页要 GPU 功耗与频率（IOReport），同样只在看着时读
+        // 整机、电源与电池功率读 SMC；GPU 功耗与频率读 IOReport，各自只在显示它的界面打开时读
         demand.power = (window && tab == .thermal) || thermalPopover || showing(.battery, .battery) || showing(.gpu, .gpu)
+        demand.gpuPower = (window && tab == .thermal) || thermalPopover || showing(.gpu, .gpu)
+        demand.gpuFrequency = showing(.gpu, .gpu)
         demand.cpuFrequency = showing(.cpu, .cpu)
         demand.fans = overview || (window && tab == .thermal) || menu.contains(.fan)
             || fans.mode != .automatic || thermalPopover
+        // 只有菜单栏要风扇时只读转速；页面上要显示模式、目标转速、起步状态，或正在手动调速时读全部
+        demand.fanDetail = overview || (window && tab == .thermal) || fans.mode != .automatic || thermalPopover
         return demand
     }
 

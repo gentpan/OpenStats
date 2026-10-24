@@ -163,7 +163,7 @@ struct AccountSettings: View {
     }
 
     private func statusSubtitle(_ sync: SyncController) -> String {
-        guard let date = sync.lastSyncedAt else { return tr("设置改动后 2 秒内上传；启动、唤醒与每 15 分钟检查一次云端") }
+        guard let date = sync.lastSyncedAt else { return tr("设置改动后 2 秒内上传；启动、唤醒、打开本页与每小时检查一次云端") }
         return tr("上次同步：\(Self.relative(date))")
     }
 

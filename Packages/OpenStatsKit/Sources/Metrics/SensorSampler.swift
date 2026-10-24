@@ -12,7 +12,9 @@ public final class SensorSampler {
         fans = smc.map(FanControl.init)
     }
 
-    public func sample(groups: Set<TemperatureGroup> = Set(TemperatureGroup.allCases), includeFans: Bool = true) -> SensorReadings? {
+    /// `fanDetail` 为假时风扇只读当前转速（见 `FanControl.read(detail:)`）
+    public func sample(groups: Set<TemperatureGroup> = Set(TemperatureGroup.allCases), includeFans: Bool = true,
+                       fanDetail: Bool = true) -> SensorReadings? {
         guard let smc else { return nil }
         var summaries: [TemperatureSummary] = []
         for group in TemperatureGroup.allCases where groups.contains(group) {
@@ -23,6 +25,6 @@ public final class SensorSampler {
                                                 maximum: values.max() ?? 0,
                                                 sensorCount: values.count))
         }
-        return SensorReadings(temperatures: summaries, fans: includeFans ? (fans?.read() ?? []) : [])
+        return SensorReadings(temperatures: summaries, fans: includeFans ? (fans?.read(detail: fanDetail) ?? []) : [])
     }
 }

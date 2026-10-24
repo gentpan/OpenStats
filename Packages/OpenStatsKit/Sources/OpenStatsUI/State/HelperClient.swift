@@ -33,7 +33,17 @@ public final class HelperClient {
     /// 连接中断后重新连上时回调，用于重新下发风扇 / 防休眠状态
     @ObservationIgnored var onReconnect: (() -> Void)?
 
+    /// 辅助工具正替应用保持着系统状态（风扇手动、合盖运行）。这期间连接必须一直开着：
+    /// 辅助工具靠连接断开发现应用崩溃，替用户把风扇与睡眠恢复原样。默认按“保持着”处理，不会断开
+    @ObservationIgnored var holdsSystemState: () -> Bool = { true }
+
     @ObservationIgnored private var connection: NSXPCConnection?
+    /// 辅助工具报告的协议版本；够新才会在空闲时断开
+    @ObservationIgnored private var remoteVersion: Int?
+    @ObservationIgnored private var pendingCalls = 0
+    @ObservationIgnored private var idleDisconnect: Task<Void, Never>?
+    /// 最后一次调用结束后多久断开；辅助工具再空闲 30 秒自己退出，省下常驻的进程
+    static let idleDisconnectDelay: Duration = .seconds(10)
     @ObservationIgnored private let service = SMAppService.daemon(plistName: HelperConstants.launchdPlistName)
 
     public init() {}
@@ -168,12 +178,19 @@ public final class HelperClient {
         refreshStatus()
         guard isReady else { return nil }
         let connection = ensureConnection()
-        return await withCheckedContinuation { (continuation: CheckedContinuation<Int?, Never>) in
+        pendingCalls += 1
+        defer {
+            pendingCalls -= 1
+            scheduleIdleDisconnect()
+        }
+        let version = await withCheckedContinuation { (continuation: CheckedContinuation<Int?, Never>) in
             let once = ResumeOnceValue<Int?>(continuation)
             let proxy = connection.remoteObjectProxyWithErrorHandler { _ in once.resume(nil) } as? OpenStatsHelperProtocol
             guard let proxy else { return once.resume(nil) }
             proxy.protocolVersion { once.resume($0) }
         }
+        if let version { remoteVersion = version }
+        return version
     }
 
     /// 退出应用时使用：同步恢复风扇与睡眠设置，每步最多等待 1 秒
@@ -197,6 +214,11 @@ public final class HelperClient {
         refreshStatus()
         guard isReady else { return tr("辅助工具未启用") }
         let connection = ensureConnection()
+        pendingCalls += 1
+        defer {
+            pendingCalls -= 1
+            scheduleIdleDisconnect()
+        }
         return await withCheckedContinuation { (continuation: CheckedContinuation<String?, Never>) in
             let once = ResumeOnce(continuation)
             let proxy = connection.remoteObjectProxyWithErrorHandler { error in
@@ -212,18 +234,42 @@ public final class HelperClient {
     }
 
     private func ensureConnection() -> NSXPCConnection {
+        idleDisconnect?.cancel()
+        idleDisconnect = nil
         if let connection { return connection }
         let connection = NSXPCConnection(machServiceName: HelperConstants.machServiceName, options: .privileged)
+        let id = ObjectIdentifier(connection)
         connection.remoteObjectInterface = NSXPCInterface(with: OpenStatsHelperProtocol.self)
         connection.interruptionHandler = { [weak self] in
             Task { @MainActor in self?.onReconnect?() }
         }
+        // 只清掉自己：主动断开后可能已经又建了新连接，旧连接的回调不能把新的也丢掉
         connection.invalidationHandler = { [weak self] in
-            Task { @MainActor in self?.connection = nil }
+            Task { @MainActor in
+                guard let self, let current = self.connection, ObjectIdentifier(current) == id else { return }
+                self.connection = nil
+            }
         }
         connection.resume()
         self.connection = connection
         return connection
+    }
+
+    /// 调用都结束、辅助工具没替应用保持任何系统状态时，过一会儿断开连接，让它空闲退出。
+    /// 下次调用会重新连上，launchd 按需启动它
+    private func scheduleIdleDisconnect() {
+        idleDisconnect?.cancel()
+        idleDisconnect = nil
+        guard pendingCalls == 0, connection != nil,
+              let remoteVersion, remoteVersion >= HelperConstants.idleDisconnectVersion else { return }
+        idleDisconnect = Task { [weak self] in
+            try? await Task.sleep(for: Self.idleDisconnectDelay)
+            guard !Task.isCancelled, let self, self.pendingCalls == 0, !self.holdsSystemState(),
+                  let connection = self.connection else { return }
+            Log.helper.info("用不着辅助工具，断开连接")
+            self.connection = nil
+            connection.invalidate()
+        }
     }
 }
 

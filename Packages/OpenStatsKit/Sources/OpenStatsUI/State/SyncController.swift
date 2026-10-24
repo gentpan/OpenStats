@@ -6,7 +6,7 @@ import Localization
 import Observation
 
 /// 账号与设置同步：用系统的登录窗口走 GitHub / Google / Apple 授权，令牌存钥匙串；
-/// 设置一变就在 2 秒后整份推送，启动、唤醒与每 15 分钟拉一次。云端以最后写入为准，
+/// 设置一变就在 2 秒后整份推送，启动、唤醒、打开账号页与每小时拉一次。云端以最后写入为准，
 /// 只有第一次登录且两边都有内容时让用户选一次
 @MainActor
 @Observable
@@ -61,7 +61,8 @@ public final class SyncController {
     @ObservationIgnored private var observing = false
 
     static let pushDelay: Duration = .seconds(2)
-    static let pullInterval: TimeInterval = 15 * 60
+    /// 设置很少在别的 Mac 上改，每小时核对一次足够；启动、唤醒与打开账号页时另外会拉
+    static let pullInterval: TimeInterval = 60 * 60
 
     init(settings: AppSettings, defaults: UserDefaults = .standard, client: SyncClient = SyncClient(), tokens: TokenStore = KeychainTokenStore()) {
         self.settings = settings
@@ -299,7 +300,7 @@ public final class SyncController {
         timer = Timer.scheduledTimer(withTimeInterval: Self.pullInterval, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.pullSoon() }
         }
-        timer?.tolerance = 60
+        timer?.tolerance = 5 * 60
     }
 
     private func observeSettings() {

@@ -42,16 +42,15 @@ public final class PowerSampler: @unchecked Sendable {
 
     public init() {}
 
-    /// SMC 读数几乎没有开销；IOReport 每次采样约 5 毫秒 CPU，GPU 功耗与 CPU 频率只在界面需要时读
-    public func sample(gpu includeGPU: Bool = true, frequency includeFrequency: Bool = true, now: Date = Date()) -> PowerReading {
+    /// SMC 读数几乎没有开销；IOReport 的 GPU 能耗、GPU 频率与 CPU 频率分别只在界面需要时读
+    public func sample(gpu includeGPU: Bool = true, gpuFrequency includeGPUFrequency: Bool = true,
+                       frequency includeFrequency: Bool = true, now: Date = Date()) -> PowerReading {
         var reading = PowerReading()
         reading.system = positive(smc?.double(SMCKey("PSTR")))
         reading.adapter = positive(smc?.double(SMCKey("PDTR")))
         reading.battery = smc?.double(SMCKey("PPBR")).flatMap { $0.isFinite && abs($0) >= 0.01 ? $0 : nil }
-        if includeGPU {
-            reading.gpu = sampleGPU(now: now)
-            reading.gpuFrequency = sampleGPUFrequency(now: now)
-        }
+        if includeGPU { reading.gpu = sampleGPU(now: now) }
+        if includeGPUFrequency { reading.gpuFrequency = sampleGPUFrequency(now: now) }
         if includeFrequency { reading.clusterFrequency = sampleFrequencies(now: now) }
         return reading
     }
@@ -64,7 +63,12 @@ public final class PowerSampler: @unchecked Sendable {
     // MARK: GPU
 
     private func sampleGPU(now: Date) -> Double? {
-        if energy == nil { energy = Subscription(group: "Energy Model", subgroup: nil) }
+        // Energy Model 组有几百个通道，只订阅要用的那一个：每次采样从约 5 毫秒降到零点几毫秒。
+        // 某些系统上过滤不出这个通道时退回订阅整组
+        if energy == nil {
+            energy = Subscription(group: "Energy Model", subgroup: nil, only: "GPU Energy")
+                ?? Subscription(group: "Energy Model", subgroup: nil)
+        }
         guard let energy, let current = energy.sample() else { return nil }
         defer { lastEnergy = (now, current) }
         // 间隔太短噪声大；太长（界面关闭过一段时间）的平均值没有意义
@@ -265,9 +269,14 @@ private final class Subscription {
     private let channels: CFMutableDictionary
     private let subscription: IOReportSubscriptionRef
 
-    init?(group: String, subgroup: String?) {
-        guard let channels = IOReportCopyChannelsInGroup(group as CFString, subgroup as CFString?, 0, 0, 0)?.takeRetainedValue() else {
+    /// `only` 不为空时只订阅这个名字的通道；组里没有这个通道时返回 nil
+    init?(group: String, subgroup: String?, only name: String? = nil) {
+        guard var channels = IOReportCopyChannelsInGroup(group as CFString, subgroup as CFString?, 0, 0, 0)?.takeRetainedValue() else {
             return nil
+        }
+        if let name {
+            guard let filtered = Self.filter(channels, named: name) else { return nil }
+            channels = filtered
         }
         var subscribed: Unmanaged<CFMutableDictionary>?
         guard let subscription = IOReportCreateSubscription(nil, channels, &subscribed, 0, nil) else { return nil }
@@ -278,6 +287,16 @@ private final class Subscription {
 
     func sample() -> CFDictionary? {
         IOReportCreateSamples(subscription, channels, nil)?.takeRetainedValue()
+    }
+
+    /// 通道列表的副本，`IOReportChannels` 里只留下指定名字的通道
+    private static func filter(_ channels: CFMutableDictionary, named name: String) -> CFMutableDictionary? {
+        let matching = Self.channels(in: channels).filter { Self.name($0) == name }
+        guard !matching.isEmpty, let copy = CFDictionaryCreateMutableCopy(nil, 0, channels) else { return nil }
+        let array = matching as CFArray
+        let key = "IOReportChannels" as CFString
+        CFDictionarySetValue(copy, Unmanaged.passUnretained(key).toOpaque(), Unmanaged.passUnretained(array).toOpaque())
+        return copy
     }
 
     static func channels(in sample: CFDictionary) -> [CFDictionary] {

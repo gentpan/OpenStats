@@ -5,7 +5,7 @@ import SwiftUI
 /// 历史：回看最近 1 小时、24 小时、7 天的 CPU、内存、网络、GPU、温度与功耗。鼠标移到图上查看某一时刻
 struct HistoryPage: View {
     @Environment(AppModel.self) private var model
-    @State private var hoverDate: Date?
+    @State private var hover = HistoryHover()
     @State private var confirmingClear = false
 
     var body: some View {
@@ -21,11 +21,7 @@ struct HistoryPage: View {
                                  options: HistoryRecorder.Range.allCases.map { ($0, $0.title) })
                     .frame(width: DS.Size.sidebarWidth + DS.Space.s16)
                 Spacer()
-                Text(verbatim: hoverDate.map { "\($0.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: L10n.locale)))" }
-                     ?? (points.isEmpty ? "" : tr("每点 \(bucketTitle(history.range))")))
-                    .dsFont(.xs)
-                    .foregroundStyle(DS.Palette.textSecondary)
-                    .monospacedDigit()
+                HoverDateText(hover: hover, fallback: points.isEmpty ? "" : tr("每点 \(bucketTitle(history.range))"))
             }
 
             if !settings.historyEnabled {
@@ -41,32 +37,32 @@ struct HistoryPage: View {
                         .foregroundStyle(DS.Palette.textSecondary)
                 }
             } else {
-                HistoryChartCard(icon: "cpu", title: "CPU", points: points, start: start, end: end, hoverDate: $hoverDate,
+                HistoryChartCard(icon: "cpu", title: "CPU", points: points, start: start, end: end, hover: hover,
                                  series: [.init(label: tr("平均"), color: DS.Palette.primary, value: \.cpu),
                                           .init(label: tr("峰值"), color: DS.Palette.primary.opacity(0.35), value: \.cpuMax, filled: false)],
                                  maxValue: 1, format: { Format.percent($0) })
-                HistoryChartCard(icon: "memorychip", title: tr("内存"), points: points, start: start, end: end, hoverDate: $hoverDate,
+                HistoryChartCard(icon: "memorychip", title: tr("内存"), points: points, start: start, end: end, hover: hover,
                                  series: [.init(label: tr("已用"), color: DS.Palette.primary, value: \.memory)],
                                  maxValue: 1, format: { Format.percent($0) },
                                  note: criticalNote(points))
-                HistoryChartCard(icon: "network", title: tr("网络"), points: points, start: start, end: end, hoverDate: $hoverDate,
+                HistoryChartCard(icon: "network", title: tr("网络"), points: points, start: start, end: end, hover: hover,
                                  series: [.init(label: tr("下载"), color: Color(nsColor: DS.NetworkPalette.download), value: \.download),
                                           .init(label: tr("上传"), color: Color(nsColor: DS.NetworkPalette.upload), value: \.upload, filled: false)],
                                  maxValue: nil, format: { Format.menuBarRate($0) })
-                HistoryChartCard(icon: "square.3.layers.3d", title: "GPU", points: points, start: start, end: end, hoverDate: $hoverDate,
+                HistoryChartCard(icon: "square.3.layers.3d", title: "GPU", points: points, start: start, end: end, hover: hover,
                                  series: [.init(label: tr("占用"), color: DS.Palette.primary, value: \.gpu)],
                                  maxValue: 1, format: { Format.percent($0) },
                                  emptyNote: tr("只在菜单栏显示 GPU 或打开 GPU 相关页面时记录"))
-                HistoryChartCard(icon: "thermometer.medium", title: tr("CPU 温度"), points: points, start: start, end: end, hoverDate: $hoverDate,
+                HistoryChartCard(icon: "thermometer.medium", title: tr("CPU 温度"), points: points, start: start, end: end, hover: hover,
                                  series: [.init(label: tr("最高"), color: DS.Palette.warning, value: \.temperature)],
                                  maxValue: nil, format: { Format.temperature($0, fahrenheit: settings.useFahrenheit) },
                                  emptyNote: tr("只在菜单栏显示温度、开启过热通知或打开温度页面时记录"))
-                HistoryChartCard(icon: "bolt", title: tr("整机功耗"), points: points, start: start, end: end, hoverDate: $hoverDate,
+                HistoryChartCard(icon: "bolt", title: tr("整机功耗"), points: points, start: start, end: end, hover: hover,
                                  series: [.init(label: tr("平均"), color: DS.Palette.warning, value: \.power)],
                                  maxValue: nil, format: { Format.watts($0) },
                                  emptyNote: tr("只在打开温度与风扇页面时记录"))
                 if model.store.battery != nil {
-                    HistoryChartCard(icon: "battery.75", title: tr("电池电量"), points: points, start: start, end: end, hoverDate: $hoverDate,
+                    HistoryChartCard(icon: "battery.75", title: tr("电池电量"), points: points, start: start, end: end, hover: hover,
                                      series: [.init(label: tr("电量"), color: DS.Palette.success, value: \.battery)],
                                      maxValue: 1, format: { Format.percent($0) },
                                      emptyNote: tr("只在菜单栏显示电池或打开电池页面时记录"))
@@ -93,7 +89,7 @@ struct HistoryPage: View {
             history.load()
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(60))
-                if hoverDate == nil { history.load() }
+                if hover.date == nil { history.load() }
             }
         }
         .confirmationDialog(tr("清除全部历史记录？"), isPresented: $confirmingClear, titleVisibility: .visible) {
@@ -114,6 +110,26 @@ struct HistoryPage: View {
     }
 }
 
+/// 鼠标在历史图上指着的时刻。单独放在一个可观察对象里，只有光标、顶部时间与各卡片的读数读它，
+/// 移动鼠标时整页和曲线都不重算
+@MainActor @Observable
+final class HistoryHover {
+    var date: Date?
+}
+
+/// 顶部右侧：指着某一时刻时显示它，否则显示每点代表多长时间
+private struct HoverDateText: View {
+    let hover: HistoryHover
+    let fallback: String
+
+    var body: some View {
+        Text(verbatim: hover.date.map { $0.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: L10n.locale)) } ?? fallback)
+            .dsFont(.xs)
+            .foregroundStyle(DS.Palette.textSecondary)
+            .monospacedDigit()
+    }
+}
+
 private struct HistoryChartCard: View {
     struct Series {
         let label: String
@@ -127,7 +143,7 @@ private struct HistoryChartCard: View {
     let points: [HistoryPoint]
     let start: Date
     let end: Date
-    @Binding var hoverDate: Date?
+    let hover: HistoryHover
     let series: [Series]
     let maxValue: Double?
     let format: (Double) -> String
@@ -136,27 +152,13 @@ private struct HistoryChartCard: View {
 
     var body: some View {
         let hasData = series.contains { item in points.contains { $0[keyPath: item.value] != nil } }
-        let primary = series[0]
-        let values = points.compactMap { $0[keyPath: primary.value] }
-        let peakPoint = points.max { ($0[keyPath: primary.value] ?? -1) < ($1[keyPath: primary.value] ?? -1) }
 
         Card {
             CardHeader(icon: icon, title: title) {
-                if let hover = hoverPoint {
-                    HStack(spacing: DS.Space.s3) {
-                        ForEach(series.indices, id: \.self) { index in
-                            legend(series[index], value: hover[keyPath: series[index].value])
-                        }
-                    }
-                } else if !values.isEmpty {
-                    Text(verbatim: tr("平均 \(format(values.reduce(0, +) / Double(values.count))) · 峰值 \(format(values.max() ?? 0))\(peakPoint.map { tr("（\(Self.moment($0.date))）") } ?? "")"))
-                        .dsFont(.xs)
-                        .foregroundStyle(DS.Palette.textTertiary)
-                        .monospacedDigit()
-                }
+                HistoryCardReading(points: points, series: series, format: format, summary: summary, hover: hover)
             }
             if hasData {
-                TimeSeriesChart(points: points, start: start, end: end, series: series, maxValue: maxValue, hoverDate: $hoverDate)
+                TimeSeriesChart(points: points, start: start, end: end, series: series, maxValue: maxValue, hover: hover)
                     .frame(height: DS.Size.chartHeight * 2)
                 HStack {
                     Text(verbatim: Self.moment(start))
@@ -177,19 +179,48 @@ private struct HistoryChartCard: View {
         }
     }
 
+    /// 没指着图时显示的平均与峰值
+    private var summary: String? {
+        let primary = series[0]
+        let values = points.compactMap { $0[keyPath: primary.value] }
+        guard !values.isEmpty else { return nil }
+        let peakPoint = points.max { ($0[keyPath: primary.value] ?? -1) < ($1[keyPath: primary.value] ?? -1) }
+        return tr("平均 \(format(values.reduce(0, +) / Double(values.count))) · 峰值 \(format(values.max() ?? 0))\(peakPoint.map { tr("（\(Self.moment($0.date))）") } ?? "")")
+    }
+
     /// 同一天只显示时间，跨天带上日期
     static func moment(_ date: Date) -> String {
         Calendar.current.isDateInToday(date)
             ? date.formatted(Date.FormatStyle(date: .omitted, time: .shortened, locale: L10n.locale))
             : date.formatted(.dateTime.locale(L10n.locale).month(.abbreviated).day().hour().minute())
     }
+}
 
-    private var hoverPoint: HistoryPoint? {
-        guard let hoverDate else { return nil }
-        return points.min { abs($0.date.timeIntervalSince(hoverDate)) < abs($1.date.timeIntervalSince(hoverDate)) }
+/// 卡片右上角：指着某一时刻时显示那一点的各项读数，否则显示平均与峰值
+private struct HistoryCardReading: View {
+    let points: [HistoryPoint]
+    let series: [HistoryChartCard.Series]
+    let format: (Double) -> String
+    let summary: String?
+    let hover: HistoryHover
+
+    var body: some View {
+        if let date = hover.date,
+           let point = points.min(by: { abs($0.date.timeIntervalSince(date)) < abs($1.date.timeIntervalSince(date)) }) {
+            HStack(spacing: DS.Space.s3) {
+                ForEach(series.indices, id: \.self) { index in
+                    legend(series[index], value: point[keyPath: series[index].value])
+                }
+            }
+        } else if let summary {
+            Text(verbatim: summary)
+                .dsFont(.xs)
+                .foregroundStyle(DS.Palette.textTertiary)
+                .monospacedDigit()
+        }
     }
 
-    private func legend(_ item: Series, value: Double?) -> some View {
+    private func legend(_ item: HistoryChartCard.Series, value: Double?) -> some View {
         HStack(spacing: DS.Space.s1) {
             Circle().fill(item.color).frame(width: DS.Space.s2, height: DS.Space.s2)
             Text(verbatim: "\(item.label) \(value.map(format) ?? "—")")
@@ -200,90 +231,150 @@ private struct HistoryChartCard: View {
     }
 }
 
-/// 按时间定位的折线图：相邻两点间隔超过 3 个时间桶视为没有记录（睡眠、关机），线条断开
+/// 按时间定位的折线图：相邻两点间隔超过 3 个时间桶视为没有记录（睡眠、关机），线条断开。
+/// 曲线用形状画（Canvas 一重绘就占住约 190 MB 图形内存），坐标先归一化到 0…1，与尺寸无关；
+/// 鼠标光标是单独的一层，移动鼠标时曲线不重画
 private struct TimeSeriesChart: View {
     let points: [HistoryPoint]
     let start: Date
     let end: Date
     let series: [HistoryChartCard.Series]
     let maxValue: Double?
-    @Binding var hoverDate: Date?
+    let hover: HistoryHover
+
+    /// 一条曲线的若干段，点的坐标都在 0…1 之间（y 向下）
+    private struct Layer {
+        let color: Color
+        let filled: Bool
+        let segments: [[CGPoint]]
+    }
 
     var body: some View {
+        let span = max(1, end.timeIntervalSince(start))
+        let bucket = points.count > 1 ? Self.medianGap(points) : 60
+        let peak = maxValue ?? max(series.flatMap { item in points.compactMap { $0[keyPath: item.value] } }.max() ?? 0, 1) * 1.15
+        let layers = series.reversed().map { item in
+            Layer(color: item.color, filled: item.filled,
+                  segments: Self.segments(points, value: item.value, start: start, span: span, bucket: bucket, peak: peak))
+        }
+        // 内存压力严重的时段：起点与宽度占整段时间的比例
+        let showsPressure = series.contains { $0.value == \HistoryPoint.memory }
+        let pressure = showsPressure
+            ? points.filter { ($0.pressure ?? 0) >= MemoryPressure.critical.rawValue }.map { CGFloat($0.date.timeIntervalSince(start) / span) }
+            : []
+        let pressureWidth = CGFloat(bucket / span)
+
         GeometryReader { proxy in
-            let size = proxy.size
-            let span = max(1, end.timeIntervalSince(start))
-            let bucket = points.count > 1 ? medianGap : 60
-            let peak = maxValue ?? max(series.flatMap { item in points.compactMap { $0[keyPath: item.value] } }.max() ?? 0, 1) * 1.15
-
-            Canvas { context, _ in
-                func x(_ date: Date) -> CGFloat { CGFloat(date.timeIntervalSince(start) / span) * size.width }
-                func y(_ value: Double) -> CGFloat { size.height - CGFloat(min(1, value / peak)) * size.height }
-
+            ZStack {
                 // 网格：上中下三条
-                for fraction in [0.0, 0.5, 1.0] {
+                ChartPath { size in
                     var grid = Path()
-                    let lineY = size.height * fraction
-                    grid.move(to: CGPoint(x: 0, y: lineY))
-                    grid.addLine(to: CGPoint(x: size.width, y: lineY))
-                    context.stroke(grid, with: .color(DS.Palette.track), lineWidth: DS.Size.stroke)
-                }
-
-                // 内存压力严重的时段
-                for point in points where (point.pressure ?? 0) >= MemoryPressure.critical.rawValue && series.contains(where: { $0.value == \HistoryPoint.memory }) {
-                    let rect = CGRect(x: x(point.date), y: 0, width: max(DS.Size.stroke * 2, size.width * CGFloat(bucket / span)), height: size.height)
-                    context.fill(Path(rect), with: .color(DS.Palette.error.opacity(0.15)))
-                }
-
-                for item in series.reversed() {
-                    var segments: [[CGPoint]] = []
-                    var previous: Date?
-                    for point in points {
-                        guard let value = point[keyPath: item.value] else { previous = nil; continue }
-                        let location = CGPoint(x: x(point.date), y: y(value))
-                        if let previous, point.date.timeIntervalSince(previous) <= bucket * 3, !segments.isEmpty {
-                            segments[segments.count - 1].append(location)
-                        } else {
-                            segments.append([location])
-                        }
-                        previous = point.date
+                    for fraction in [0.0, 0.5, 1.0] {
+                        grid.move(to: CGPoint(x: 0, y: size.height * fraction))
+                        grid.addLine(to: CGPoint(x: size.width, y: size.height * fraction))
                     }
-                    for segment in segments {
-                        var line = Path()
-                        line.addLines(segment.count == 1 ? [segment[0], CGPoint(x: segment[0].x + DS.Size.stroke, y: segment[0].y)] : segment)
-                        if item.filled, let first = segment.first, let last = segment.last {
-                            var area = line
-                            area.addLine(to: CGPoint(x: last.x, y: size.height))
-                            area.addLine(to: CGPoint(x: first.x, y: size.height))
-                            area.closeSubpath()
-                            context.fill(area, with: .color(item.color.opacity(0.12)))
+                    return grid
+                }
+                .stroke(DS.Palette.track, lineWidth: DS.Size.stroke)
+
+                if !pressure.isEmpty {
+                    ChartPath { size in
+                        var path = Path()
+                        for x in pressure {
+                            path.addRect(CGRect(x: x * size.width, y: 0, width: max(DS.Size.stroke * 2, size.width * pressureWidth), height: size.height))
                         }
-                        context.stroke(line, with: .color(item.color), style: StrokeStyle(lineWidth: DS.Size.chartLine, lineJoin: .round))
+                        return path
                     }
+                    .fill(DS.Palette.error.opacity(0.15))
                 }
 
-                if let hoverDate {
-                    var cursor = Path()
-                    cursor.move(to: CGPoint(x: x(hoverDate), y: 0))
-                    cursor.addLine(to: CGPoint(x: x(hoverDate), y: size.height))
-                    context.stroke(cursor, with: .color(DS.Palette.textTertiary), lineWidth: DS.Size.stroke)
+                ForEach(layers.indices, id: \.self) { index in
+                    let layer = layers[index]
+                    let segments = layer.segments
+                    if layer.filled {
+                        ChartPath { Self.areaPath(segments, in: $0) }.fill(layer.color.opacity(0.12))
+                    }
+                    ChartPath { Self.linePath(segments, in: $0) }
+                        .stroke(layer.color, style: StrokeStyle(lineWidth: DS.Size.chartLine, lineJoin: .round))
                 }
+
+                HistoryCursor(hover: hover, start: start, span: span)
             }
             .contentShape(Rectangle())
             .onContinuousHover { phase in
                 switch phase {
                 case .active(let location):
-                    hoverDate = start.addingTimeInterval(span * Double(max(0, min(1, location.x / max(1, size.width)))))
+                    hover.date = start.addingTimeInterval(span * Double(max(0, min(1, location.x / max(1, proxy.size.width)))))
                 case .ended:
-                    hoverDate = nil
+                    hover.date = nil
                 }
             }
         }
     }
 
     /// 相邻点的典型间隔，即时间桶大小
-    private var medianGap: TimeInterval {
+    private static func medianGap(_ points: [HistoryPoint]) -> TimeInterval {
         let gaps = zip(points.dropFirst(), points).map { $0.date.timeIntervalSince($1.date) }.sorted()
         return gaps.isEmpty ? 60 : gaps[gaps.count / 2]
+    }
+
+    /// 某一项的取值按时间断开成若干段，坐标归一化到 0…1
+    private static func segments(_ points: [HistoryPoint], value: KeyPath<HistoryPoint, Double?>, start: Date, span: TimeInterval,
+                                 bucket: TimeInterval, peak: Double) -> [[CGPoint]] {
+        var segments: [[CGPoint]] = []
+        var previous: Date?
+        for point in points {
+            guard let reading = point[keyPath: value] else { previous = nil; continue }
+            let location = CGPoint(x: point.date.timeIntervalSince(start) / span, y: 1 - min(1, reading / peak))
+            if let previous, point.date.timeIntervalSince(previous) <= bucket * 3, !segments.isEmpty {
+                segments[segments.count - 1].append(location)
+            } else {
+                segments.append([location])
+            }
+            previous = point.date
+        }
+        return segments
+    }
+
+    nonisolated private static func linePath(_ segments: [[CGPoint]], in size: CGSize) -> Path {
+        var path = Path()
+        for segment in segments {
+            let points = segment.map { CGPoint(x: $0.x * size.width, y: $0.y * size.height) }
+            path.addLines(points.count == 1 ? [points[0], CGPoint(x: points[0].x + DS.Size.stroke, y: points[0].y)] : points)
+        }
+        return path
+    }
+
+    nonisolated private static func areaPath(_ segments: [[CGPoint]], in size: CGSize) -> Path {
+        var path = Path()
+        for segment in segments {
+            guard let first = segment.first, let last = segment.last else { continue }
+            var piece = Path()
+            piece.addLines(segment.map { CGPoint(x: $0.x * size.width, y: $0.y * size.height) })
+            piece.addLine(to: CGPoint(x: last.x * size.width, y: size.height))
+            piece.addLine(to: CGPoint(x: first.x * size.width, y: size.height))
+            piece.closeSubpath()
+            path.addPath(piece)
+        }
+        return path
+    }
+}
+
+/// 鼠标指着的时刻画一条竖线；只有这一层随鼠标移动重画
+private struct HistoryCursor: View {
+    let hover: HistoryHover
+    let start: Date
+    let span: TimeInterval
+
+    var body: some View {
+        if let date = hover.date {
+            GeometryReader { proxy in
+                Rectangle()
+                    .fill(DS.Palette.textTertiary)
+                    .frame(width: DS.Size.stroke)
+                    .offset(x: CGFloat(date.timeIntervalSince(start) / span) * proxy.size.width - DS.Size.stroke / 2)
+            }
+            .allowsHitTesting(false)
+        }
     }
 }

@@ -12,6 +12,9 @@ final class MenuBarController: NSObject {
     /// 合并模式的面板：状态总览与各项详情
     private var combinedPanel: StatusPanel?
     private var layoutSignature: [MenuBarItem?] = []
+    /// 每个图标上一次画出来的位图：这次画得一模一样就不再赋图。
+    /// 赋图会让系统把每块屏幕菜单栏上的这个图标都重绘一遍，是空闲时 CPU 的主要开销
+    private var lastFingerprints: [ObjectIdentifier: Data] = [:]
 
     /// 开发调试：启动后展开并固定某个弹窗
     var pinsNextPopover = false
@@ -44,6 +47,7 @@ final class MenuBarController: NSObject {
             return defaults.object(forKey: key).map { (key, $0) }
         }
         for entry in items { NSStatusBar.system.removeStatusItem(entry.statusItem) }
+        lastFingerprints = [:]
         for (key, value) in positions { defaults.set(value, forKey: key) }
         items = []
         panels = panels.filter { key, _ in signature.contains(key) }
@@ -80,14 +84,22 @@ final class MenuBarController: NSObject {
             var entryReading = reading
             // 防休眠标记只画在最左侧的图标里
             entryReading.keepAwake = reading.keepAwake && index == 0
-            entry.statusItem.button?.image = MenuBarRenderer.image(reading: entryReading,
-                                                                  items: itemsToDraw,
-                                                                  style: { settings.style(for: $0) },
-                                                                  networkStyle: settings.networkStyle,
-                                                                  colorizeHighLoad: settings.colorizeHighLoad,
-                                                                  fahrenheit: settings.useFahrenheit,
-                                                                  itemGap: CGFloat(settings.menuBarItemSpacing))
-            entry.statusItem.button?.toolTip = itemsToDraw.isEmpty ? "OpenStats" : reading.tooltip(items: itemsToDraw, fahrenheit: settings.useFahrenheit)
+            guard let button = entry.statusItem.button else { continue }
+            let image = MenuBarRenderer.image(reading: entryReading,
+                                              items: itemsToDraw,
+                                              style: { settings.style(for: $0) },
+                                              networkStyle: settings.networkStyle,
+                                              colorizeHighLoad: settings.colorizeHighLoad,
+                                              fahrenheit: settings.useFahrenheit,
+                                              itemGap: CGFloat(settings.menuBarItemSpacing))
+            let key = ObjectIdentifier(entry.statusItem)
+            let fingerprint = MenuBarRenderer.fingerprint(of: image)
+            if fingerprint == nil || fingerprint != lastFingerprints[key] || button.image == nil {
+                button.image = image
+                lastFingerprints[key] = fingerprint
+            }
+            let toolTip = itemsToDraw.isEmpty ? "OpenStats" : reading.tooltip(items: itemsToDraw, fahrenheit: settings.useFahrenheit)
+            if button.toolTip != toolTip { button.toolTip = toolTip }
         }
     }
 

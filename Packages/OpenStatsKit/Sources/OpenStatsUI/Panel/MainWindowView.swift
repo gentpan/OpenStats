@@ -153,15 +153,16 @@ private struct MainSidebar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            // 窗口矮时导航自己滚动，底部按钮始终可见；上下边缘渐隐，滚到一半的行淡出，而不是被硬切成半行
+            // 窗口矮时导航自己滚动，底部按钮始终可见；上下边缘渐隐，滚到一半的行淡出，而不是被硬切成半行。
+            // 渐隐已经说明还能滚，滚动时也不显示滚动条
             if isSnapshot {
                 navigation
             } else {
                 ScrollView {
                     navigation
                         .padding(.bottom, Self.edgeFade)
-                        .overlayScrollers()
                 }
+                .scrollIndicators(.never)
                 .scrollBounceBehavior(.basedOnSize)
                 .mask(ScrollEdgeFade(height: Self.edgeFade))
             }

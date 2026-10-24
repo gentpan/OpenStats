@@ -49,9 +49,11 @@ public final class NetworkController {
     /// 正在运行的探测是否为前台频率；前后台切换时重启循环，不必等完后台的长间隔
     @ObservationIgnored private var probingForeground: Bool?
 
-    /// 网络详情打开时每秒探测一次；详情关闭、只在菜单栏显示网速时低频探测
+    /// 网络详情打开时每秒探测一次；详情关闭、只在菜单栏显示网速时低频探测。
+    /// 后台的结果只用来给网络详情预先填上最近的连接情况（断网提醒另有系统的网络状态监听），
+    /// 每分钟一次足够，也少唤醒 Wi‑Fi
     static let foregroundProbeSeconds = 1
-    static let backgroundProbeSeconds = 10
+    static let backgroundProbeSeconds = 60
 
     /// 上次查到的公网 IP 信息：点开弹窗时先显示它，只有超过 7 天或公网 IP 变了才重新查归属地
     private struct PublicCache: Codable {
@@ -61,7 +63,8 @@ public final class NetworkController {
     static let geoCacheLifetime: TimeInterval = 7 * 24 * 60 * 60
     /// 第 4 版起只有 cleanip.io 一个数据源；第 5 版起国家也取 cleanip.io 的，第 4 版缓存里可能是 Cloudflare 的国家拼 cleanip.io 的城市，不再读取
     private static let cacheKey = "publicAddressCache5"
-    private static let staleCacheKeys = ["publicAddressCache4"]
+    /// 旧版本留下的缓存，启动时删掉
+    private static let staleCacheKeys = ["publicAddressCache", "publicAddressCache3", "publicAddressCache4"]
 
     /// 用户按过“重置统计”后的累计流量基线：界面显示 当前累计 − 基线。
     /// 随开机时间一起保存，重启后系统计数器归零、基线作废，自动回到开机后累计
@@ -123,7 +126,7 @@ public final class NetworkController {
 
     // MARK: 生命周期
 
-    /// 网络详情打开时按设置的间隔探测；只在菜单栏显示网络项时按 10 秒低频探测（可在设置里关闭），其余时间停止
+    /// 网络详情打开时每秒探测；只在菜单栏显示网络项时每分钟低频探测（可在设置里关闭），其余时间停止
     func setVisibility(inMenuBar: Bool, detailVisible: Bool) {
         self.inMenuBar = inMenuBar
         wantsDetail = detailVisible
@@ -317,7 +320,7 @@ public final class NetworkController {
                 self.probes.append(ProbeSample(latency: latency))
                 // 后台探测允许系统合并唤醒，更省电
                 try? await Task.sleep(until: started + .seconds(interval),
-                                      tolerance: foreground ? .milliseconds(100) : .seconds(2), clock: clock)
+                                      tolerance: foreground ? .milliseconds(100) : .seconds(10), clock: clock)
             }
         }
     }

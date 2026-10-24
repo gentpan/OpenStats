@@ -108,15 +108,16 @@ public final class MetricsStore {
         if let battery = snapshot.battery { self.battery = battery }
         if let processes = snapshot.processes {
             self.processes = processes
-            var activity: [String: Double] = [:]
+            // 磁盘排行按进程表的行（同一应用的进程合成一行）累加读写，行号规则与 ProcessRowModel.id 一致。
+            // 每次采样都要算，直接累加，不必为每一行建完整的行数据（应用名、用户名……）
             var reads: [String: Double] = [:]
             var writes: [String: Double] = [:]
-            for row in ProcessRowModel.grouped(processes) {
-                activity[row.id] = row.disk.map { $0.read + $0.write } ?? 0
-                reads[row.id] = row.disk?.read ?? 0
-                writes[row.id] = row.disk?.write ?? 0
+            for process in processes {
+                let id = ProcessRowModel.id(for: process)
+                reads[id, default: 0] += process.diskRead ?? 0
+                writes[id, default: 0] += process.diskWrite ?? 0
             }
-            diskRanking.update(activity)
+            diskRanking.update(reads.merging(writes, uniquingKeysWith: +))
             diskReadAverage.update(reads)
             diskWriteAverage.update(writes)
         }

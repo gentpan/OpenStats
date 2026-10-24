@@ -7,6 +7,9 @@ import SwiftUI
 final class UpdateWindowController: NSObject, NSWindowDelegate {
     private let model: AppModel
     private var window: NSWindow?
+    private lazy var content = WindowContent { [weak self, model] in
+        NSHostingView(rootView: UpdatePromptView { self?.close() }.environment(model))
+    }
 
     init(model: AppModel) {
         self.model = model
@@ -16,6 +19,7 @@ final class UpdateWindowController: NSObject, NSWindowDelegate {
     func show() {
         let window = self.window ?? makeWindow()
         self.window = window
+        if content.install(in: window), let view = window.contentView { window.setContentSize(view.fittingSize) }
         if !window.isVisible { window.center() }
         NSApp.activate()
         window.makeKeyAndOrderFront(nil)
@@ -28,10 +32,15 @@ final class UpdateWindowController: NSObject, NSWindowDelegate {
         WindowChrome.apply(to: window)
         window.isReleasedWhenClosed = false
         window.delegate = self
-        let host = NSHostingView(rootView: UpdatePromptView { [weak window] in window?.performClose(nil) }.environment(model))
-        window.contentView = host
-        window.setContentSize(host.fittingSize)
         return window
+    }
+
+    private func close() {
+        window?.performClose(nil)
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        if let window { content.release(from: window) }
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {

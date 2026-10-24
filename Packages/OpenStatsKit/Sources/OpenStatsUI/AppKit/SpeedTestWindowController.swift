@@ -7,6 +7,7 @@ import SwiftUI
 final class SpeedTestWindowController: NSObject, NSWindowDelegate {
     private let model: AppModel
     private var window: NSWindow?
+    private lazy var content = WindowContent { [model] in NSHostingView(rootView: SpeedTestWindowView().environment(model)) }
     var onVisibilityChange: ((Bool) -> Void)?
 
     init(model: AppModel) {
@@ -20,6 +21,7 @@ final class SpeedTestWindowController: NSObject, NSWindowDelegate {
     func show() {
         let window = self.window ?? makeWindow()
         self.window = window
+        content.install(in: window)
         if !isVisible {
             isVisible = true
             model.speedTest.windowDidOpen()
@@ -39,7 +41,6 @@ final class SpeedTestWindowController: NSObject, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.contentMinSize = NSSize(width: DS.Size.panelWidth - DS.Space.s16, height: DS.Size.panelMinHeight * 1.5)
-        window.contentView = NSHostingView(rootView: SpeedTestWindowView().environment(model))
         // 第一次打开居中，之后沿用用户调整过的位置与大小
         if !window.setFrameUsingName("OpenStatsSpeedTestWindow") { window.center() }
         window.setFrameAutosaveName("OpenStatsSpeedTestWindow")
@@ -50,5 +51,12 @@ final class SpeedTestWindowController: NSObject, NSWindowDelegate {
         isVisible = false
         model.speedTest.windowDidClose()
         onVisibilityChange?(false)
+        if let window { content.release(from: window) }
+    }
+
+    /// 被完全挡住、在别的桌面或应用被隐藏时暂停轮询，重新露出来时恢复
+    func windowDidChangeOcclusionState(_ notification: Notification) {
+        guard isVisible, let window else { return }
+        model.speedTest.windowOcclusionChanged(visible: window.occlusionState.contains(.visible))
     }
 }

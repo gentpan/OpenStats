@@ -280,3 +280,37 @@ struct LiveSamplerTests {
         #expect(parts.system + parts.data + parts.virtualMemory + parts.other + parts.purgeable + parts.free == 1996 * gb)
     }
 }
+
+@Suite("磁盘可清除空间")
+struct DiskPurgeableTests {
+    /// 5 分钟内沿用上次统计的可清除空间，可用空间仍按当前的普通可用空间算
+    @Test func reusesPurgeableWithinLifetime() throws {
+        let now = Date()
+        let fresh = try #require(DiskSampler.sample(fresh: true, now: now))
+        let cached = try #require(DiskSampler.sample(now: now.addingTimeInterval(60)))
+        #expect(cached.purgeable == fresh.purgeable)
+        #expect(cached.available >= cached.purgeable)
+    }
+}
+
+@Suite("整机 CPU 滴答")
+struct CPUTicksTests {
+    @Test func usageBetweenReadings() throws {
+        let before = CPUTicks(user: 100, system: 50, idle: 1000, nice: 0, bootTime: 1)
+        let after = CPUTicks(user: 400, system: 150, idle: 1600, nice: 0, bootTime: 1)
+        #expect(try #require(after.usage(since: before)) == 0.4)
+    }
+
+    @Test func handlesWrapRebootAndShortGaps() throws {
+        // 32 位计数回绕一次仍能算对
+        let before = CPUTicks(user: UInt32.max - 99, system: 0, idle: 0, nice: 0, bootTime: 1)
+        let after = CPUTicks(user: 100, system: 0, idle: 200, nice: 0, bootTime: 1)
+        #expect(try #require(after.usage(since: before)) == 0.5)
+        // 重启后计数归零，不能与重启前相减
+        #expect(CPUTicks(user: 10, system: 0, idle: 900, nice: 0, bootTime: 2).usage(since: before) == nil)
+        // 间隔太短，读数没有意义
+        #expect(CPUTicks(user: 10, system: 0, idle: 20, nice: 0, bootTime: 1)
+                    .usage(since: CPUTicks(user: 0, system: 0, idle: 0, nice: 0, bootTime: 1)) == nil)
+        #expect(CPUTicks.read() != nil)
+    }
+}

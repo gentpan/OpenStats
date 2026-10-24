@@ -159,9 +159,12 @@ final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProto
     private func connectionClosed(_ id: ObjectIdentifier) {
         connections.remove(id)
         guard connections.isEmpty else { return }
-        // 应用已退出或崩溃：把系统恢复到默认状态
-        log.info("客户端全部断开，恢复风扇与睡眠设置")
-        _ = resetFans()
+        // 应用已退出、崩溃，或用不着辅助工具时主动断开：只恢复本工具改过的设置。
+        // 风扇不是本工具设成手动的就不碰，免得把其他风扇控制软件的设置也改回自动
+        if !manualFans.isEmpty || sleepDisabledByHelper {
+            log.info("客户端全部断开，恢复风扇与睡眠设置")
+        }
+        if !manualFans.isEmpty { _ = resetFans() }
         if sleepDisabledByHelper { _ = applySleepDisabled(false) }
         scheduleIdleExit()
     }

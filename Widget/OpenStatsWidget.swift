@@ -3,7 +3,7 @@ import SwiftUI
 import WidgetKit
 
 // 桌面小组件：在自己的沙盒进程里直接读取 CPU、内存、磁盘与电池，不依赖主应用是否运行。
-// 刷新频率由系统决定（通常每 5 到 15 分钟），适合“看一眼”，实时数据仍以菜单栏为准。
+// 刷新频率由系统决定（请求每 15 分钟，系统还会按预算限流），适合“看一眼”，实时数据仍以菜单栏为准。
 
 struct SystemEntry: TimelineEntry {
     let date: Date
@@ -28,21 +28,37 @@ struct SystemProvider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<SystemEntry>) -> Void) {
         let entry = Self.read()
-        completion(Timeline(entries: [entry], policy: .after(entry.date.addingTimeInterval(5 * 60))))
+        completion(Timeline(entries: [entry], policy: .after(entry.date.addingTimeInterval(15 * 60))))
     }
 
-    /// CPU 占用需要两次采样，间隔半秒
     static func read() -> SystemEntry {
-        var sampler = CPUSampler()
-        _ = sampler.sample()
-        Thread.sleep(forTimeInterval: 0.5)
-        let cpu = sampler.sample()
         let memory = MemorySampler().sample()
         let disk = DiskSampler.sample()
         let battery = BatterySampler.sample()
-        return SystemEntry(date: .now, cpu: cpu?.total, memory: memory?.usedFraction, memoryPressure: memory?.pressure,
+        return SystemEntry(date: .now, cpu: cpuUsage(), memory: memory?.usedFraction, memoryPressure: memory?.pressure,
                            disk: disk?.usedFraction, diskFree: disk?.available,
                            battery: battery?.level, charging: battery?.isCharging ?? false)
+    }
+
+    private static let ticksKey = "cpuTicks"
+
+    /// 与上次刷新之间的平均 CPU 占用：每次刷新记下整机累计的 CPU 时钟，相减即可，不用停下来等。
+    /// 第一次刷新、重启之后或离上次太近时没法相减，退回间隔半秒的两次采样
+    private static func cpuUsage() -> Double? {
+        let defaults = UserDefaults.standard
+        let current = CPUTicks.read()
+        defer {
+            if let current, let data = try? JSONEncoder().encode(current) { defaults.set(data, forKey: ticksKey) }
+        }
+        if let current, let data = defaults.data(forKey: ticksKey),
+           let previous = try? JSONDecoder().decode(CPUTicks.self, from: data),
+           let usage = current.usage(since: previous) {
+            return usage
+        }
+        var sampler = CPUSampler()
+        _ = sampler.sample()
+        Thread.sleep(forTimeInterval: 0.5)
+        return sampler.sample()?.total
     }
 }
 

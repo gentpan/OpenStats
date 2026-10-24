@@ -223,6 +223,11 @@ struct ProcessRowModel: Identifiable {
     let representative: ProcessUsage
     let processes: [ProcessUsage]
 
+    /// 行号：属于某个应用的进程合成一行，按应用包路径；其余进程各自一行，按 PID
+    static func id(for process: ProcessUsage) -> String {
+        process.appBundlePath.map { "app-\($0)" } ?? "pid-\(process.pid)"
+    }
+
     @MainActor
     init(process: ProcessUsage) {
         id = "pid-\(process.pid)"
@@ -588,13 +593,16 @@ private struct ProcessExplanationCard: View {
     }
 }
 
-/// 进程图标缓存：只保留 40px 小位图，避免每次刷新解码系统图标的全部分辨率
+/// 进程图标缓存：每个图标画成一张 40px 的小位图（20pt、2 倍屏），避免每次刷新解码系统图标的全部分辨率。
+/// 直接向系统图标要 40px 的 CGImage 会拿到 128px 的那一档，所以自己画一遍。最多记 128 个，满了丢掉最久没用的
 @MainActor
 final class AppIconCache {
     static let shared = AppIconCache()
-    private static let pixelSize: CGFloat = DS.Size.iconStandalone * 2
+    private static let pixelSize = Int(DS.Size.iconStandalone * 2)
     private static let limit = 128
     private var cache: [String: CGImage] = [:]
+    /// 最近用过的排在后面
+    private var order: [String] = []
 
     func image(for process: ProcessUsage) -> Image {
         image(bundlePath: process.appBundlePath)
@@ -602,17 +610,36 @@ final class AppIconCache {
 
     func image(bundlePath: String?) -> Image {
         let key = bundlePath ?? "unix-executable"
-        if let cached = cache[key] { return Image(decorative: cached, scale: 2) }
+        if let cached = cache[key] {
+            if order.last != key, let index = order.firstIndex(of: key) {
+                order.remove(at: index)
+                order.append(key)
+            }
+            return Image(decorative: cached, scale: 2)
+        }
 
         let icon = bundlePath.map { NSWorkspace.shared.icon(forFile: $0) }
             ?? NSWorkspace.shared.icon(for: .unixExecutable)
-        var rect = NSRect(x: 0, y: 0, width: Self.pixelSize, height: Self.pixelSize)
-        guard let cgImage = icon.cgImage(forProposedRect: &rect, context: nil, hints: nil) else {
-            return Image(systemName: "app")
+        guard let cgImage = Self.render(icon) else { return Image(systemName: "app") }
+        if cache.count >= Self.limit, !order.isEmpty {
+            cache[order.removeFirst()] = nil
         }
-        if cache.count >= Self.limit { cache.removeAll() }
         cache[key] = cgImage
+        order.append(key)
         return Image(decorative: cgImage, scale: 2)
+    }
+
+    private static func render(_ icon: NSImage) -> CGImage? {
+        let size = pixelSize
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let context = CGContext(data: nil, width: size, height: size, bitsPerComponent: 8, bytesPerRow: 0, space: space,
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        context.interpolationQuality = .high
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: false)
+        icon.draw(in: NSRect(x: 0, y: 0, width: size, height: size))
+        NSGraphicsContext.restoreGraphicsState()
+        return context.makeImage()
     }
 }
 

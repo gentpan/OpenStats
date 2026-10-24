@@ -6,19 +6,53 @@ import Localization
 // MARK: - 磁盘
 
 public enum DiskSampler {
-    public static func sample(volume: URL = URL(fileURLWithPath: "/")) -> DiskUsage? {
-        let keys: Set<URLResourceKey> = [.volumeLocalizedNameKey, .volumeTotalCapacityKey,
-                                         .volumeAvailableCapacityForImportantUsageKey, .volumeAvailableCapacityKey]
+    /// 可清除空间要系统去统计（一次约 7 毫秒 CPU），普通可用空间几乎不花时间。
+    /// 可清除的部分记住 5 分钟，期间可用空间 = 普通可用空间 + 记住的可清除空间，写入文件后仍能马上反映
+    static let purgeableLifetime: TimeInterval = 5 * 60
+    private static let purgeableCache = PurgeableCache()
+
+    /// `fresh` 为真时重新统计可清除空间（磁盘页打开时）
+    public static func sample(volume: URL = URL(fileURLWithPath: "/"), fresh: Bool = false, now: Date = Date()) -> DiskUsage? {
+        let cached = fresh ? nil : purgeableCache.value(for: volume.path, now: now)
+        var keys: Set<URLResourceKey> = [.volumeLocalizedNameKey, .volumeTotalCapacityKey, .volumeAvailableCapacityKey]
+        if cached == nil { keys.insert(.volumeAvailableCapacityForImportantUsageKey) }
         guard let values = try? volume.resourceValues(forKeys: keys),
               let total = values.volumeTotalCapacity else { return nil }
-        // “重要用途可用空间”包含可清除空间，与访达显示一致；减去普通可用空间就是可清除的部分
-        let available = max(0, values.volumeAvailableCapacityForImportantUsage ?? 0)
-        let strict = Int64(values.volumeAvailableCapacity ?? 0)
+        let strict = max(0, Int64(values.volumeAvailableCapacity ?? 0))
+        let purgeable: Int64
+        if let cached {
+            purgeable = cached
+        } else {
+            // “重要用途可用空间”包含可清除空间，与访达显示一致；减去普通可用空间就是可清除的部分
+            let important = max(0, values.volumeAvailableCapacityForImportantUsage ?? 0)
+            purgeable = max(0, important - strict)
+            purgeableCache.store(purgeable, for: volume.path, now: now)
+        }
         var usage = DiskUsage(volumeName: values.volumeLocalizedName ?? tr("磁盘"),
-                              total: UInt64(total), available: UInt64(available),
-                              purgeable: UInt64(max(0, available - strict)))
+                              total: UInt64(total), available: UInt64(strict + purgeable),
+                              purgeable: UInt64(purgeable))
         if volume.path == "/" { usage.breakdown = breakdown(usage) }
         return usage
+    }
+
+    /// 各卷最近一次统计出的可清除空间；应用与小组件里都可能从不同线程读写
+    private final class PurgeableCache: @unchecked Sendable {
+        private let lock = NSLock()
+        private var entries: [String: (bytes: Int64, date: Date)] = [:]
+
+        func value(for path: String, now: Date) -> Int64? {
+            lock.lock()
+            defer { lock.unlock() }
+            guard let entry = entries[path], now.timeIntervalSince(entry.date) < DiskSampler.purgeableLifetime,
+                  now >= entry.date else { return nil }
+            return entry.bytes
+        }
+
+        func store(_ bytes: Int64, for path: String, now: Date) {
+            lock.lock()
+            entries[path] = (bytes, now)
+            lock.unlock()
+        }
     }
 
     /// APFS 下系统卷、数据卷与虚拟内存卷共用一个容器：statfs 对每个卷都只给出整个容器的用量，

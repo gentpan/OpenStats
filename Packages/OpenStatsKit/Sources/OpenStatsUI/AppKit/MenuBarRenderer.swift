@@ -196,6 +196,30 @@ enum MenuBarRenderer {
         return image
     }
 
+    /// 把图按 2 倍像素画成位图，用来判断两次画出来是否一样。固定用浅色外观画：
+    /// 模板图与动态颜色会随菜单栏外观自动变化，比较时不必关心外观
+    static func fingerprint(of image: NSImage) -> Data? {
+        let scale: CGFloat = 2
+        let width = Int(ceil(image.size.width * scale)), height = Int(ceil(image.size.height * scale))
+        guard width > 0, height > 0,
+              let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height,
+                                            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                            colorSpaceName: .deviceRGB, bytesPerRow: width * 4, bitsPerPixel: 32),
+              let context = NSGraphicsContext(bitmapImageRep: bitmap) else { return nil }
+        bitmap.size = image.size
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = context
+        let draw = { image.draw(in: NSRect(origin: .zero, size: image.size)) }
+        if let appearance = NSAppearance(named: .aqua) { appearance.performAsCurrentDrawingAppearance(draw) } else { draw() }
+        context.flushGraphics()
+        NSGraphicsContext.restoreGraphicsState()
+        guard let bytes = bitmap.bitmapData else { return nil }
+        var data = Data(bytes: bytes, count: bitmap.bytesPerRow * height)
+        // 尺寸与是否模板图也算在内：同样的像素换了尺寸或着色方式，也要重新赋图
+        withUnsafeBytes(of: (width, height, image.isTemplate)) { data.append(contentsOf: $0) }
+        return data
+    }
+
     /// 设置页预览：按指定外观绘制到不透明底色上
     static func preview(_ image: NSImage, dark: Bool) -> NSImage {
         let appearance = NSAppearance(named: dark ? .darkAqua : .aqua)

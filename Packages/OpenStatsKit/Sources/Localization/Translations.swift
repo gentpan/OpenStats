@@ -1005,7 +1005,7 @@ npm 缓存	npm Cache
 设置	Settings
 设置 · {}	Settings · {}
 设置…	Settings…
-设置改动后 2 秒内上传；启动、唤醒与每 15 分钟检查一次云端	Changes upload within 2 seconds; the cloud is checked at launch, on wake and every 15 minutes
+设置改动后 2 秒内上传；启动、唤醒、打开本页与每小时检查一次云端	Changes upload within 2 seconds; the cloud is checked at launch, on wake, when this page opens and every hour
 设置风扇目标转速，或恢复系统自动控制	Set fan target speeds, or return them to automatic
 评分由 cleanip.io 提供，点击查看完整报告	Score by cleanip.io. Click to open the full report
 该项目在菜单栏里的实时效果	Live preview of this item in the menu bar

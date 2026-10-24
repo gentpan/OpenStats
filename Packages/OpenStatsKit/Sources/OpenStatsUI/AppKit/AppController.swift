@@ -54,6 +54,11 @@ public final class AppController: NSObject, NSApplicationDelegate {
         }
         model.quit = { NSApp.terminate(nil) }
         model.helper.refreshStatus()
+        // 风扇手动或合盖运行期间与辅助工具保持连接，其余时候用完就断开
+        model.helper.holdsSystemState = { [weak model] in
+            guard let model else { return true }
+            return model.fans.mode != .automatic || model.keepAwake.lidClosedActive
+        }
         Task { await model.helper.verifyVersion() }
         model.helper.onReconnect = { [weak self] in
             Task { [weak self] in
