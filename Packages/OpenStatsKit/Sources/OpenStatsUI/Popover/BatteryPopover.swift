@@ -152,6 +152,13 @@ private struct BatteryHealthSection: View {
                 Text(verbatim: battery.health.map { Format.percent($0) } ?? "—")
                     .foregroundStyle(battery.health.map { $0 < 0.8 ? DS.Palette.warning : DS.Palette.textPrimary } ?? DS.Palette.textPrimary)
             }
+            // 读到系统的值时，健康度跟系统设置一致，我们自己的推算另起一行；读不到时健康度就是推算值，不重复显示
+            if battery.systemHealth != nil, let estimated = battery.estimatedHealth {
+                InfoRow(label: tr("推算健康度")) {
+                    Text(verbatim: Format.percent(estimated))
+                        .foregroundStyle(estimated < 0.8 ? DS.Palette.warning : DS.Palette.textPrimary)
+                }
+            }
             InfoRow(label: tr("循环次数"), text: battery.cycleCount.map { $0.formatted() } ?? "—")
             // 温度与电源已在顶部；这里放顶部没有的电芯读数
             if let full = battery.fullChargeCapacity, let design = battery.designCapacity {
@@ -170,7 +177,9 @@ private struct BatteryHealthSection: View {
                 }
                 .help(tr("电池此刻的电流；接着电源时也可能短暂由电池补电"))
             }
-            Text(tr("健康度是现在充满时的容量与出厂容量之比，低于 80% 时苹果建议更换电池"))
+            Text(battery.systemHealth != nil
+                 ? tr("健康度与“系统设置 › 电池”里的最大容量一致；推算健康度是满充容量与设计容量之比，会随使用小幅浮动。低于 80% 时苹果建议更换电池")
+                 : tr("健康度是现在充满时的容量与出厂容量之比，低于 80% 时苹果建议更换电池"))
                 .dsFont(.xs)
                 .foregroundStyle(DS.Palette.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)

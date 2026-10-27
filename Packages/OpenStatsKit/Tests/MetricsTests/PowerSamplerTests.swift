@@ -82,3 +82,36 @@ import Testing
         #expect(second.map { $0.readRate >= 0 && $0.writeRate >= 0 } ?? true)
     }
 }
+
+@Suite struct SystemBatteryHealthTests {
+    @Test func parsesMaximumCapacity() {
+        let json = """
+        {"SPPowerDataType":[
+          {"_name":"spbattery_information",
+           "sppower_battery_health_info":{"sppower_battery_cycle_count":38,"sppower_battery_health":"Good",
+                                          "sppower_battery_health_maximum_capacity":"100%"}},
+          {"_name":"sppower_information"}]}
+        """
+        #expect(SystemBatteryHealth.parse(Data(json.utf8)) == 1)
+        #expect(SystemBatteryHealth.parse(Data(#"{"SPPowerDataType":[{"sppower_battery_health_info":{"sppower_battery_health_maximum_capacity":"87 %"}}]}"#.utf8)) == 0.87)
+    }
+
+    @Test func missingReadingFallsBack() {
+        // 没有最大容量这一项（如部分 Intel Mac）、读数无效或输出为空时交给估算值
+        #expect(SystemBatteryHealth.parse(Data(#"{"SPPowerDataType":[{"sppower_battery_health_info":{"sppower_battery_health":"Good"}}]}"#.utf8)) == nil)
+        #expect(SystemBatteryHealth.parse(Data(#"{"SPPowerDataType":[{"sppower_battery_health_info":{"sppower_battery_health_maximum_capacity":"0%"}}]}"#.utf8)) == nil)
+        #expect(SystemBatteryHealth.parse(Data()) == nil)
+    }
+}
+
+@Suite struct BatteryHealthPreferenceTests {
+    @Test func healthPrefersSystemReading() {
+        var status = BatteryStatus(level: 1, isCharging: false, isPluggedIn: true, isFullyCharged: true, minutesRemaining: nil)
+        #expect(status.health == nil)
+        status.estimatedHealth = 0.977
+        #expect(status.health == 0.977)
+        status.systemHealth = 1
+        #expect(status.health == 1)
+        #expect(status.estimatedHealth == 0.977)
+    }
+}

@@ -137,7 +137,10 @@ public struct BatteryStatus: Sendable, Equatable {
     public var isFullyCharged: Bool
     public var minutesRemaining: Int?   // 放电剩余或充满所需时间
     public var cycleCount: Int?
-    public var health: Double?          // 0...1
+    /// 系统设置“电池 › 电池健康”里的最大容量（0...1），读不到时为空
+    public var systemHealth: Double?
+    /// OpenStats 按标称满充容量 ÷ 设计容量推算的健康度（0...1）
+    public var estimatedHealth: Double?
     public var adapterWatts: Int?
     /// 设计容量与当前满充容量（mAh）
     public var designCapacity: Int?
@@ -145,6 +148,9 @@ public struct BatteryStatus: Sendable, Equatable {
     /// 电压（V）与电流（A，放电为负、充电为正）
     public var voltage: Double?
     public var amperage: Double?
+
+    /// 界面和提醒用的健康度：与系统设置一致，读不到系统的值时用推算值
+    public var health: Double? { systemHealth ?? estimatedHealth }
 }
 
 public struct GPUUsage: Sendable, Equatable {

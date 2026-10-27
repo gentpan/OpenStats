@@ -236,6 +236,8 @@ npm 缓存	npm Cache
 停用失败：{}	Failed to turn off: {}
 健康 {}	Health {}
 健康度	Health
+推算健康度	Estimated health
+健康度与“系统设置 › 电池”里的最大容量一致；推算健康度是满充容量与设计容量之比，会随使用小幅浮动。低于 80% 时苹果建议更换电池	Health matches Maximum Capacity in System Settings › Battery; estimated health is the full charge capacity versus the design capacity and drifts slightly with use. Apple recommends a replacement below 80%
 健康度是现在充满时的容量与出厂容量之比，低于 80% 时苹果建议更换电池	Health is today's full charge capacity versus the design capacity; Apple recommends a replacement below 80%
 充电上限可在系统设置中设为 80%–100%，长期接电源时有助于延缓电池老化	Set a charge limit of 80%–100% in System Settings to slow battery aging when you stay plugged in
 充电中	Charging

@@ -159,7 +159,7 @@ public final class AlertController: NSObject {
             if periodicTask == nil {
                 periodicTask = Task { [weak self] in
                     while !Task.isCancelled {
-                        self?.checkPeriodic()
+                        await self?.checkPeriodic()
                         await self?.checkBluetooth()
                         try? await Task.sleep(for: .seconds(10 * 60), tolerance: .seconds(60))
                     }
@@ -195,14 +195,16 @@ public final class AlertController: NSObject {
         }
     }
 
-    private func checkPeriodic(now: Date = Date()) {
+    private func checkPeriodic(now: Date = Date()) async {
         let enabled = settings.enabledAlerts
         if enabled.contains(.diskSpace), let disk = DiskSampler.sample() {
             let low = disk.total > 0 && (Double(disk.available) / Double(disk.total) < 0.1 || disk.available < 10_000_000_000)
             fireIfNeeded(.diskSpace, isActive: low, now: now,
                          body: tr("“\(disk.volumeName)”只剩 \(Format.bytes(disk.available, base: .decimal)) 可用。可以用 OpenStats 的清理功能释放缓存。"))
         }
-        if enabled.contains(.batteryHealth), let health = BatterySampler.sample()?.health {
+        // 系统的最大容量可能要当场读，放到主线程外，免得启动时按估算值误报
+        if enabled.contains(.batteryHealth),
+           let health = await Task.detached(priority: .utility, operation: { BatterySampler.sample(waitForSystemHealth: true)?.health }).value {
             // 冷却时间跨越重启，记在偏好设置里
             let last = defaults.object(forKey: Keys.batteryNotified) as? Date
             if health < 0.8, last.map({ now.timeIntervalSince($0) >= AlertKind.batteryHealth.cooldown }) ?? true {

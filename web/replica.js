@@ -504,8 +504,8 @@
         ${bar(1, "var(--os-success)")}</div>
         ${section("电量历史", line(BATTERY_DAY, { h: 48, cls: "success" }), { trail: "最近 24 小时" })}
         ${section("功耗", `${line(S.powerHistory, { h: 40, max: 50, cls: "warning" })}${irow("整机", `${Math.round(S.power)} W`)}${irow("电源输入", `${Math.round(S.power + 3)} W`)}${irow("电池充电", "0.6 W")}${irow("GPU", `${S.gpuPower.toFixed(1)} W`)}`, { trail: "最近 60 秒" })}
-        ${section("电池健康", irow("健康度", "100%") + irow("循环次数", "34") + irow("满充 / 设计容量", u("8,611 / 8,579 mAh")) + irow("电压", u("12.82 V")) + irow("电流", u("0.00 A"))
-          + `<div class="t3" style="font-size:11px;line-height:1.5">健康度是现在充满时的容量与出厂容量之比，低于 80% 时苹果建议更换电池</div>`)}`;
+        ${section("电池健康", irow("健康度", "100%") + irow("推算健康度", "100%") + irow("循环次数", "34") + irow("满充 / 设计容量", u("8,611 / 8,579 mAh")) + irow("电压", u("12.82 V")) + irow("电流", u("0.00 A"))
+          + `<div class="t3" style="font-size:11px;line-height:1.5">健康度与“系统设置 › 电池”里的最大容量一致；推算健康度是满充容量与设计容量之比，会随使用小幅浮动。低于 80% 时苹果建议更换电池</div>`)}`;
     },
   };
 

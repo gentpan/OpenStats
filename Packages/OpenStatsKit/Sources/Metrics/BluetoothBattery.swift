@@ -24,7 +24,7 @@ public struct BluetoothDevice: Sendable, Equatable, Identifiable {
 /// 电量来自两处：system_profiler 的蓝牙信息（AirPods 等耳机的左右耳与充电盒）和 IOKit 里 Apple 键盘、鼠标、触控板的 BatteryPercent
 public enum BluetoothBatteryReader {
     public static func read() -> [BluetoothDevice] {
-        var devices = parseSystemProfiler(runSystemProfiler())
+        var devices = parseSystemProfiler(SystemProfiler.run("SPBluetoothDataType", detailLevel: "basic", timeout: 10))
         for (product, percent) in hidBatteries() {
             if let index = devices.firstIndex(where: { $0.name == product }) {
                 if devices[index].batteries.isEmpty { devices[index].batteries = [(tr("电量"), percent)] }
@@ -49,7 +49,7 @@ public enum BluetoothBatteryReader {
                                                       ("device_batteryLevelCase", tr("充电盒"))]
                     var batteries: [(String, Int)] = []
                     for (key, label) in labels {
-                        if let percent = percentValue(info[key]), !batteries.contains(where: { $0.0 == label }) {
+                        if let percent = SystemProfiler.percent(info[key]), !batteries.contains(where: { $0.0 == label }) {
                             batteries.append((label, percent))
                         }
                     }
@@ -62,12 +62,6 @@ public enum BluetoothBatteryReader {
         return devices
     }
 
-    static func percentValue(_ value: Any?) -> Int? {
-        if let number = value as? Int { return (0...100).contains(number) ? number : nil }
-        guard let text = value as? String, let number = Int(text.trimmingCharacters(in: CharacterSet(charactersIn: "% "))) else { return nil }
-        return (0...100).contains(number) ? number : nil
-    }
-
     static func kind(forName name: String, minorType: String?) -> BluetoothDevice.Kind {
         let text = ((minorType ?? "") + " " + name).lowercased()
         if text.contains("keyboard") { return .keyboard }
@@ -76,22 +70,6 @@ public enum BluetoothBatteryReader {
         if text.contains("headphone") || text.contains("headset") || text.contains("airpods") || text.contains("beats") { return .headphones }
         if text.contains("phone") { return .phone }
         return .other
-    }
-
-    private static func runSystemProfiler() -> Data {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/sbin/system_profiler")
-        process.arguments = ["SPBluetoothDataType", "-json", "-detailLevel", "basic"]
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = FileHandle.nullDevice
-        do { try process.run() } catch { return Data() }
-        // 最多等 10 秒，蓝牙服务卡住时不拖住采样
-        let deadline = DispatchTime.now() + 10
-        DispatchQueue.global().asyncAfter(deadline: deadline) { if process.isRunning { process.terminate() } }
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        return data
     }
 
     private static func hidBatteries() -> [(String, Int)] {

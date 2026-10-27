@@ -156,7 +156,7 @@ public actor MetricsHub {
             lastDisk = now
         }
         if demand.battery, now.timeIntervalSince(lastBattery) > 10 {
-            snapshot.battery = BatterySampler.sample()
+            snapshot.battery = BatterySampler.sample(waitForSystemHealth: true)
             lastBattery = now
         }
         if demand.processes || demand.systemProcesses {

@@ -77,7 +77,9 @@ public enum DiskSampler {
 // MARK: - 电池
 
 public enum BatterySampler {
-    public static func sample() -> BatteryStatus? {
+    /// `waitForSystemHealth` 为真时，系统的最大容量没读过或已过期就当场读（几十毫秒，一小时最多一次），只在后台线程这样调用；
+    /// 为假时只用记下的读数，过期了在后台重读，这次先用上次的值
+    public static func sample(waitForSystemHealth: Bool = false) -> BatteryStatus? {
         guard let blob = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
               let sources = IOPSCopyPowerSourcesList(blob)?.takeRetainedValue() as? [CFTypeRef] else { return nil }
 
@@ -97,6 +99,7 @@ public enum BatterySampler {
                                        isCharging: isCharging, isPluggedIn: pluggedIn, isFullyCharged: charged,
                                        minutesRemaining: pluggedIn && !isCharging ? nil : minutes)
             fillRegistryDetails(&status)
+            status.systemHealth = SystemBatteryHealth.maximumCapacity(wait: waitForSystemHealth)
             return status
         }
         return nil
@@ -111,9 +114,10 @@ public enum BatterySampler {
         if let data = IORegistry.property(service, "BatteryData") as? [String: Any],
            let design = data["DesignCapacity"] as? Int, design > 0,
            let capacity = (data["NominalChargeCapacity"] as? Int) ?? (data["FullChargeCapacity"] as? Int) {
-            status.health = min(1, Double(capacity) / Double(design))
+            // 标称满充容量是电量计平滑过的值，比原始满充容量（随温度和使用起伏）稳定。
+            // 系统设置里的“最大容量”不是它除以设计容量：界面上的健康度优先用 SystemBatteryHealth 读到的系统值，这个推算值单独显示
+            status.estimatedHealth = min(1, Double(capacity) / Double(design))
             status.designCapacity = design
-            // 系统设置里“最大容量”用的是 NominalChargeCapacity；原始满充容量会随温度和使用略有起伏
             status.fullChargeCapacity = capacity
         }
         // 电压单位 mV，电流单位 mA（有符号，放电为负）
@@ -126,6 +130,70 @@ public enum BatterySampler {
         }
         if let adapter = IORegistry.property(service, "AdapterDetails") as? [String: Any] {
             status.adapterWatts = adapter["Watts"] as? Int
+        }
+    }
+}
+
+/// 系统设置“电池 › 电池健康”里的最大容量。它由系统电源服务按苹果自己的算法得出，
+/// 和“标称满充容量 ÷ 设计容量”常差一两个百分点（例如系统显示 100%，相除只有 97.7%）。
+/// 系统信息读它用的接口要苹果的私有权限，第三方应用只能从 system_profiler 拿；值变化很慢，读一次记一小时
+enum SystemBatteryHealth {
+    static let lifetime: TimeInterval = 60 * 60
+    /// 沙盒里（桌面小组件）的 system_profiler 读不到电源服务，不启动它
+    private static let isAvailable = ProcessInfo.processInfo.environment["APP_SANDBOX_CONTAINER_ID"] == nil
+    /// 重读排在这条串行队列上，同时来的几次请求只启动一次进程
+    private static let queue = DispatchQueue(label: "OpenStats.SystemBatteryHealth", qos: .utility)
+    private static let cache = Cache()
+
+    /// 最大容量（0...1）；读不到（如没有这项读数的机型）时为空
+    static func maximumCapacity(wait: Bool, now: Date = Date()) -> Double? {
+        guard isAvailable else { return nil }
+        if let entry = cache.fresh(now: now) { return entry.value }
+        if wait { return queue.sync { refreshIfStale() } }
+        queue.async { _ = refreshIfStale() }
+        return cache.latest
+    }
+
+    private static func refreshIfStale() -> Double? {
+        if let entry = cache.fresh(now: Date()) { return entry.value }
+        let value = parse(SystemProfiler.run("SPPowerDataType", detailLevel: "mini", timeout: 10))
+        return cache.store(value, date: Date())
+    }
+
+    /// `system_profiler SPPowerDataType -json` 里 sppower_battery_health_info 的 "100%"
+    static func parse(_ data: Data) -> Double? {
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let sections = root["SPPowerDataType"] as? [[String: Any]] else { return nil }
+        for section in sections {
+            if let info = section["sppower_battery_health_info"] as? [String: Any],
+               let percent = SystemProfiler.percent(info["sppower_battery_health_maximum_capacity"]), percent > 0 {
+                return Double(percent) / 100
+            }
+        }
+        return nil
+    }
+
+    private final class Cache: @unchecked Sendable {
+        struct Entry { var value: Double?; var date: Date }
+        private let lock = NSLock()
+        private var entry: Entry?
+
+        func fresh(now: Date) -> Entry? {
+            lock.withLock {
+                guard let entry, now >= entry.date, now.timeIntervalSince(entry.date) < SystemBatteryHealth.lifetime else { return nil }
+                return entry
+            }
+        }
+
+        var latest: Double? { lock.withLock { entry?.value } }
+
+        /// 这次没读到（超时等）就沿用上次读到的值，一小时后再试
+        func store(_ value: Double?, date: Date) -> Double? {
+            lock.withLock {
+                let kept = value ?? entry?.value
+                entry = Entry(value: kept, date: date)
+                return kept
+            }
         }
     }
 }

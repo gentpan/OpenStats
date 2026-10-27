@@ -63,7 +63,7 @@ import Testing
         #expect(airpods?.batteries.map(\.percent) == [80, 75, 40])
         #expect(airpods?.batteries.map(\.label) == ["左耳", "右耳", "充电盒"])
         #expect(devices.first { $0.name == "Magic Keyboard" }?.batteries.first?.percent == 55)
-        #expect(BluetoothBatteryReader.percentValue("120%") == nil)
+        #expect(SystemProfiler.percent("120%") == nil)
         #expect(BluetoothBatteryReader.parseSystemProfiler(Data("oops".utf8)).isEmpty)
     }
 }
