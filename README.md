@@ -151,7 +151,7 @@ Choose which sections each popover shows in Settings. `Esc` closes it.
   queueing (load average per core, rising or falling); usage summed by app.
 - **Memory.** What is still available with a pressure timeline; a waterline bar; memory saved by compression and
   live swap I/O; usage summed by app.
-- **Network.** Traffic history; a connection-probe grid (green when reachable, red when not, last 60 pings); interface,
+- **Network.** Traffic history; a connection-probe grid (green when reachable, red when not, orange when the router answers but the internet does not, last 60 pings); interface,
   Wi-Fi signal, VPN / proxy; local and public IPv4 / IPv6 with a flag, region and ASN; an IP cleanliness score with an F to A+
   grade and risk flags (VPN, proxy, Tor, data center, abuse); DNS flush
   and one-click switching to Cloudflare, Google, Tencent, Alibaba Cloud or manual servers;
@@ -260,8 +260,9 @@ check in Settings → About:
   come from `cleanip.io`, queried directly from each Mac with nothing but the public address and never
   through our servers; a result is kept for a week unless the address changes or you refresh.
 - **Connection probe**: an ICMP ping to the target you pick (Cloudflare, Google, Alibaba Cloud,
-  Tencent or your router) once a second while network details are open (every 10 seconds in the background), only while the network item is in the menu bar
-  or network details are open.
+  Tencent or your router) once a second while network details are open (every minute in the background), only while the network item is in the menu bar
+  or network details are open. With the router as target, a reply is followed by a ping to Alibaba Cloud `223.5.5.5` and Cloudflare `1.1.1.1`
+  to tell "router up, internet down" from "all good".
 - **Update check**: at launch and once a day, the app reads a version manifest from getopenstats.com — the
   manifest only. When a new version is out it asks; nothing installs without your click.
 

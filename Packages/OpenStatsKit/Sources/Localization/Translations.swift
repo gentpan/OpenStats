@@ -418,7 +418,7 @@ npm 缓存	npm Cache
 国内网站也绕到了{}，访问会变慢，也可能触发风控。	Chinese sites also detour through the {}, which is slower and may trigger security checks.
 国内网站直连，国际网站经 {} 的{}。	Chinese sites connect directly; international sites go through {}'s {}.
 国内网站走了代理，访问会绕路变慢。	Chinese sites are going through the proxy, which takes a longer route and is slower.
-国内网络建议选阿里云或腾讯；选路由器只检测本地连接	In mainland China, Alibaba Cloud or Tencent work best; Router only checks the local link
+国内网络建议选阿里云或腾讯；选路由器时，路由器有回应但外网不通会显示橙格	In mainland China, Alibaba Cloud or Tencent work best; with Router, an orange cell means the router replies but the internet is down
 国内节点只能测 TCP 建连，经代理测不准，所以始终直连测	China nodes only allow TCP connect timing, which a proxy distorts, so they're always tested directly
 图形	Graphics
 图形核心	GPU cores
@@ -1182,6 +1182,9 @@ macOS 报告的热状态：偏高及以上时，系统会降低性能来降温	T
 内存压力由 macOS 判断：变黄或变红说明内存不够用，系统开始压缩或写入磁盘	Memory pressure is judged by macOS. Yellow or red means memory is short and the system is compressing or swapping to disk
 写到磁盘上的内存。长期使用较多说明内存不够用，会拖慢速度	Memory written to disk. Heavy use over time means memory is short and slows the Mac down
 到探测目标的往返时间	Round-trip time to the probe target
+外网不通	Internet unreachable
+路由器有回应，但路由器之外的网络没有回应	The router replies, but nothing beyond it does
+橙格：路由器有回应，但外网不通	Orange: the router replies but the internet is unreachable
 最近 {} 次探测里没有回应的比例	Share of the last {} probes with no reply
 单核	Per Core
 占整机：{}	Of total: {}

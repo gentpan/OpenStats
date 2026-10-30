@@ -599,21 +599,29 @@ struct MirroredRateChart: View {
 }
 
 /// 连接探测格子：一格一次探测，从左上到右下按时间排，最新的在最后一格。
-/// 只表示通不通：通了是绿色，超时或不可达是红色，还没探测到的是灰色
+/// 只表示通不通：通了是绿色，超时或不可达是红色，还没探测到的是灰色；
+/// 探路由器时，路由器有回应但外网不通是橙色
 struct ProbeGrid: View {
     let samples: [ProbeSample]
     var columns = 20
     var rows = 3
 
-    private enum Kind: Sendable { case pending, reachable, failed }
+    private enum Kind: Sendable { case pending, reachable, routerOnly, failed }
 
     var body: some View {
         let capacity = columns * rows
-        let results = samples.suffix(capacity).map { $0.latency != nil }
+        let results = samples.suffix(capacity).map { sample -> Kind in
+            switch sample.state {
+            case .reachable: .reachable
+            case .routerOnly: .routerOnly
+            case .failed: .failed
+            }
+        }
         let columns = columns, rows = rows
         ZStack {
             ChartPath { Self.cells(.pending, results: results, columns: columns, rows: rows, in: $0) }.fill(DS.Palette.track)
             ChartPath { Self.cells(.reachable, results: results, columns: columns, rows: rows, in: $0) }.fill(DS.Palette.success)
+            ChartPath { Self.cells(.routerOnly, results: results, columns: columns, rows: rows, in: $0) }.fill(DS.Palette.warning)
             ChartPath { Self.cells(.failed, results: results, columns: columns, rows: rows, in: $0) }.fill(DS.Palette.error)
         }
         // 格子保持接近正方形，宽度随容器变化
@@ -623,7 +631,7 @@ struct ProbeGrid: View {
         .accessibilityLabel(tr("连接探测历史"))
     }
 
-    nonisolated private static func cells(_ kind: Kind, results: [Bool], columns: Int, rows: Int, in size: CGSize) -> Path {
+    nonisolated private static func cells(_ kind: Kind, results: [Kind], columns: Int, rows: Int, in size: CGSize) -> Path {
         let capacity = columns * rows
         let gap = DS.Space.s1 / 2
         let cellWidth = (size.width - gap * CGFloat(columns - 1)) / CGFloat(columns)
@@ -631,7 +639,7 @@ struct ProbeGrid: View {
         let offset = capacity - results.count
         var path = Path()
         for index in 0..<capacity {
-            let current: Kind = index < offset ? .pending : results[index - offset] ? .reachable : .failed
+            let current: Kind = index < offset ? .pending : results[index - offset]
             guard current == kind else { continue }
             let rect = CGRect(x: CGFloat(index % columns) * (cellWidth + gap),
                               y: CGFloat(index / columns) * (cellHeight + gap),

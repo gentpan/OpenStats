@@ -42,16 +42,20 @@ private struct NetworkHero: View {
         let network = model.network
         let probes = network.probes.elements
         let probing = model.settings.probeEnabled && !probes.isEmpty
-        let latency = probes.last?.latency
+        let latest = probes.last
+        let latency = latest?.latency
+        // 探路由器时路由器有回应、外网却不通：读数不能写成“4 ms”让人以为一切正常
+        let routerOnly = latest?.state == .routerOnly
         let loss = probes.isEmpty ? 0 : Double(probes.filter { $0.latency == nil }.count) / Double(probes.count)
 
         PopoverHero(label: "↓ " + tr("下载"), value: rate.map { Format.menuBarRate($0.downloadBytesPerSecond) } ?? "—",
                     caption: connectionSummary(network.details),
                     stats: [
                         HeroStat(label: "↑ " + tr("上传"), value: rate.map { Format.menuBarRate($0.uploadBytesPerSecond) } ?? "—"),
-                        probing ? HeroStat(label: tr("延迟"), value: latency.map { "\(Int($0.rounded())) ms" } ?? tr("超时"),
-                                           tone: latency.map { $0 >= 300 ? .error : $0 >= 100 ? .warning : .neutral } ?? .error,
-                                           help: tr("到探测目标的往返时间")) : nil,
+                        probing ? HeroStat(label: tr("延迟"),
+                                           value: routerOnly ? tr("外网不通") : latency.map { "\(Int($0.rounded())) ms" } ?? tr("超时"),
+                                           tone: routerOnly ? .warning : latency.map { $0 >= 300 ? .error : $0 >= 100 ? .warning : .neutral } ?? .error,
+                                           help: routerOnly ? tr("路由器有回应，但路由器之外的网络没有回应") : tr("到探测目标的往返时间")) : nil,
                         probing ? HeroStat(label: tr("丢包"), value: Format.percent(loss),
                                            tone: loss >= 0.05 ? .error : loss > 0 ? .warning : .neutral,
                                            help: tr("最近 \(probes.count) 次探测里没有回应的比例")) : nil,
@@ -117,7 +121,14 @@ private struct ProbeSection: View {
         SectionCard(title: PopoverSection.networkProbe.title) {
             if settings.probeEnabled {
                 // 只用来看网络通不通：60 格是最近 60 次探测，排成两行细格
-                ProbeGrid(samples: network.probes.elements, columns: NetworkController.probeCapacity / 2, rows: 2)
+                let samples = network.probes.elements
+                VStack(alignment: .leading, spacing: DS.Space.s2) {
+                    ProbeGrid(samples: samples, columns: NetworkController.probeCapacity / 2, rows: 2)
+                    // 橙格只在探路由器时出现，出现了才解释一句
+                    if samples.suffix(NetworkController.probeCapacity).contains(where: { $0.state == .routerOnly }) {
+                        Text(tr("橙格：路由器有回应，但外网不通")).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
+                    }
+                }
             } else {
                 HStack {
                     Text(tr("定时 ping 一个地址，记录网络是否通畅")).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)

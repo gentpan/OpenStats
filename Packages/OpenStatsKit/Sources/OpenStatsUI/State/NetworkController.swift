@@ -6,6 +6,26 @@ import Observation
 /// 一次连接探测：latency 为往返毫秒数，nil 表示超时或不可达
 public struct ProbeSample: Sendable, Equatable {
     public let latency: Double?
+    /// 只在探测目标是路由器时有值：路由器之外的网络是否也通。
+    /// 路由器上联断了（亮红灯）时局域网还是通的，只看路由器有没有回应会一直是通
+    public let internet: Bool?
+
+    init(latency: Double?, internet: Bool? = nil) {
+        self.latency = latency
+        self.internet = internet
+    }
+
+    public enum State: Sendable {
+        case reachable
+        /// 路由器有回应，但路由器之外的网络没有
+        case routerOnly
+        case failed
+    }
+
+    public var state: State {
+        guard latency != nil else { return .failed }
+        return internet == false ? .routerOnly : .reachable
+    }
 }
 
 /// 网络详情：接口与地址、公网 IP、连接探测、各进程流量与 DNS 配置
@@ -305,19 +325,29 @@ public final class NetworkController {
             while !Task.isCancelled {
                 guard let self else { return }
                 let interval = Double(foreground ? Self.foregroundProbeSeconds : Self.backgroundProbeSeconds)
-                if self.details == nil { await self.refreshDetails() }
+                let toGateway = self.settings.probeTarget == .gateway
+                // 详情关着时没有人刷新接口信息；换了网络后路由器地址会变，探路由器时每次都重读
+                if self.details == nil || (toGateway && !foreground) { await self.refreshDetails() }
                 let started = clock.now
-                guard let address = self.probeAddress else {
-                    try? await Task.sleep(for: .seconds(interval))
-                    continue
+                let sample: ProbeSample
+                if let address = self.probeAddress {
+                    sequence &+= 1
+                    let current = sequence
+                    sample = await Task.detached {
+                        let timeout = min(interval, 1.5)
+                        let latency = ConnectivityProbe.ping(address, sequence: current, timeout: timeout)
+                        // 路由器亮红灯（上联断了）时本机到路由器还是通的，路由器有回应后再确认一下外网
+                        let internet = toGateway && latency != nil
+                            ? ConnectivityProbe.internetReachable(sequence: current, timeout: timeout) : nil
+                        return ProbeSample(latency: latency, internet: internet)
+                    }.value
+                } else {
+                    // 探路由器但读不到路由器地址（网线拔了、Wi-Fi 断开）：这就是不通，不能跳过，
+                    // 否则格子里一直留着断网前的绿格
+                    sample = ProbeSample(latency: nil)
                 }
-                sequence &+= 1
-                let current = sequence
-                let latency = await Task.detached {
-                    ConnectivityProbe.ping(address, sequence: current, timeout: min(interval, 1.5))
-                }.value
                 guard !Task.isCancelled else { return }
-                self.probes.append(ProbeSample(latency: latency))
+                self.probes.append(sample)
                 // 后台探测允许系统合并唤醒，更省电
                 try? await Task.sleep(until: started + .seconds(interval),
                                       tolerance: foreground ? .milliseconds(100) : .seconds(10), clock: clock)

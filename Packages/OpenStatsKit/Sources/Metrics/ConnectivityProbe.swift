@@ -1,9 +1,33 @@
 import Darwin
 import Foundation
+import os
 
 /// 用 ICMP 回显（ping）测量到目标地址的往返延迟。
 /// macOS 允许普通用户创建 SOCK_DGRAM 类型的 ICMP 套接字，不需要 root，也不经过 shell。
 public enum ConnectivityProbe {
+    /// 判断路由器之外的网络通不通时问的公共地址：国内外各一个，任何一个有回应就算通，
+    /// 免得某个地址被屏蔽或临时不可达时误判成断网
+    public static let internetReferences = ["223.5.5.5", "1.1.1.1"]
+
+    /// 路由器之外的网络通不通。同时 ping `references`，有一个回应就立刻返回 true，都没有回应或超时返回 false。
+    /// 路由器上联断了（亮红灯）时，本机到路由器这一跳还是通的，只 ping 路由器看不出来，要靠它
+    public static func internetReachable(sequence: UInt16, timeout: TimeInterval,
+                                         references: [String] = internetReferences) -> Bool {
+        let finished = DispatchSemaphore(value: 0)
+        let replies = OSAllocatedUnfairLock(initialState: 0)
+        for address in references {
+            DispatchQueue.global(qos: .utility).async {
+                if ping(address, sequence: sequence, timeout: timeout) != nil { replies.withLock { $0 += 1 } }
+                finished.signal()
+            }
+        }
+        for _ in references {
+            finished.wait()
+            if replies.withLock({ $0 }) > 0 { return true }
+        }
+        return false
+    }
+
     /// 发送一次回显请求，返回往返毫秒数；超时或不可达时返回 nil。调用会阻塞，最长 `timeout`。
     public static func ping(_ address: String, sequence: UInt16, timeout: TimeInterval) -> Double? {
         var v4 = in_addr()

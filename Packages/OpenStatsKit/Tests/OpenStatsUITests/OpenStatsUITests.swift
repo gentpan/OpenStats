@@ -474,3 +474,14 @@ struct ProcessRowIDTests {
         #expect(grouped.count == 3)
     }
 }
+
+@Suite struct ProbeSampleTests {
+    @Test func classifiesReplies() {
+        #expect(ProbeSample(latency: 4).state == .reachable)
+        #expect(ProbeSample(latency: 4, internet: true).state == .reachable)
+        // 路由器上联断了：路由器有回应，外网没有
+        #expect(ProbeSample(latency: 4, internet: false).state == .routerOnly)
+        #expect(ProbeSample(latency: nil).state == .failed)
+        #expect(ProbeSample(latency: nil, internet: true).state == .failed)
+    }
+}

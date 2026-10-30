@@ -169,7 +169,11 @@ is open and back to accessory when all are closed.
 `NetworkController` runs only while it is needed:
 
 - **Connection probe** — an unprivileged `SOCK_DGRAM` ICMP echo (`ConnectivityProbe`), matched on
-  sequence number and a random payload token because the kernel rewrites the identifier.
+  sequence number and a random payload token because the kernel rewrites the identifier. When the
+  target is the router, a reply only proves the LAN hop (the router's WAN light can be red while it
+  still answers), so each reply is followed by `internetReachable`, which pings two public addresses
+  in parallel and passes on the first answer; a router-only reply is recorded as `ProbeSample.State.routerOnly`
+  (orange cell). If the gateway address cannot be read, the sample is recorded as failed, not skipped.
 - **Interface and addresses** — `SCDynamicStore` / `SCPreferences` for the primary and physical
   service, `getifaddrs` for addresses, CoreWLAN for signal and rate.
 - **Public IP** — Cloudflare trace (ipify as fallback) for the address only. Location, ASN, network

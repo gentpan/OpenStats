@@ -627,7 +627,7 @@ struct NetworkSettings: View {
                 }
             }
             GroupRow {
-                SettingRow(title: tr("探测目标"), subtitle: tr("国内网络建议选阿里云或腾讯；选路由器只检测本地连接")) {
+                SettingRow(title: tr("探测目标"), subtitle: tr("国内网络建议选阿里云或腾讯；选路由器时，路由器有回应但外网不通会显示橙格")) {
                     Picker(tr("探测目标"), selection: $settings.probeTarget) {
                         ForEach(ProbeTarget.allCases) { target in
                             Text(target.title).tag(target)

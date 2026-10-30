@@ -173,6 +173,14 @@ struct LiveSamplerTests {
         #expect(!ConnectivityProbe.matches(reply, count: reply.count, family: AF_INET, sequence: 7, token: 1))
     }
 
+    @Test func internetReachableNeedsOnlyOneReply() {
+        // 192.0.2.1 是文档保留地址，永远不会回应；127.0.0.1 一定回应
+        let silent = "192.0.2.1"
+        #expect(!ConnectivityProbe.internetReachable(sequence: 1, timeout: 0.3, references: [silent]))
+        #expect(!ConnectivityProbe.internetReachable(sequence: 1, timeout: 0.3, references: []))
+        #expect(ConnectivityProbe.internetReachable(sequence: 2, timeout: 1, references: [silent, "127.0.0.1"]))
+    }
+
     @Test func computesInternetChecksum() {
         let packet: [UInt8] = [8, 0, 0, 0, 0x12, 0x34, 0, 1]
         let sum = ConnectivityProbe.checksum(packet)
