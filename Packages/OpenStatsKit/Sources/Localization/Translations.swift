@@ -387,6 +387,7 @@ npm 缓存	npm Cache
 右侧风扇	Right Fan
 右耳	Right
 各核心占用	Per-Core Load
+启动于 {}	Started {}
 各核心负载	Core Load
 各项指标正常	Everything looks good
 合上屏幕时 Mac 不进入睡眠，下载、渲染、远程连接不中断。	Your Mac stays awake with the lid closed, so downloads, renders and remote sessions continue.
@@ -550,6 +551,7 @@ npm 缓存	npm Cache
 开机后自动在菜单栏显示 OpenStats	Show OpenStats in the menu bar after you log in
 异常断电	Unsafe shutdowns
 弹窗显示	Popover Sections
+与“{}”共用	Shared with “{}”
 强冷	Max
 强制刷新：忽略缓存，立即重新查询公网 IP 与归属地	Force refresh: ignore the cache and look up the public IP and location again now
 强制退出	Force Quit
@@ -621,6 +623,7 @@ npm 缓存	npm Cache
 探针数量，一个探针占一次额度	Number of probes; each probe uses one test from the quota
 接入 Cloudflare 的网站能实测出口，其余按国内 / 国际规则推断	Exits are measured for sites behind Cloudflare and inferred for the rest
 接口	Interface
+网卡	Adapter
 接通电源	Plugged in
 推出	Eject
 推出中…	Ejecting…

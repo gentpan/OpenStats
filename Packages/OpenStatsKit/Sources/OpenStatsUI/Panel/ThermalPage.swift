@@ -75,7 +75,7 @@ private struct PowerCard: View {
     var body: some View {
         let power = model.store.power
         Card {
-            CardHeader(icon: "bolt", title: tr("功耗"), detail: power?.system.map { tr("整机 \(Format.watts($0))") } ?? tr("读取中"))
+            CardHeader(icon: "bolt", title: tr("功耗")) { EmptyView() }
             PowerRows(power: power, history: model.store.powerHistory.elements)
         }
     }

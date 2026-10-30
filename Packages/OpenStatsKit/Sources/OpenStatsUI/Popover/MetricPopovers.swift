@@ -366,7 +366,7 @@ struct MemoryPopover: View {
         ForEach(MenuBarItem.memory.popoverSections.filter { isDetailPage || settings.isVisible($0) }) { section in
             switch section {
             case .memoryWaterline:
-                SectionCard(title: section.title, trailing: { Text(verbatim: memory.map { Format.bytes($0.total) } ?? "") }) {
+                SectionCard(title: section.title) {
                     if let memory {
                         let parts: [(String, UInt64, Color)] = [
                             ("App", memory.app, DS.Palette.primary),
@@ -386,8 +386,10 @@ struct MemoryPopover: View {
                             Text(verbatim: Format.bytes(memory.compressionSavings)).foregroundStyle(DS.Palette.success)
                         }
                         InfoRow(label: tr("压缩比"), text: memory.compressionRatio.map { "\($0.formatted(.number.precision(.fractionLength(1))))×" } ?? "—")
-                        InfoRow(label: tr("交换区"), text: memory.swapTotal > 0
-                                ? "\(Format.bytes(memory.swapUsed)) / \(Format.bytes(memory.swapTotal))" : tr("未使用"))
+                        // 没用交换时顶部“交换”已经写了“未使用”，这里只在用了的时候补上总量
+                        if memory.swapTotal > 0 {
+                            InfoRow(label: tr("交换区"), text: "\(Format.bytes(memory.swapUsed)) / \(Format.bytes(memory.swapTotal))")
+                        }
                         InfoRow(label: tr("换入 / 换出"), text: store.swapRate.map { "\(Format.menuBarRate($0.swapIn)) / \(Format.menuBarRate($0.swapOut))" } ?? "—")
                         if let rate = store.swapRate, rate.swapOut > 1024 * 1024 {
                             InfoBanner(icon: "exclamationmark.triangle.fill", text: tr("系统正在把内存写到磁盘，可能会变慢。可以关掉占用大的应用。"), tone: .warning)

@@ -105,7 +105,7 @@ public enum PopoverSection: String, CaseIterable, Identifiable, Sendable {
     /// 弹窗默认不显示的区块（主窗口详情页始终显示），弹窗默认只留最常看的内容，不至于撑满一屏：
     /// CPU 留热力图与按应用汇总（本机不像服务器那样需要看 1/5/15 分钟负载）；内存留水位与按应用；
     /// 磁盘留读写速度与应用（SSD 健康已在顶部）；温度留温度与风扇。其余在设置里逐个打开。
-    /// 网络弹窗的探测、接口与累计流量、IP 纯净度、DNS 是常看的统计，全部默认显示
+    /// 网络弹窗的流量历史（含累计流量）、探测、接口、IP 纯净度、DNS 是常看的统计，全部默认显示
     static let hiddenByDefault: Set<PopoverSection> = [
         .cpuCores, .cpuClusters, .cpuLoadAverage,
         .memoryCompression,

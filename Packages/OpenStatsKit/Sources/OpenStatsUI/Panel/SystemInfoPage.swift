@@ -29,14 +29,14 @@ struct SystemInfoPage: View {
                         Text(verbatim: tr("\(system.osVersion)（\(system.osBuild)）"))
                             .dsFont(.sm)
                             .foregroundStyle(DS.Palette.textSecondary)
+                        // 芯片与内存在下面的“处理器”“内存与图形”里，这里只放那里没有的
                         FlowLayout(spacing: DS.Space.s2) {
-                            Chip(text: chipName(topology.brand), icon: "apple.logo")
-                            Chip(text: Format.capacity(ProcessInfo.processInfo.physicalMemory))
                             if let disk = store.disk {
                                 Chip(text: Format.capacity(disk.total, base: .decimal))
                             }
                             if let boot = system.bootDate {
                                 Chip(text: tr("已运行 ") + Format.uptime(since: boot))
+                                    .help(tr("启动于 \(boot.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: L10n.locale)))"))
                             }
                         }
                     }
@@ -84,7 +84,6 @@ struct SystemInfoPage: View {
 
             InfoCard(icon: "number", title: tr("标识")) {
                 InfoRow(label: tr("机型标识符")) { CopyableText(text: system.modelIdentifier.isEmpty ? "—" : system.modelIdentifier) }
-                InfoRow(label: tr("系统版号")) { CopyableText(text: system.osBuild.isEmpty ? "—" : system.osBuild) }
                 InfoRow(label: tr("序列号")) {
                     HStack(spacing: DS.Space.s1) {
                         if revealSerial, !isSnapshot, let serial = system.serialNumber {
@@ -98,9 +97,6 @@ struct SystemInfoPage: View {
                             }
                         }
                     }
-                }
-                if let boot = system.bootDate {
-                    InfoRow(label: tr("启动于"), text: boot.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: L10n.locale)))
                 }
             }
         }
@@ -120,9 +116,6 @@ struct SystemInfoPage: View {
         return details.isEmpty ? base + size : tr("\(base)\(size)（\(details.joined(separator: tr("，")))）")
     }
 
-    private func chipName(_ brand: String) -> String {
-        brand.hasPrefix("Apple ") ? String(brand.dropFirst("Apple ".count)) : brand
-    }
 }
 
 private struct InfoCard<Content: View>: View {

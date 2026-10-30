@@ -326,7 +326,7 @@ struct CoreClusterBars: View {
             .frame(height: DS.TextSize.xs.rawValue * 1.5)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(tr("各核心负载"))
+        .accessibilityLabel(tr("各核心占用"))
     }
 
     /// 满足条件的核心合成一条路径：`track` 为真时是整根底槽，否则是按占用高度填充的部分

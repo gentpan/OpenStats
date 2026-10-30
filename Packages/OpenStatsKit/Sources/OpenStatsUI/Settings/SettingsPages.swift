@@ -338,7 +338,12 @@ struct MenuBarSettings: View {
                             }
                             if settings.isEnabled(item) {
                                 ItemStyleRow(item: item)
-                                PopoverSectionPicker(item: item)
+                                if item == .fan, settings.isEnabled(.temperature) {
+                                    // 两项共用温度弹窗的同一组区块，只在“CPU 温度”下改一次
+                                    SharedPopoverSectionsNote(owner: .temperature)
+                                } else {
+                                    PopoverSectionPicker(item: item)
+                                }
                             }
                         }
                     }
@@ -463,6 +468,24 @@ private struct ItemStyleRow: View {
             .frame(height: DS.Size.segmentHeight + DS.Space.s1)
             .background(DS.Palette.track, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             .accessibilityLabel(tr("该项目在菜单栏里的实时效果"))
+    }
+}
+
+/// 风扇与温度共用弹窗区块时，风扇这一行不再重复列出开关，只写明在哪一项下面改
+private struct SharedPopoverSectionsNote: View {
+    let owner: MenuBarItem
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s3) {
+            Text(tr("弹窗显示"))
+                .dsFont(.xs)
+                .foregroundStyle(DS.Palette.textSecondary)
+                .fixedSize()
+            Text(tr("与“\(owner.title)”共用"))
+                .dsFont(.xs)
+                .foregroundStyle(DS.Palette.textTertiary)
+        }
+        .padding(.leading, DS.Size.iconStandalone + DS.Space.s3)
     }
 }
 

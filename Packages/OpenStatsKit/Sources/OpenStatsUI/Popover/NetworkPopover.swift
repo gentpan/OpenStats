@@ -80,6 +80,7 @@ private struct TrafficHistorySection: View {
 
     var body: some View {
         let store = model.store
+        let network = model.network
         let upload = store.uploadHistory.elements
         let download = store.downloadHistory.elements
 
@@ -95,6 +96,30 @@ private struct TrafficHistorySection: View {
         }) {
             MirroredRateChart(upload: upload, download: download,
                               height: isDetailPage ? DS.Size.chartHeight * 3 : DS.Size.chartHeight + DS.Space.s2)
+            if let totals = store.network {
+                let counted = network.trafficTotals(totals)
+                let sinceReset = network.trafficBaseline != nil
+                InfoRow(label: sinceReset ? tr("重置后下载") : tr("开机后下载"), text: Format.bytes(counted.download, base: .decimal))
+                InfoRow(label: sinceReset ? tr("重置后上传") : tr("开机后上传"), text: Format.bytes(counted.upload, base: .decimal))
+                // 重置：把上传 / 下载从现在起重新累计，标出起算时间
+                HStack(spacing: DS.Space.s2) {
+                    if let since = network.trafficBaseline?.date {
+                        Text(verbatim: tr("自 \(since.formatted(Date.FormatStyle(locale: L10n.locale).month().day().hour().minute())) 起"))
+                            .dsFont(.xs)
+                            .foregroundStyle(DS.Palette.textTertiary)
+                    }
+                    Spacer(minLength: 0)
+                    MiniIconButton(systemName: "arrow.counterclockwise",
+                                   help: tr("重置上传与下载统计：从现在起重新累计。重启后自动回到开机后的累计；右键可改回")) {
+                        network.resetTraffic(totals)
+                    }
+                    .contextMenu {
+                        if network.trafficBaseline != nil {
+                            Button(tr("改回开机后累计")) { network.clearTrafficBaseline() }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -150,27 +175,10 @@ private struct InterfaceSection: View {
         let network = model.network
         let details = network.details
         let physical = details?.physical
-        let totals = model.store.network
 
-        SectionCard(title: PopoverSection.networkInterface.title, trailing: {
-            // 右上角重置：把上传 / 下载从现在起重新累计，标出起算时间
-            if let totals {
-                if let since = network.trafficBaseline?.date {
-                    Text(verbatim: tr("自 \(since.formatted(Date.FormatStyle(locale: L10n.locale).month().day().hour().minute())) 起"))
-                }
-                MiniIconButton(systemName: "arrow.counterclockwise",
-                               help: tr("重置上传与下载统计：从现在起重新累计。重启后自动回到开机后的累计；右键可改回")) {
-                    network.resetTraffic(totals)
-                }
-                .contextMenu {
-                    if network.trafficBaseline != nil {
-                        Button(tr("改回开机后累计")) { network.clearTrafficBaseline() }
-                    }
-                }
-            }
-        }) {
+        SectionCard(title: PopoverSection.networkInterface.title) {
             if let physical {
-                InfoRow(label: tr("接口"), text: tr("\(physical.displayName)（\(physical.bsdName)）"))
+                InfoRow(label: tr("网卡"), text: tr("\(physical.displayName)（\(physical.bsdName)）"))
                 InfoRow(label: tr("状态")) {
                     StatusBadge(text: physical.isUp ? tr("已连接") : tr("未连接"), tone: physical.isUp ? .success : .error)
                 }
@@ -185,12 +193,6 @@ private struct InterfaceSection: View {
             }
             if let tunnel = details?.tunnel {
                 InfoRow(label: tr("VPN / 代理"), text: tr("\(tunnel.name)（\(tunnel.bsdName)）"))
-            }
-            if let totals {
-                let counted = network.trafficTotals(totals)
-                let sinceReset = network.trafficBaseline != nil
-                InfoRow(label: sinceReset ? tr("重置后下载") : tr("开机后下载"), text: Format.bytes(counted.download, base: .decimal))
-                InfoRow(label: sinceReset ? tr("重置后上传") : tr("开机后上传"), text: Format.bytes(counted.upload, base: .decimal))
             }
         }
     }

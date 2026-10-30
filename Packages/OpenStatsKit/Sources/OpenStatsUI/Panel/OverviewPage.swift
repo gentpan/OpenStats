@@ -339,7 +339,7 @@ private struct CoreLoadCard: View {
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s1) {
                 Image(systemName: "square.grid.3x3.fill").dsFont(.xs, weight: .semibold)
-                Text(tr("核心负载")).dsFont(.xs, weight: .semibold)
+                Text(tr("各核心占用")).dsFont(.xs, weight: .semibold)
                 Spacer()
                 LegendItem(color: DS.Palette.primary, label: tr("用户"), value: cpu.map { Format.percent($0.user) } ?? "—")
                 LegendItem(color: DS.Palette.secondary, label: tr("系统"), value: cpu.map { Format.percent($0.system) } ?? "—")
