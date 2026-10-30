@@ -485,3 +485,124 @@ struct ProcessRowIDTests {
         #expect(ProbeSample(latency: nil, internet: true).state == .failed)
     }
 }
+
+@MainActor
+@Suite struct KeepAwakeTests {
+    /// 记录发给辅助工具的“合盖不睡眠”开关；`failure` 非空时下一次调用失败
+    private final class SleepSwitch {
+        var calls: [Bool] = []
+        var failure: String?
+
+        func call(_ disabled: Bool) -> String? {
+            calls.append(disabled)
+            defer { failure = nil }
+            return failure
+        }
+    }
+
+    private func makeController() -> (KeepAwakeController, SleepSwitch) {
+        let controller = KeepAwakeController(helper: HelperClient(), settings: AppSettings(defaults: isolatedDefaults()))
+        let sleepSwitch = SleepSwitch()
+        controller.setSleepDisabled = { sleepSwitch.call($0) }
+        return (controller, sleepSwitch)
+    }
+
+    @Test func reapplyResendsLidModeAfterHelperRestart() async {
+        let (controller, sleepSwitch) = makeController()
+        await controller.start()
+        await controller.setLidClosed(true)
+        #expect(controller.lidClosedActive)
+        #expect(sleepSwitch.calls == [true])
+
+        // 新的辅助工具进程启动时已把睡眠设置恢复成默认，必须重新下发，而不是以为还在生效
+        await controller.reapply()
+        #expect(sleepSwitch.calls == [true, true])
+        #expect(controller.lidClosedActive)
+
+        await controller.stop(reason: nil)
+        #expect(sleepSwitch.calls == [true, true, false])
+        #expect(!controller.lidClosedActive)
+    }
+
+    @Test func reapplyFailureShowsTheTruth() async {
+        let (controller, sleepSwitch) = makeController()
+        await controller.start()
+        await controller.setLidClosed(true)
+
+        sleepSwitch.failure = "pmset 执行失败"
+        await controller.reapply()
+        // 没下发成功就不能继续显示“合盖运行”
+        #expect(!controller.lidClosedActive)
+        #expect(!controller.lidClosedRequested)
+        #expect(controller.noticeIsError)
+        await controller.stop(reason: nil)
+    }
+
+    private func waitUntil(timeout: Duration = .seconds(3), _ condition: @MainActor () -> Bool) async {
+        let clock = ContinuousClock()
+        let deadline = clock.now + timeout
+        while !condition(), clock.now < deadline { try? await Task.sleep(for: .milliseconds(10)) }
+    }
+
+    @Test func lowBatteryTurnsLidModeOffWithoutAnyMetricsSample() async {
+        // 合上盖子后屏幕睡眠，指标采样暂停，没有任何采样回调；电量保护必须靠自己的定时查看
+        let (controller, sleepSwitch) = makeController()
+        controller.batteryWatchInterval = .milliseconds(10)
+        controller.readPower = { (level: 0.05, isPluggedIn: false) }
+        await controller.start()
+        await controller.setLidClosed(true)
+        #expect(controller.lidClosedActive)
+
+        await waitUntil { !controller.lidClosedActive }
+        #expect(!controller.lidClosedActive)
+        #expect(sleepSwitch.calls == [true, false])
+        #expect(!controller.noticeIsError)
+        // 只关合盖运行，防休眠本身还开着
+        #expect(controller.isActive)
+        await controller.stop(reason: nil)
+    }
+
+    @Test func pluggedInOrEnoughBatteryKeepsLidMode() async {
+        let (controller, sleepSwitch) = makeController()
+        controller.batteryWatchInterval = .milliseconds(5)
+        await controller.start()
+        await controller.setLidClosed(true)
+
+        controller.readPower = { (level: 0.05, isPluggedIn: true) }
+        try? await Task.sleep(for: .milliseconds(80))
+        controller.readPower = { (level: 0.8, isPluggedIn: false) }
+        try? await Task.sleep(for: .milliseconds(80))
+        #expect(controller.lidClosedActive)
+        #expect(sleepSwitch.calls == [true])
+        await controller.stop(reason: nil)
+    }
+
+    @Test func lowBatteryRetriesWhenTurningOffFails() async {
+        let (controller, sleepSwitch) = makeController()
+        await controller.start()
+        await controller.setLidClosed(true)
+
+        sleepSwitch.failure = "pmset 执行失败"
+        controller.evaluateBattery(level: 0.05, isPluggedIn: false)
+        await waitUntil { controller.noticeIsError }
+        // 没关成功：仍是合盖运行，也不能提示“已关闭”
+        #expect(controller.lidClosedActive)
+        #expect(controller.noticeIsError)
+
+        controller.evaluateBattery(level: 0.05, isPluggedIn: false)
+        await waitUntil { !controller.lidClosedActive }
+        #expect(!controller.lidClosedActive)
+        #expect(!controller.noticeIsError)
+        #expect(sleepSwitch.calls == [true, false, false])
+        await controller.stop(reason: nil)
+    }
+
+    @Test func reapplyDoesNothingWithoutLidMode() async {
+        let (controller, sleepSwitch) = makeController()
+        await controller.reapply()
+        await controller.start()
+        await controller.reapply()
+        #expect(sleepSwitch.calls.isEmpty)
+        await controller.stop(reason: nil)
+    }
+}

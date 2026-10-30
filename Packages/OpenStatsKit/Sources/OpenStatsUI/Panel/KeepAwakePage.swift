@@ -112,8 +112,10 @@ private struct LidCard: View {
         Card {
             SettingRow(title: tr("合盖后继续运行"),
                        subtitle: tr("合上屏幕时 Mac 不进入睡眠，下载、渲染、远程连接不中断。")) {
+                // 与弹窗里的开关一致：打开合盖运行时一并开启防休眠。
+                // 只记下“想要合盖运行”而防休眠没开的话，开关亮着、实际合盖照样睡
                 DSToggle(isOn: Binding(get: { keepAwake.lidClosedRequested },
-                                       set: { value in Task { await keepAwake.setLidClosed(value) } }),
+                                       set: { model.requestLidMode($0) }),
                          label: tr("合盖后继续运行"))
                     .disabled(!model.helper.isReady)
             }

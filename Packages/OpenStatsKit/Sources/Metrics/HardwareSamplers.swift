@@ -80,27 +80,41 @@ public enum BatterySampler {
     /// `waitForSystemHealth` 为真时，系统的最大容量没读过或已过期就当场读（几十毫秒，一小时最多一次），只在后台线程这样调用；
     /// 为假时只用记下的读数，过期了在后台重读，这次先用上次的值
     public static func sample(waitForSystemHealth: Bool = false) -> BatteryStatus? {
+        guard let description = internalBattery() else { return nil }
+
+        let current = description[kIOPSCurrentCapacityKey] as? Int ?? 0
+        let maximum = description[kIOPSMaxCapacityKey] as? Int ?? 100
+        let isCharging = description[kIOPSIsChargingKey] as? Bool ?? false
+        let pluggedIn = description[kIOPSPowerSourceStateKey] as? String == kIOPSACPowerValue
+        let charged = description[kIOPSIsChargedKey] as? Bool ?? false
+        let minutesKey = isCharging ? kIOPSTimeToFullChargeKey : kIOPSTimeToEmptyKey
+        let minutes = (description[minutesKey] as? Int).flatMap { $0 > 0 ? $0 : nil }
+
+        var status = BatteryStatus(level: maximum > 0 ? Double(current) / Double(maximum) : 0,
+                                   isCharging: isCharging, isPluggedIn: pluggedIn, isFullyCharged: charged,
+                                   minutesRemaining: pluggedIn && !isCharging ? nil : minutes)
+        fillRegistryDetails(&status)
+        status.systemHealth = SystemBatteryHealth.maximumCapacity(wait: waitForSystemHealth)
+        return status
+    }
+
+    /// 只读电量（0...1）与是否接着电源：不碰注册表，也不启动 system_profiler。
+    /// 合盖运行期间的电量看护用它；没有内置电池的 Mac 返回 nil
+    public static func powerState() -> (level: Double, isPluggedIn: Bool)? {
+        guard let description = internalBattery() else { return nil }
+        let current = description[kIOPSCurrentCapacityKey] as? Int ?? 0
+        let maximum = description[kIOPSMaxCapacityKey] as? Int ?? 100
+        return (maximum > 0 ? Double(current) / Double(maximum) : 0,
+                description[kIOPSPowerSourceStateKey] as? String == kIOPSACPowerValue)
+    }
+
+    private static func internalBattery() -> [String: Any]? {
         guard let blob = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
               let sources = IOPSCopyPowerSourcesList(blob)?.takeRetainedValue() as? [CFTypeRef] else { return nil }
-
         for source in sources {
             guard let description = IOPSGetPowerSourceDescription(blob, source)?.takeUnretainedValue() as? [String: Any],
                   description[kIOPSTypeKey] as? String == kIOPSInternalBatteryType else { continue }
-
-            let current = description[kIOPSCurrentCapacityKey] as? Int ?? 0
-            let maximum = description[kIOPSMaxCapacityKey] as? Int ?? 100
-            let isCharging = description[kIOPSIsChargingKey] as? Bool ?? false
-            let pluggedIn = description[kIOPSPowerSourceStateKey] as? String == kIOPSACPowerValue
-            let charged = description[kIOPSIsChargedKey] as? Bool ?? false
-            let minutesKey = isCharging ? kIOPSTimeToFullChargeKey : kIOPSTimeToEmptyKey
-            let minutes = (description[minutesKey] as? Int).flatMap { $0 > 0 ? $0 : nil }
-
-            var status = BatteryStatus(level: maximum > 0 ? Double(current) / Double(maximum) : 0,
-                                       isCharging: isCharging, isPluggedIn: pluggedIn, isFullyCharged: charged,
-                                       minutesRemaining: pluggedIn && !isCharging ? nil : minutes)
-            fillRegistryDetails(&status)
-            status.systemHealth = SystemBatteryHealth.maximumCapacity(wait: waitForSystemHealth)
-            return status
+            return description
         }
         return nil
     }

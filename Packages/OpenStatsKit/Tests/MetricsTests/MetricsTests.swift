@@ -181,6 +181,16 @@ struct LiveSamplerTests {
         #expect(ConnectivityProbe.internetReachable(sequence: 2, timeout: 1, references: [silent, "127.0.0.1"]))
     }
 
+    @Test func powerStateIsSane() {
+        // 台式 Mac 没有内置电池，返回 nil
+        guard let power = BatterySampler.powerState() else { return }
+        #expect((0...1).contains(power.level))
+        if let full = BatterySampler.sample() {
+            #expect(full.isPluggedIn == power.isPluggedIn)
+            #expect(abs(full.level - power.level) < 0.05)
+        }
+    }
+
     @Test func computesInternetChecksum() {
         let packet: [UInt8] = [8, 0, 0, 0, 0x12, 0x34, 0, 1]
         let sum = ConnectivityProbe.checksum(packet)

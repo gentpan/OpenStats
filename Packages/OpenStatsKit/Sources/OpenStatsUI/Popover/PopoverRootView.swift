@@ -332,12 +332,13 @@ struct PopoverQuickToggles: View {
 
     private var hasFans: Bool { !(model.store.sensors?.fans.isEmpty ?? true) }
 
-    /// 开启时显示结束时间而不是倒计时：不用每分钟刷新
+    /// 开启时显示结束时间而不是倒计时：不用每分钟刷新。合盖运行开着时写在前面：
+    /// 它让合上盖子的 Mac 继续发热耗电，不能只在展开菜单里才看得到
     private var keepAwakeStatus: String {
         let keepAwake = model.keepAwake
         guard keepAwake.isActive else { return tr("按系统休眠") }
-        guard let end = keepAwake.endDate else { return tr("不限时") }
-        return tr("\(end.formatted(date: .omitted, time: .shortened)) 结束")
+        let until = keepAwake.endDate.map { tr("\($0.formatted(date: .omitted, time: .shortened)) 结束") } ?? tr("不限时")
+        return keepAwake.lidClosedActive ? "\(tr("合盖运行")) · \(until)" : until
     }
 }
 

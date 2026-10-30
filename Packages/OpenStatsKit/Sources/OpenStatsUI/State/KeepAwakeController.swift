@@ -78,12 +78,22 @@ public final class KeepAwakeController {
 
     @ObservationIgnored private var assertionID: IOPMAssertionID = 0
     @ObservationIgnored private var expiryTask: Task<Void, Never>?
-    @ObservationIgnored private let helper: HelperClient
     @ObservationIgnored private let settings: AppSettings
+    /// 让辅助工具开关“合盖不睡眠”，返回错误说明；测试里换成桩，不碰真实的系统设置
+    @ObservationIgnored var setSleepDisabled: (Bool) async -> String?
+    /// 合盖运行期间自己定时看电量。指标采样在屏幕睡眠（合盖时必然发生）时会暂停，
+    /// 电量保护只挂在采样回调上的话，合上盖子之后它根本不会执行
+    @ObservationIgnored var batteryWatchInterval: Swift.Duration = .seconds(60)
+    /// 读电量与是否接着电源；测试里换成桩
+    @ObservationIgnored var readPower: @Sendable () async -> (level: Double, isPluggedIn: Bool)? = {
+        await Task.detached { BatterySampler.powerState() }.value
+    }
+    @ObservationIgnored private var batteryWatch: Task<Void, Never>?
+    @ObservationIgnored private var isLoweringLidMode = false
 
     init(helper: HelperClient, settings: AppSettings) {
-        self.helper = helper
         self.settings = settings
+        setSleepDisabled = { await helper.setSleepDisabled($0) }
     }
 
     func setActive(_ active: Bool) async {
@@ -120,29 +130,62 @@ public final class KeepAwakeController {
         expiryTask?.cancel()
         releaseAssertion()
         if lidClosedActive {
-            if let error = await helper.setSleepDisabled(false) {
+            if let error = await setSleepDisabled(false) {
                 show(tr("恢复系统睡眠失败：\(error)"), isError: true)
                 return
             }
             lidClosedActive = false
+            syncBatteryWatch()
         }
         if let reason { show(reason, isError: false) }
     }
 
-    /// 连接恢复后重新下发合盖设置
+    /// 辅助工具重启或重连后重新下发合盖设置。新的辅助工具进程启动时会先把睡眠设置恢复成系统默认，
+    /// 这边记着的“已生效”已经过时，不能拿它当作不用再发：先清掉再下发，否则界面一直显示合盖运行、实际合盖就睡
     func reapply() async {
         guard isActive, lidClosedRequested else { return }
+        lidClosedActive = false
         await applyLidMode()
     }
 
-    /// 电池电量保护：使用电池供电且电量低于下限时关闭合盖运行
+    /// 电池电量保护：使用电池供电且电量低于下限时关闭合盖运行（屏幕亮着时由指标采样调用）
     func evaluateBattery(_ battery: BatteryStatus?) {
-        guard lidClosedActive, let battery, !battery.isPluggedIn,
-              battery.level * 100 < Double(settings.lidModeBatteryFloor) else { return }
+        guard let battery else { return }
+        evaluateBattery(level: battery.level, isPluggedIn: battery.isPluggedIn)
+    }
+
+    func evaluateBattery(level: Double, isPluggedIn: Bool) {
+        guard lidClosedActive, !isPluggedIn, !isLoweringLidMode,
+              level * 100 < Double(settings.lidModeBatteryFloor) else { return }
+        isLoweringLidMode = true
         Task {
+            defer { isLoweringLidMode = false }
             lidClosedRequested = false
             await applyLidMode()
-            show(tr("电量低于 \(settings.lidModeBatteryFloor)%，已关闭合盖运行"), isError: false)
+            // 没关成功时 applyLidMode 已经给出错误，下次看电量会再试
+            if !lidClosedActive {
+                show(tr("电量低于 \(settings.lidModeBatteryFloor)%，已关闭合盖运行"), isError: false)
+            }
+        }
+    }
+
+    /// 合盖运行生效期间定时看电量，其余时候不跑
+    private func syncBatteryWatch() {
+        guard lidClosedActive else {
+            batteryWatch?.cancel()
+            batteryWatch = nil
+            return
+        }
+        guard batteryWatch == nil else { return }
+        batteryWatch = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let interval = self?.batteryWatchInterval else { return }
+                try? await Task.sleep(for: interval, tolerance: interval / 6)
+                guard !Task.isCancelled, let self else { return }
+                if let power = await self.readPower() {
+                    self.evaluateBattery(level: power.level, isPluggedIn: power.isPluggedIn)
+                }
+            }
         }
     }
 
@@ -154,7 +197,8 @@ public final class KeepAwakeController {
     private func applyLidMode() async {
         let wanted = isActive && lidClosedRequested
         guard wanted != lidClosedActive else { return }
-        if let error = await helper.setSleepDisabled(wanted) {
+        defer { syncBatteryWatch() }
+        if let error = await setSleepDisabled(wanted) {
             lidClosedRequested = lidClosedActive
             show(error, isError: true)
             return
