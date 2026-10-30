@@ -840,16 +840,5 @@ struct AboutSettings: View {
 
         UpdateSettings()
         DiagnosticsSettings()
-
-        SettingsGroup(caption: tr("致谢")) {
-            GroupRow(showsDivider: false) {
-                SettingRow(title: "exelban/stats", subtitle: tr("SMC 通信与 Apple Silicon 风扇解锁流程移植自该项目 · MIT License")) {
-                    Button(tr("查看")) {
-                        if let url = URL(string: "https://github.com/exelban/stats") { NSWorkspace.shared.open(url) }
-                    }
-                    .buttonStyle(DSButtonStyle(kind: .secondary))
-                }
-            }
-        }
     }
 }

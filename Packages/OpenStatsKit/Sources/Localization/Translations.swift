@@ -85,7 +85,6 @@ OpenStats-诊断-{}.zip	OpenStats-Diagnostics-{}.zip
 SMC [{}] 不支持的数据类型 {}	SMC [{}] unsupported data type {}
 SMC [{}] 被固件拒绝 (0x{})	SMC [{}] rejected by firmware (0x{})
 SMC [{}] 调用失败 ({})	SMC [{}] call failed ({})
-SMC 通信与 Apple Silicon 风扇解锁流程移植自该项目 · MIT License	SMC access and the Apple Silicon fan unlock sequence are ported from this project · MIT License
 SSD 健康	SSD Health
 Time Machine 在备份之间会先在本机留下快照，它们占的空间计入“可清除”，系统缺空间时会自动删。手动删除不影响已完成的备份。	Between backups Time Machine keeps snapshots on this Mac. Their space counts as purgeable and macOS removes them when it runs low. Deleting them by hand does not affect completed backups.
 VPN / 代理	VPN / Proxy
@@ -725,7 +724,6 @@ npm 缓存	npm Cache
 极好	Excellent
 极高风险	Very high risk
 构建	Build
-查看	View
 查看{}详情	Show {} details
 查看全部进程	All Processes
 查看包含的项目	Show items
@@ -992,7 +990,6 @@ npm 缓存	npm Cache
 自定义模式下 CPU 达到 {}°C 会自动交还系统控制；退出应用时风扇恢复自动。	In Custom mode, fans return to system control when the CPU reaches {}°C, and to automatic when you quit.
 自定义转速时，CPU 达到该温度自动恢复系统控制	With a custom speed, fans return to system control at this CPU temperature
 自己的进程为实际占用内存，系统进程为常驻内存	Footprint for your processes, resident memory for system processes
-致谢	Acknowledgements
 良好	Good
 节点	Edge
 芯片	Chip
