@@ -39,6 +39,30 @@ public struct SettingsDocument: Codable, Equatable, Sendable {
     public init() {}
 }
 
+extension SettingsDocument {
+    /// 账号页“同步的内容”那段说明里提到的字段。新增同步字段时在这里登记，并改 AccountSettings 里的说明；
+    /// SettingsDocumentTests 会检查文档里的字段有没有漏登记
+    static let describedFields: Set<String> = [
+        // 菜单栏项目、顺序与风格
+        "menuBarItems", "menuBarOrder", "menuBarStyle", "networkStyle", "styleOverrides", "menuBarLayout",
+        "menuBarItemSpacing", "colorizeHighLoad",
+        // 刷新频率、外观、语言、温度单位、程序坞图标
+        "refreshSeconds", "appearance", "language", "useFahrenheit", "showDockIcon",
+        // 详情弹窗的区块
+        "hiddenPopoverSections",
+        // 连接探测与公网 IP 查询
+        "probeEnabled", "probeInBackground", "probeTarget", "publicIPLookup",
+        // 通知与蓝牙低电量提示
+        "enabledAlerts", "alertCPUTemperature", "alertCPULoad", "bluetoothLowBatteryInMenuBar",
+        // 快捷键
+        "hotKeys",
+        // 风扇安全温度、合盖电量下限
+        "fanSafetyTemperature", "lidModeBatteryFloor",
+        // 几个开关：CPU 整机/单核、记录历史数据、自动检查更新、缓存先移到废纸篓
+        "cpuSharePerCore", "historyEnabled", "autoCheckUpdates", "cleanPrefersTrash",
+    ]
+}
+
 extension AppSettings {
     /// 当前设置导出成文档。读取这里列出的每一项也就登记了观察，SyncController 借此得知设置变化
     public func exportDocument() -> SettingsDocument {

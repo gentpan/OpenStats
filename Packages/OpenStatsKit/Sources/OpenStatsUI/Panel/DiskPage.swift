@@ -142,14 +142,10 @@ private struct VerifyCard: View {
         let tools = model.diskTools
         Card {
             CardHeader(icon: "stethoscope", title: tr("文件系统检查")) {
-                HStack(spacing: DS.Space.s3) {
-                    Text(tools.lastVerified.map { tr("上次检查：\($0.formatted(.relative(presentation: .named).locale(L10n.locale)))") } ?? tr("尚未检查"))
-                        .dsFont(.xs).foregroundStyle(DS.Palette.textSecondary).lineLimit(1)
-                    Button(tools.verifyPhase == .running ? tr("检查中…") : tr("检查")) { tools.verify() }
-                        .buttonStyle(DSButtonStyle(kind: .secondary))
-                        .disabled(tools.verifyPhase == .running)
-                        .fixedSize()
-                }
+                Button(tools.verifyPhase == .running ? tr("检查中…") : tr("检查")) { tools.verify() }
+                    .buttonStyle(DSButtonStyle(kind: .secondary))
+                    .disabled(tools.verifyPhase == .running)
+                    .fixedSize()
             }
             switch tools.verifyPhase {
             case .running:
@@ -172,8 +168,14 @@ private struct VerifyCard: View {
             case .idle:
                 Text(tr("相当于“磁盘工具”里的急救，但只检查不修改：核对启动盘的目录结构、文件分配与快照元数据是否一致。"))
                     .dsFont(.xs).foregroundStyle(DS.Palette.textSecondary).fixedSize(horizontal: false, vertical: true)
-                if tools.lastVerified != nil {
-                    StatusBadge(text: tools.lastVerifiedOK ? tr("上次检查正常") : tr("上次检查发现问题"), tone: tools.lastVerifiedOK ? .success : .error)
+                if let verified = tools.lastVerified {
+                    HStack(spacing: DS.Space.s2) {
+                        StatusBadge(text: tools.lastVerifiedOK ? tr("上次检查正常") : tr("上次检查发现问题"), tone: tools.lastVerifiedOK ? .success : .error)
+                        Text(verbatim: verified.formatted(.relative(presentation: .named).locale(L10n.locale)))
+                            .dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
+                    }
+                } else {
+                    Text(tr("尚未检查")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
                 }
             }
         }
@@ -190,19 +192,19 @@ private struct SnapshotsCard: View {
         let tools = model.diskTools
         Card {
             CardHeader(icon: "clock.arrow.circlepath", title: tr("本地快照")) {
-                HStack(spacing: DS.Space.s3) {
-                    Text(tools.snapshotsLoaded ? tr("\(tools.snapshots.count) 个") : tr("读取中"))
-                        .dsFont(.xs).foregroundStyle(DS.Palette.textSecondary).lineLimit(1)
-                    Button(tools.isDeletingSnapshots ? tr("删除中…") : tr("全部删除")) { confirming = true }
-                        .buttonStyle(DSButtonStyle(kind: .secondary))
-                        .disabled(tools.snapshots.isEmpty || tools.isDeletingSnapshots)
-                        .fixedSize()
-                }
+                Button(tools.isDeletingSnapshots ? tr("删除中…") : tr("全部删除")) { confirming = true }
+                    .buttonStyle(DSButtonStyle(kind: .secondary))
+                    .disabled(tools.snapshots.isEmpty || tools.isDeletingSnapshots)
+                    .fixedSize()
             }
             Text(tr("Time Machine 在备份之间会先在本机留下快照，它们占的空间计入“可清除”，系统缺空间时会自动删。手动删除不影响已完成的备份。"))
                 .dsFont(.xs).foregroundStyle(DS.Palette.textSecondary).fixedSize(horizontal: false, vertical: true)
-            if tools.snapshotsLoaded, tools.snapshots.isEmpty {
+            if !tools.snapshotsLoaded {
+                Text(tr("读取中")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+            } else if tools.snapshots.isEmpty {
                 Text(tr("现在没有本地快照")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+            } else {
+                Text(tr("\(tools.snapshots.count) 个")).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
             }
             ForEach(tools.snapshots.prefix(6)) { snapshot in
                 InfoRow(label: snapshot.date.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? snapshot.identifier) {

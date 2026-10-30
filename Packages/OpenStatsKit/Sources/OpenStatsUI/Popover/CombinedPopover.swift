@@ -291,7 +291,7 @@ private struct MetersCard: View {
         if let battery = store.battery {
             let tone = battery.tone
             MeterCell(item: .battery, icon: healthSymbol(battery.health), title: tr("电池"),
-                      badge: battery.health.map { tr("健康 \(Format.percent($0))") }) {
+                      badge: battery.health.map { tr("健康度 \(Format.percent($0))") }) {
                 HStack(spacing: DS.Space.s1) {
                     Text(verbatim: Format.percent(battery.level))
                         .dsFont(.sm)

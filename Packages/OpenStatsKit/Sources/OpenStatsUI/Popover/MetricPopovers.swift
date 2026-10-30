@@ -276,7 +276,7 @@ private struct CPUHero: View {
 }
 
 /// 应用 CPU 占用的口径：整机 / 单核，与走势时长选择同样的小字标签
-private struct CPUShareToggle: View {
+struct CPUShareToggle: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {

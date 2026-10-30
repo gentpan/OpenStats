@@ -364,9 +364,9 @@ struct MenuBarSettings: View {
                 }
             }
             GroupRow {
-                SettingRow(title: tr("蓝牙设备电量低时提示"),
-                           subtitle: tr("键盘、鼠标、耳机等低于 20% 时，在菜单栏的电池项目旁显示该设备的图标与电量；需要开启电池项目")) {
-                    DSToggle(isOn: $settings.bluetoothLowBatteryInMenuBar, label: tr("蓝牙设备电量低时提示"))
+                SettingRow(title: tr("在菜单栏显示低电量的蓝牙设备"),
+                           subtitle: tr("键盘、鼠标、耳机等低于 20% 时，在菜单栏的电池项目旁显示该设备的图标与电量；需要开启电池项目。系统通知在“通知”里单独设置")) {
+                    DSToggle(isOn: $settings.bluetoothLowBatteryInMenuBar, label: tr("在菜单栏显示低电量的蓝牙设备"))
                 }
             }
         }
@@ -719,7 +719,7 @@ struct HelperSettings: View {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     Text(tr("它只做这几件事")).dsFont(.sm, weight: .medium).foregroundStyle(DS.Palette.textPrimary)
                     CapabilityLine(text: tr("设置风扇目标转速，或恢复系统自动控制"))
-                    CapabilityLine(text: tr("开启 / 关闭“合盖不睡眠”（等同 pmset disablesleep）"))
+                    CapabilityLine(text: tr("开启 / 关闭“合盖后继续运行”（等同 pmset disablesleep）"))
                     CapabilityLine(text: tr("刷新 DNS 缓存、释放内存、为网络服务设置 DNS 服务器"))
                     CapabilityLine(text: tr("应用退出或断开连接时，自动恢复风扇与睡眠设置"))
                 }

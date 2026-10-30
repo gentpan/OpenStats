@@ -47,7 +47,8 @@ struct ProcessesPage: View {
 
             let columns = ProcessColumn.visible(forWidth: tableWidth)
             Card(padding: 0, spacing: 0) {
-                ProcessHeader(columns: columns, sortColumn: sortColumn, ascending: ascending) { column in
+                ProcessHeader(columns: columns, sortColumn: sortColumn, ascending: ascending,
+                              cpuPerCore: model.settings.cpuSharePerCore) { column in
                     if column == sortColumn { ascending.toggle() } else { sortColumn = column; ascending = column.ascendingByDefault }
                 }
                 HairlineDivider()
@@ -59,13 +60,15 @@ struct ProcessesPage: View {
                         .padding(DS.Space.s6)
                 } else if isSnapshot {
                     ForEach(rows.prefix(16)) { row in
-                        ProcessTableRow(row: row, columns: columns, isSelected: false, sortColumn: sortColumn)
+                        ProcessTableRow(row: row, columns: columns, isSelected: false, sortColumn: sortColumn,
+                                        cpuPerCore: model.settings.cpuSharePerCore)
                     }
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 0) {
                             ForEach(rows) { row in
-                                ProcessTableRow(row: row, columns: columns, isSelected: row.id == selection, sortColumn: sortColumn)
+                                ProcessTableRow(row: row, columns: columns, isSelected: row.id == selection, sortColumn: sortColumn,
+                                                cpuPerCore: model.settings.cpuSharePerCore)
                                     .onTapGesture { selection = row.id }
                                     .contextMenu { menu(for: row) }
                             }
@@ -149,6 +152,11 @@ struct ProcessesPage: View {
                     .foregroundStyle(DS.Palette.textSecondary)
             }
             Text(verbatim: tr("显示 \(count) 项")).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+            // CPU 列的口径与仪表盘、CPU 页共用一个设置，在哪里切换都一样
+            HStack(spacing: DS.Space.s2) {
+                Text("CPU").dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+                CPUShareToggle()
+            }
         }
         .padding(.horizontal, DS.Space.s1)
     }
@@ -339,9 +347,9 @@ enum ProcessColumn: CaseIterable {
         }
     }
 
-    var help: String {
+    func help(cpuPerCore: Bool) -> String {
         switch self {
-        case .cpu: tr("以单核满载为 100%")
+        case .cpu: cpuPerCore ? tr("以单核满载为 100%") : tr("占整机 CPU 的比例：全部核心跑满为 100%，与系统总占用同一口径")
         case .cpuTime: tr("进程启动以来累计占用的 CPU 时间")
         case .memory: tr("自己的进程为实际占用内存，系统进程为常驻内存")
         case .threads: tr("线程数（只能读取自己的进程）")
@@ -352,6 +360,13 @@ enum ProcessColumn: CaseIterable {
     }
 
     var ascendingByDefault: Bool { self == .name || self == .user }
+
+    /// CPU 列的写法。`value` 是单核口径（单核满载为 1）：单核口径原样显示，整机口径除以核数，
+    /// 与仪表盘、CPU 页的应用占用是同一把尺子
+    static func cpuText(_ value: Double, perCore: Bool) -> String {
+        if value < 0.0005 { return "0%" }
+        return perCore ? Format.coreShare(value) : Format.machineShare(value)
+    }
 
     func isOrdered(_ lhs: ProcessRowModel, _ rhs: ProcessRowModel) -> Bool {
         switch self {
@@ -373,6 +388,7 @@ private struct ProcessHeader: View {
     let columns: [ProcessColumn]
     let sortColumn: ProcessColumn
     let ascending: Bool
+    let cpuPerCore: Bool
     let onSort: (ProcessColumn) -> Void
 
     var body: some View {
@@ -392,7 +408,7 @@ private struct ProcessHeader: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help(column.help)
+                .help(column.help(cpuPerCore: cpuPerCore))
                 .frame(width: column.width)
                 .frame(maxWidth: column.width == nil ? .infinity : nil)
                 .padding(.leading, column == .name ? DS.Size.iconStandalone + DS.Space.s3 : 0)
@@ -409,6 +425,7 @@ private struct ProcessTableRow: View {
     let columns: [ProcessColumn]
     let isSelected: Bool
     let sortColumn: ProcessColumn
+    let cpuPerCore: Bool
     @State private var hovering = false
 
     var body: some View {
@@ -439,7 +456,7 @@ private struct ProcessTableRow: View {
     private func text(for column: ProcessColumn) -> String {
         switch column {
         case .name: row.title
-        case .cpu: row.cpu < 0.0005 ? "0%" : "\((row.cpu * 100).formatted(.number.precision(.fractionLength(1))))%"
+        case .cpu: ProcessColumn.cpuText(row.cpu, perCore: cpuPerCore)
         case .cpuTime: Format.cpuTime(row.cpuTime)
         case .memory: Format.bytes(row.memory)
         case .threads: row.threads.map(String.init) ?? "—"

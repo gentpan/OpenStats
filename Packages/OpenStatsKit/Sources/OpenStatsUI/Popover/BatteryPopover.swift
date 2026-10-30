@@ -55,7 +55,7 @@ private struct BatteryHero: View {
                                 HeroStat(label: tr("温度"),
                                          value: temperature.map { Format.temperature($0.maximum, fahrenheit: model.settings.useFahrenheit) } ?? "—",
                                          tone: temperature.map { Tone.forTemperatureText($0.maximum) } ?? .neutral),
-                                HeroStat(label: tr("健康"), value: battery.health.map(Format.percent) ?? "—",
+                                HeroStat(label: tr("健康度"), value: battery.health.map(Format.percent) ?? "—",
                                          tone: (battery.health ?? 1) < 0.8 ? .warning : .neutral),
                             ])
                 ProgressTrack(fraction: battery.level, color: tone.color, height: DS.Space.s2 + DS.Space.s1 / 2)

@@ -204,6 +204,7 @@ npm 缓存	npm Cache
 代理方式	Proxy Setup
 代理没有生效	Proxy Not Working
 代理软件	Proxy Apps
+占整机 CPU 的比例：全部核心跑满为 100%，与系统总占用同一口径	Share of total CPU: all cores fully busy is 100%, the same scale as total usage
 以单核满载为 100%	100% = one full core
 以后再说	Later
 以系统权限运行的后台服务，只接受本应用的请求	A background service with system privileges that only accepts requests from this app
@@ -235,6 +236,7 @@ npm 缓存	npm Cache
 停用	Turn Off
 停用失败：{}	Failed to turn off: {}
 健康 {}	Health {}
+健康度 {}	Health {}
 健康度	Health
 推算健康度	Estimated health
 健康度与“系统设置 › 电池”里的最大容量一致；推算健康度是满充容量与设计容量之比，会随使用小幅浮动。低于 80% 时苹果建议更换电池	Health matches Maximum Capacity in System Settings › Battery; estimated health is the full charge capacity versus the design capacity and drifts slightly with use. Apple recommends a replacement below 80%
@@ -398,7 +400,7 @@ npm 缓存	npm Cache
 同双行文字，但两行各自居中；标签比数值宽时（风扇、温度）不会偏到一边	Same as stacked, but both lines are centered, so a value narrower than its label (fan, temperature) is not pushed to one side
 同步	Sync
 同步失败	Sync failed
-同步的内容：菜单栏项目与风格、刷新频率、外观与语言、详情弹窗的区块、连接探测、通知、快捷键、风扇安全温度、合盖电量下限。当前页面、辅助工具与历史记录留在本机。	What syncs: menu bar items and styles, refresh rate, appearance and language, popover sections, connection probe, notifications, hotkeys, fan safety temperature and lid-mode battery floor. The current page, the helper and history stay on this Mac.
+同步的内容：菜单栏项目、顺序与风格，刷新频率、外观、语言、温度单位、程序坞图标，详情弹窗的区块，连接探测与公网 IP 查询，通知与蓝牙低电量提示，快捷键，风扇安全温度、合盖电量下限，以及 CPU 整机/单核、记录历史数据、自动检查更新、缓存先移到废纸篓这几个开关。当前页面、辅助工具与已记录的历史数据留在本机。	What syncs: menu bar items, order and styles; refresh rate, appearance, language, temperature unit and Dock icon; popover sections; connection probe and public IP lookup; notifications and the low Bluetooth battery hint; hotkeys; fan safety temperature and lid-mode battery floor; and the switches for CPU whole-machine/per-core, recording history, automatic update checks and moving caches to the Trash first. The current page, the helper and recorded history stay on this Mac.
 后台低频探测	Background Probing
 启动中…	Starting…
 启动于	Booted
@@ -502,7 +504,7 @@ npm 缓存	npm Cache
 已运行	Uptime
 已运行 	Up 
 已连接	Connected
-已连接的键盘、鼠标、耳机等电量低于 15%，每 10 分钟检查一次	A connected keyboard, mouse, headphones or similar drops below 15%; checked every 10 minutes
+已连接的键盘、鼠标、耳机等电量低于 15% 时发送通知，每 10 分钟检查一次；菜单栏上的低电量提示在“菜单栏”里设置	A notification is sent when a connected keyboard, mouse, headphones or similar drops below 15%, checked every 10 minutes. The low-battery hint in the menu bar is set under Menu Bar
 已选 {} 项 · {}	{} selected · {}
 已释放	Freed
 已释放 {} 缓存内存	Freed {} of cached memory
@@ -537,7 +539,7 @@ npm 缓存	npm Cache
 开发版	Development
 开发者	Developer
 开启	On
-开启 / 关闭“合盖不睡眠”（等同 pmset disablesleep）	Turn lid-closed sleep prevention on or off (same as pmset disablesleep)
+开启 / 关闭“合盖后继续运行”（等同 pmset disablesleep）	Turn “Keep Running with Lid Closed” on or off (same as pmset disablesleep)
 开启后图标出现在菜单栏；按住 ⌘ 键拖动图标可以调整位置	Adds the icon to the menu bar; hold ⌘ and drag the icon to move it
 开始	Start
 开始分析	Analyze
@@ -1000,7 +1002,7 @@ npm 缓存	npm Cache
 蓝牙设备	Bluetooth Devices
 蓝牙设备电量 {}%	Bluetooth device battery {}%
 蓝牙设备电量低	Bluetooth Battery Low
-蓝牙设备电量低时提示	Low Bluetooth battery hint
+在菜单栏显示低电量的蓝牙设备	Show low-battery Bluetooth devices in the menu bar
 解压失败：{}	Unzip failed: {}
 计算中	Calculating
 记录历史数据	Record History
@@ -1107,7 +1109,7 @@ npm 缓存	npm Cache
 重置上传与下载统计：从现在起重新累计。重启后自动回到开机后的累计；右键可改回	Reset the upload and download totals and count from now on. After a restart they go back to since-boot totals; right-click to switch back
 重置后上传	Uploaded since reset
 重置后下载	Downloaded since reset
-键盘、鼠标、耳机等低于 20% 时，在菜单栏的电池项目旁显示该设备的图标与电量；需要开启电池项目	When a keyboard, mouse, headphones or similar drops below 20%, show its icon and level next to the Battery item in the menu bar; requires the Battery item
+键盘、鼠标、耳机等低于 20% 时，在菜单栏的电池项目旁显示该设备的图标与电量；需要开启电池项目。系统通知在“通知”里单独设置	When a keyboard, mouse, headphones or similar drops below 20%, show its icon and level next to the Battery item in the menu bar; requires the Battery item. System notifications are set separately under Notifications
 闲	Idle
 防休眠	Keep Awake
 阿里云	Alibaba Cloud

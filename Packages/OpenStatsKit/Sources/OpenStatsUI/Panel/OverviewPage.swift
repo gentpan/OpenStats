@@ -365,7 +365,7 @@ struct BatteryCard: View {
                     Text(tr("电池")).dsFont(.xs, weight: .semibold)
                     Spacer(minLength: DS.Space.s1)
                     if let health = battery.health {
-                        Chip(text: tr("健康 \(Format.percent(health))"), tone: health < 0.8 ? .warning : .neutral)
+                        Chip(text: tr("健康度 \(Format.percent(health))"), tone: health < 0.8 ? .warning : .neutral)
                     }
                 }
                 .foregroundStyle(DS.Palette.textSecondary)

@@ -32,7 +32,7 @@ public enum AlertKind: String, CaseIterable, Identifiable, Sendable {
         case .diskSpace: tr("启动磁盘可用空间低于 10% 或 10 GB，每 10 分钟检查一次")
         case .networkDown: tr("网络连接中断超过 20 秒，恢复后再提示一次")
         case .batteryHealth: tr("电池最大容量低于 80%，每 30 天最多提醒一次")
-        case .bluetoothBattery: tr("已连接的键盘、鼠标、耳机等电量低于 15%，每 10 分钟检查一次")
+        case .bluetoothBattery: tr("已连接的键盘、鼠标、耳机等电量低于 15% 时发送通知，每 10 分钟检查一次；菜单栏上的低电量提示在“菜单栏”里设置")
         }
     }
 
@@ -56,7 +56,7 @@ public enum AlertKind: String, CaseIterable, Identifiable, Sendable {
         case .memoryPressure: .memory
         case .diskSpace: .disk
         case .networkDown: .network
-        case .batteryHealth, .bluetoothBattery: .system
+        case .batteryHealth, .bluetoothBattery: .battery
         }
     }
 
