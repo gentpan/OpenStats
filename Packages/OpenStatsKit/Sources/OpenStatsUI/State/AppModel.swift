@@ -30,6 +30,7 @@ public final class AppModel {
     public let history: HistoryRecorder
     public let sync: SyncController
     let diskTools: DiskToolsController
+    public let dashboard: DashboardController
     @ObservationIgnored public let hub: MetricsHub
 
     public var isMainWindowVisible = false
@@ -84,6 +85,7 @@ public final class AppModel {
         sync = SyncController(settings: settings)
         diskTools = DiskToolsController(helper: helper)
         speedTest = SpeedTestController(settings: settings)
+        dashboard = DashboardController(settings: settings, store: store)
     }
 
     /// 根据当前可见内容决定采集范围：主窗口看标签页，详情弹窗看是哪一项
@@ -103,13 +105,15 @@ public final class AppModel {
         demand.memory = true
         demand.network = true
         let showing = { (page: PanelTab, item: MenuBarItem) in (window && tab == page) || popover == item }
+        // 监控大屏开着时，它的页面数据要一直采
+        let dashboard = settings.dashboardEnabled
         demand.gpu = overview || (window && tab == .system) || menu.contains(.gpu) || showing(.gpu, .gpu)
-        demand.disk = overview || (window && [.system, .cleaner, .disk].contains(tab)) || menu.contains(.disk) || popover == .disk
+        demand.disk = overview || (window && [.system, .cleaner, .disk].contains(tab)) || menu.contains(.disk) || popover == .disk || dashboard
         demand.diskDetail = showing(.disk, .disk)
         demand.battery = overview || (window && tab == .keepAwake) || keepAwake.lidClosedActive
-            || menu.contains(.battery) || showing(.battery, .battery)
+            || menu.contains(.battery) || showing(.battery, .battery) || dashboard
         demand.processes = overview || (window && [.processes, .disk].contains(tab)) || showing(.cpu, .cpu) || showing(.memory, .memory)
-            || popover == .disk
+            || popover == .disk || dashboard
         demand.systemProcesses = window && tab == .processes
 
         var groups = Set<TemperatureGroup>()
