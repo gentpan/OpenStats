@@ -281,13 +281,13 @@ public enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
 /// 主窗口侧边栏的页面
 public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
     case overview, system, history, cpu, gpu, memory, disk, network, thermal, battery, processes, keepAwake, cleaner, uninstaller, startupItems
-    case settingsGeneral, settingsMenuBar, settingsNotifications, settingsAccount, settingsHelper, settingsAbout
+    case settingsGeneral, settingsMenuBar, settingsDashboard, settingsNotifications, settingsAccount, settingsHelper, settingsAbout
 
     public var id: String { rawValue }
 
     static let monitors: [PanelTab] = [.overview, .system, .history, .cpu, .gpu, .memory, .disk, .network, .thermal, .battery]
     static let tools: [PanelTab] = [.processes, .startupItems, .keepAwake, .cleaner, .uninstaller]
-    static let settings: [PanelTab] = [.settingsGeneral, .settingsMenuBar, .settingsNotifications, .settingsAccount, .settingsHelper, .settingsAbout]
+    static let settings: [PanelTab] = [.settingsGeneral, .settingsMenuBar, .settingsDashboard, .settingsNotifications, .settingsAccount, .settingsHelper, .settingsAbout]
 
     var isSettings: Bool { Self.settings.contains(self) }
 
@@ -313,6 +313,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .startupItems: tr("启动项")
         case .settingsGeneral: tr("通用")
         case .settingsMenuBar: tr("菜单栏")
+        case .settingsDashboard: tr("监控大屏")
         case .settingsNotifications: tr("通知")
         case .settingsAccount: tr("账号与同步")
         case .settingsHelper: tr("辅助工具")
@@ -339,6 +340,7 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .startupItems: "power"
         case .settingsGeneral: "gearshape"
         case .settingsMenuBar: "menubar.rectangle"
+        case .settingsDashboard: "tv"
         case .settingsNotifications: "bell.badge"
         case .settingsAccount: "person.crop.circle"
         case .settingsHelper: "lock.shield"
@@ -523,6 +525,14 @@ public final class AppSettings {
     public var cleanPrefersTrash: Bool {
         didSet { defaults.set(cleanPrefersTrash, forKey: Keys.cleanPrefersTrash) }
     }
+    /// 局域网监控大屏：向同网段设备提供只读网页仪表盘
+    public var dashboardEnabled: Bool {
+        didSet { defaults.set(dashboardEnabled, forKey: Keys.dashboardEnabled) }
+    }
+    /// 监控大屏的 HTTP 端口
+    public var dashboardPort: Int {
+        didSet { defaults.set(dashboardPort, forKey: Keys.dashboardPort) }
+    }
 
     public static let refreshOptions = [1, 2, 3, 5]
     public static let batteryFloorOptions = [10, 20, 30, 40]
@@ -531,6 +541,7 @@ public final class AppSettings {
     public static let alertTemperatureOptions = [85, 90, 95, 100]
     public static let alertLoadOptions = [70, 80, 90]
     public static let cpuChartOptions = [60, 180, 300]
+    public static let dashboardPortOptions = [8790, 8791, 8888]
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -585,6 +596,9 @@ public final class AppSettings {
             ? defaults.integer(forKey: Keys.alertCPULoad) : 80
         cpuChartSeconds = Self.cpuChartOptions.contains(defaults.integer(forKey: Keys.cpuChartSeconds))
             ? defaults.integer(forKey: Keys.cpuChartSeconds) : 60
+        dashboardEnabled = defaults.object(forKey: Keys.dashboardEnabled) as? Bool ?? false
+        dashboardPort = Self.dashboardPortOptions.contains(defaults.integer(forKey: Keys.dashboardPort))
+            ? defaults.integer(forKey: Keys.dashboardPort) : 8790
     }
 
     /// 合并显示用自定义顺序；每项独立的位置由 macOS 的 ⌘ 拖动与 autosaveName 记住。
@@ -680,5 +694,7 @@ public final class AppSettings {
         static let alertCPUTemperature = "alertCPUTemperature"
         static let alertCPULoad = "alertCPULoad"
         static let cpuChartSeconds = "cpuChartSeconds"
+        static let dashboardEnabled = "dashboardEnabled"
+        static let dashboardPort = "dashboardPort"
     }
 }

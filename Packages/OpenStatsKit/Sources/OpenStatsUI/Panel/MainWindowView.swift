@@ -84,6 +84,7 @@ public struct MainWindowView: View {
             case .startupItems: StartupItemsPage()
             case .settingsGeneral: SettingsTabPage { GeneralSettings() }
             case .settingsMenuBar: SettingsTabPage { MenuBarSettings() }
+            case .settingsDashboard: SettingsTabPage { DashboardSettings() }
             case .settingsNotifications: SettingsTabPage { NotificationSettings() }
             case .settingsAccount: SettingsTabPage { AccountSettings() }
             case .settingsHelper: SettingsTabPage { HelperSettings() }

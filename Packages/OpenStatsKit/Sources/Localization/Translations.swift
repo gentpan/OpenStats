@@ -1271,5 +1271,14 @@ Swift 包缓存	Swift Package Cache
 ，充电中	, charging
 ，已从程序坞移除	, removed from the Dock
 ：{}	: {}
+监控大屏	Dashboard screen
+无法在端口 {} 上监听	Cannot listen on port {}
+未知错误	Unknown error
+启用监控大屏	Enable dashboard screen
+同一局域网里的设备（平板、旧电脑、电视的浏览器）打开下面的地址，即可实时查看本机监控，适合挂一块监控屏	Open the address below in a browser on any device on the same network (tablet, spare computer, TV) for a live view of this Mac — handy as a dedicated monitoring screen
+端口	Port
+未开启	Off
+服务运行中 · 端口 {}	Running · port {}
+端口 {} 启动失败	Failed to start on port {}
 """#
 }
