@@ -38,7 +38,7 @@ import Testing
         try touch(lib.appendingPathComponent("Saved Application State/com.example.foo.savedState"), directory: true)
         try touch(lib.appendingPathComponent("LaunchAgents/com.example.foo.helper.plist"))
 
-        let found = Set(AppUninstaller.leftovers(for: app, home: home.path).map { $0.url.lastPathComponent })
+        let found = Set(AppUninstaller.leftovers(for: app, home: home.path, systemRoot: home.appendingPathComponent("__system").path).map { $0.url.lastPathComponent })
         #expect(found.contains("Foo.app"))
         #expect(found.contains("Foo"))
         #expect(found.contains("com.example.foo.plist"))
@@ -79,7 +79,7 @@ import Testing
             preserved += [sharedDirectory] + neighbors
         }
 
-        let leftovers = AppUninstaller.leftovers(for: app, home: home.path)
+        let leftovers = AppUninstaller.leftovers(for: app, home: home.path, systemRoot: home.appendingPathComponent("__system").path)
         #expect(Set(leftovers.map { $0.url.path }) == targets)
         for location in locations {
             let target = lib.appendingPathComponent(location.path).appendingPathComponent(location.target)

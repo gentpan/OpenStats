@@ -118,6 +118,7 @@ public final class CleanerController {
     /// 运行中的应用在主线程读取一次后传入后台扫描
     private static func environment() -> CleanEnvironment {
         let running = Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier))
-        return CleanEnvironment(runningBundleIdentifiers: { running })
+        // 正常的 Mac 上不可能一个应用都没有（至少有 Finder、程序坞）；空列表说明读取失败，按“可能在运行”处理
+        return CleanEnvironment(runningBundleIdentifiers: { running }, runningAppsReadable: !running.isEmpty)
     }
 }

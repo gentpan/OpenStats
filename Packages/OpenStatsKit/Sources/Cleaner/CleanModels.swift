@@ -44,14 +44,22 @@ public enum SkipReason: Sendable, Equatable, Hashable {
 public struct CleanEnvironment: Sendable {
     public var home: String
     public var runningBundleIdentifiers: @Sendable () -> Set<String>
+    /// 读到的运行列表是否可信。读不到时（例如列表是空的）按“可能在运行”处理，相关条目不删
+    public var runningAppsReadable: Bool
     public var now: @Sendable () -> Date
+    /// 移到废纸篓的执行方式；测试里换成桩，免得真的动用户的废纸篓
+    public var trasher: any Trasher
 
     public init(home: String = NSHomeDirectory(),
                 runningBundleIdentifiers: @escaping @Sendable () -> Set<String>,
-                now: @escaping @Sendable () -> Date = Date.init) {
+                runningAppsReadable: Bool = true,
+                now: @escaping @Sendable () -> Date = Date.init,
+                trasher: any Trasher = FileManagerTrasher()) {
         self.home = home
         self.runningBundleIdentifiers = runningBundleIdentifiers
+        self.runningAppsReadable = runningAppsReadable
         self.now = now
+        self.trasher = trasher
     }
 }
 
@@ -95,6 +103,14 @@ public struct CleanItem: Sendable, Identifiable, Hashable {
     public var id: String { url.path }
     public let url: URL
     public let size: UInt64
+    /// 扫描时记下的身份；清理前对不上就放弃，防止预览之后路径被换成了别的东西
+    public let identity: FileIdentity?
+
+    init(url: URL, size: UInt64, identity: FileIdentity? = nil) {
+        self.url = url
+        self.size = size
+        self.identity = identity
+    }
 }
 
 public struct RuleScan: Sendable, Identifiable {

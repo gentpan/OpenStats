@@ -138,6 +138,8 @@ public struct SpaceScanResult: Sendable, Equatable {
         public let bytes: UInt64
         public let modified: Date?
         public let isPackage: Bool
+        /// 扫描结束时记下的身份；“移到废纸篓”时对不上就拒绝。没有它也拒绝（无从判断是不是同一个文件）
+        public var identity: FileIdentity?
         public var id: String { url.path }
         public var name: String { url.lastPathComponent }
     }
@@ -235,7 +237,11 @@ public enum SpaceScanner {
 
         return SpaceScanResult(root: root,
                                folders: folders.sorted { $0.bytes > $1.bytes },
-                               largestFiles: candidates.sorted { $0.bytes > $1.bytes },
+                               largestFiles: candidates.sorted { $0.bytes > $1.bytes }.map { file in
+                                   var file = file
+                                   file.identity = FileIdentity.capture(file.url)
+                                   return file
+                               },
                                scannedItems: scanned, totalBytes: totalBytes, date: Date())
     }
 
@@ -320,10 +326,31 @@ public enum SpaceScanner {
         return true
     }
 
-    /// 移到废纸篓（可恢复）；不允许的路径直接报错
-    public static func trash(_ url: URL) throws {
-        guard canTrash(url) else { throw CocoaError(.fileWriteNoPermission) }
-        try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+    /// 移到废纸篓（可恢复），经过删除入口。不允许的路径、扫描之后又被改过的文件都会报错，不会移动。
+    /// 返回文件在废纸篓里的位置
+    @discardableResult
+    public static func trash(_ file: SpaceScanResult.File, home: URL = FileManager.default.homeDirectoryForCurrentUser,
+                             trasher: any Trasher = FileManagerTrasher(), log: CleanLog? = CleanLog()) async throws -> URL? {
+        let url = file.url
+        let scanned = file.modified
+        let service = DeletionService(home: home.path, scope: { candidate in
+            guard canTrash(candidate, home: home) else { throw SafetyError.outsideAllowedRoots }
+            // 扫描之后文件被改过（或换成了别的文件），说明列表已经过期
+            if let scanned {
+                // 直接读目录项：URL 的资源值有缓存，扫描时取过的值会原样返回
+                let current = FileIdentity.modificationDate(of: candidate.path)
+                guard let current, abs(current.timeIntervalSince(scanned)) < 1 else { throw DeletionError.staleScan }
+            }
+        }, running: { .known([]) }, standardTrasher: trasher, log: log)
+        let request = DeletionRequest(url: url, mode: .trash, base: home, size: file.bytes, label: "space.large-file",
+                                      identity: file.identity)
+        guard let result = await service.execute([request]).first else { throw CancellationError() }
+        switch result.outcome {
+        case .removed(let trashedTo): return trashedTo
+        case .blocked(let block): throw DeletionError.blocked(block)
+        case .failed(let message): throw DeletionError.failed(message)
+        case .wouldRemove: return nil
+        }
     }
 }
 

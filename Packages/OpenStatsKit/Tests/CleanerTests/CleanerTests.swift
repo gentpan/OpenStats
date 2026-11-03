@@ -102,6 +102,20 @@ struct CleanEngineTests {
         #expect(scan.skippedCount == 2)  // 运行中的应用 + 受保护的密码管理器；com.apple.* 在列出时即排除
     }
 
+    @Test func anUnreadableRunningListNeverCountsAsNothingRunning() async throws {
+        let home = try FakeHome()
+        defer { home.remove() }
+        let cache = try home.file("Library/Caches/com.example.app/data.bin")
+        var environment = home.environment()
+        environment.runningAppsReadable = false
+
+        // 读不到运行列表时，按“可能在运行”处理：以应用标识命名的缓存都不动
+        let scans = await CleanEngine.scan([RuleCatalog.userCaches], environment: environment)
+        #expect(scans.first?.items.isEmpty == true)
+        #expect(scans.first?.skippedCount == 1)
+        #expect(FileManager.default.fileExists(atPath: cache.path))
+    }
+
     @Test func recentlyModifiedItemsAreSkipped() async throws {
         let home = try FakeHome()
         defer { home.remove() }

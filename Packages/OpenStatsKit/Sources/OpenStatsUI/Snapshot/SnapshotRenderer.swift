@@ -16,7 +16,7 @@ enum SnapshotRenderer {
         settings.menuBarItems = [.cpu, .gpu, .memory, .network, .disk, .temperature, .battery]
         // 历史页用示例数据：最近 24 小时每分钟一条，中间留一段“睡眠”空档
         let historyURL = FileManager.default.temporaryDirectory.appendingPathComponent("openstats-snapshot-history.sqlite")
-        try? FileManager.default.removeItem(at: historyURL)
+        try? FileManager.default.removeItem(at: historyURL) // SAFE: 截图用的临时历史库
         if let database = try? HistoryDatabase(url: historyURL) {
             let now = Int(Date().timeIntervalSince1970) / 60 * 60
             for index in 0..<(24 * 60) where !(600..<780).contains(index) {
@@ -64,6 +64,12 @@ enum SnapshotRenderer {
         model.startupItems.refresh()
         model.uninstaller.loadApps()
         try? await Task.sleep(for: .seconds(2))
+        // 环境变量 OPENSTATS_SNAPSHOT_UNINSTALL=<bundle id>：卸载页选中这个应用并等残留扫描完成（只读，不卸载）
+        if let identifier = ProcessInfo.processInfo.environment["OPENSTATS_SNAPSHOT_UNINSTALL"],
+           let app = model.uninstaller.apps.first(where: { $0.bundleIdentifier == identifier }) {
+            model.uninstaller.select(app)
+            for _ in 0..<600 where model.uninstaller.isScanning { try? await Task.sleep(for: .milliseconds(100)) }
+        }
         model.updates.showPreview(UpdateRelease(
             version: "0.3.0", build: "3", date: "2026-09-20", minimumSystem: "14.0",
             url: URL(string: "https://getopenstats.com/download/OpenStats-0.3.0.zip")!, sha256: String(repeating: "0", count: 64),

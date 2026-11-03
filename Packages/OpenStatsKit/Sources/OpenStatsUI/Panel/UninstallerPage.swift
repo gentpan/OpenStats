@@ -193,6 +193,17 @@ private struct AppDetailCard: View {
                 .help(uninstaller.unreadableDirectories.map(\.path).joined(separator: "\n"))
             }
 
+            if uninstaller.showsDiagnostics {
+                let skipped = uninstaller.skippedCandidateCount
+                InfoBanner(icon: "doc.text.magnifyingglass",
+                           text: skipped > 0 ? tr("有 \(skipped) 项名字匹配的文件没有通过检查，不会被移除。点“复制诊断”可以看到原因。")
+                                             : tr("只找到了应用本体，没有找到任何残留。如果你确定还有残留，点“复制诊断”反馈给开发者。"),
+                           tone: .neutral) {
+                    Button(tr("复制诊断")) { uninstaller.copyDiagnostics() }
+                        .buttonStyle(DSButtonStyle(kind: .secondary))
+                }
+            }
+
             HairlineDivider()
             HStack {
                 Text(tr("将移到废纸篓")).dsFont(.sm, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
@@ -203,7 +214,7 @@ private struct AppDetailCard: View {
             }
 
             ForEach(AppLeftover.Kind.allCases, id: \.self) { kind in
-                let items = uninstaller.leftovers.filter { $0.kind == kind }
+                let items = uninstaller.leftovers.filter { $0.kind == kind && $0.location == .user }
                 if !items.isEmpty {
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                         Text(kind.title).dsFont(.xs, weight: .medium).foregroundStyle(DS.Palette.textSecondary)
@@ -217,7 +228,8 @@ private struct AppDetailCard: View {
                                         .foregroundStyle(DS.Palette.textPrimary)
                                         .lineLimit(1)
                                         .truncationMode(.middle)
-                                        .help(item.url.path)
+                                        .help([item.url.path, item.evidence.map { tr("依据：\($0.summary)") }]
+                                            .compactMap { $0 }.joined(separator: "\n"))
                                     if item.requiresReview {
                                         Text(tr("可能与其他应用共用，默认保留"))
                                             .dsFont(.xs)
@@ -232,6 +244,34 @@ private struct AppDetailCard: View {
                                 MiniIconButton(systemName: "magnifyingglass", help: tr("在访达中显示")) {
                                     NSWorkspace.shared.activateFileViewerSelecting([item.url])
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+
+            let systemItems = uninstaller.leftovers.filter { $0.location == .system }
+            if !systemItems.isEmpty {
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    Text(tr("系统级残留（仅提示）")).dsFont(.xs, weight: .medium).foregroundStyle(DS.Palette.textSecondary)
+                    Text(tr("这些在 /Library 等系统位置，需要管理员权限，这里不会自动处理。需要时可以在访达里查看。"))
+                        .dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    ForEach(systemItems) { item in
+                        HStack(spacing: DS.Space.s2) {
+                            VStack(alignment: .leading, spacing: DS.Space.s1 / 2) {
+                                Text(verbatim: item.url.path)
+                                    .dsFont(.xs).foregroundStyle(DS.Palette.textPrimary)
+                                    .lineLimit(1).truncationMode(.middle)
+                                    .help([item.url.path, item.evidence.map { tr("依据：\($0.summary)") }]
+                                        .compactMap { $0 }.joined(separator: "\n"))
+                                Text(verbatim: item.kind.title).dsFont(.xs).foregroundStyle(DS.Palette.textTertiary)
+                            }
+                            Spacer(minLength: DS.Space.s2)
+                            Text(verbatim: Format.bytes(item.size, base: .decimal))
+                                .dsFont(.xs).foregroundStyle(DS.Palette.textTertiary).monospacedDigit()
+                            MiniIconButton(systemName: "magnifyingglass", help: tr("在访达中显示")) {
+                                NSWorkspace.shared.activateFileViewerSelecting([item.url])
                             }
                         }
                     }

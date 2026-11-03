@@ -149,7 +149,7 @@ public final class UpdateController {
                 // 临时目录与应用在同一卷上，替换时是原子改名
                 let work = try FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask,
                                                        appropriateFor: app, create: true)
-                defer { try? FileManager.default.removeItem(at: work) }
+                defer { try? FileManager.default.removeItem(at: work) } // SAFE: 更新的临时工作目录
 
                 let archive = try await UpdateInstaller.download(release.url, into: work) { fraction in
                     Task { @MainActor in
@@ -175,7 +175,7 @@ public final class UpdateController {
                 }
                 skippedVersion = nil
                 Log.update.notice("已安装 \(release.version, privacy: .public)，重新启动")
-                try? FileManager.default.removeItem(at: work)
+                try? FileManager.default.removeItem(at: work) // SAFE: 更新的临时工作目录
                 try UpdateInstaller.relaunch(app)
                 terminate()
             } catch {

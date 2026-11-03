@@ -200,17 +200,19 @@ final class DiskToolsController {
 
     /// 把扫描结果里的一个文件移到废纸篓，然后从结果里去掉它
     func trash(_ file: SpaceScanResult.File) {
-        do {
-            try SpaceScanner.trash(file.url)
-            trashOutcome = Outcome(text: tr("已把“\(file.name)”移到废纸篓"), isError: false)
-            if case .finished(let result) = scanPhase {
-                scanPhase = .finished(SpaceScanResult(root: result.root, folders: result.folders,
-                                                      largestFiles: result.largestFiles.filter { $0.id != file.id },
-                                                      scannedItems: result.scannedItems, totalBytes: result.totalBytes, date: result.date))
+        Task {
+            do {
+                try await SpaceScanner.trash(file)
+                trashOutcome = Outcome(text: tr("已把“\(file.name)”移到废纸篓"), isError: false)
+                if case .finished(let result) = scanPhase {
+                    scanPhase = .finished(SpaceScanResult(root: result.root, folders: result.folders,
+                                                          largestFiles: result.largestFiles.filter { $0.id != file.id },
+                                                          scannedItems: result.scannedItems, totalBytes: result.totalBytes, date: result.date))
+                }
+                Log.app.notice("空间分析：移到废纸篓 \(file.url.path, privacy: .private)")
+            } catch {
+                trashOutcome = Outcome(text: tr("无法移到废纸篓：\(error.localizedDescription)"), isError: true)
             }
-            Log.app.notice("空间分析：移到废纸篓 \(file.url.path, privacy: .private)")
-        } catch {
-            trashOutcome = Outcome(text: tr("无法移到废纸篓：\(error.localizedDescription)"), isError: true)
         }
     }
 

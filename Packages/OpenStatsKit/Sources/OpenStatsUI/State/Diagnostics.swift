@@ -122,7 +122,7 @@ final class DiagnosticsExporter {
         let work = manager.temporaryDirectory.appendingPathComponent("OpenStats-diagnostics-\(UUID().uuidString)")
         let folder = work.appendingPathComponent(tr("OpenStats-诊断-\(fileDate())"))
         try manager.createDirectory(at: folder, withIntermediateDirectories: true)
-        defer { try? manager.removeItem(at: work) }
+        defer { try? manager.removeItem(at: work) } // SAFE: 导出诊断信息的临时工作目录
 
         try summary.write(to: folder.appendingPathComponent("summary.txt"), atomically: true, encoding: .utf8)
 
@@ -152,7 +152,7 @@ final class DiagnosticsExporter {
             }
         }
 
-        try? manager.removeItem(at: destination)
+        try? manager.removeItem(at: destination) // SAFE: 用户在保存面板里确认覆盖的导出文件
         let zip = run("/usr/bin/ditto", ["-c", "-k", "--sequesterRsrc", "--keepParent", folder.path, destination.path])
         guard manager.fileExists(atPath: destination.path) else {
             throw NSError(domain: "OpenStats", code: 1, userInfo: [NSLocalizedDescriptionKey: zip])

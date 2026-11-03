@@ -51,7 +51,7 @@ public enum UpdateInstaller {
     /// ditto 解压，保留包内符号链接与扩展属性；返回解出的 .app
     public static func extractApp(from archive: URL, into directory: URL) throws -> URL {
         let output = directory.appendingPathComponent("extracted", isDirectory: true)
-        try? FileManager.default.removeItem(at: output)
+        try? FileManager.default.removeItem(at: output) // SAFE: 更新包的下载输出，在自己的临时工作目录里
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         let result = run("/usr/bin/ditto", ["-x", "-k", archive.path, output.path])
         guard result.status == 0 else { throw UpdateError.archive(result.output) }
@@ -114,19 +114,19 @@ public enum UpdateInstaller {
     public static func replace(_ current: URL, with candidate: URL, backupDirectory: URL) throws {
         let manager = FileManager.default
         let backup = backupDirectory.appendingPathComponent("previous-\(current.lastPathComponent)")
-        try? manager.removeItem(at: backup)
+        try? manager.removeItem(at: backup) // SAFE: 上一次更新留下的旧版备份，在自己的备份目录里
         do {
-            try manager.moveItem(at: current, to: backup)
+            try manager.moveItem(at: current, to: backup) // SAFE: 更新时把旧版应用改名为备份，同一卷上原子改名
         } catch {
             throw UpdateError.install(error.localizedDescription)
         }
         do {
-            try manager.moveItem(at: candidate, to: current)
+            try manager.moveItem(at: candidate, to: current) // SAFE: 更新时把新版放到原位置，失败会还原旧版
         } catch {
-            try? manager.moveItem(at: backup, to: current)
+            try? manager.moveItem(at: backup, to: current) // SAFE: 新版放不上去时把备份还原
             throw UpdateError.install(error.localizedDescription)
         }
-        try? manager.removeItem(at: backup)
+        try? manager.removeItem(at: backup) // SAFE: 更新成功后丢弃旧版备份，在自己的备份目录里
     }
 
     /// 当前用户能否直接改写应用所在目录（管理员账户对 /Applications 通常可以）
@@ -208,8 +208,8 @@ private final class Downloader: NSObject, URLSessionDownloadDelegate, @unchecked
             return
         }
         do {
-            try? FileManager.default.removeItem(at: destination)
-            try FileManager.default.moveItem(at: location, to: destination)
+            try? FileManager.default.removeItem(at: destination) // SAFE: 下载目标文件，在自己的临时工作目录里
+            try FileManager.default.moveItem(at: location, to: destination) // SAFE: 下载完成后把临时文件移到自己的工作目录
         } catch {
             moveError = error
         }

@@ -15,8 +15,9 @@ hosting SwiftUI, no third-party dependencies. The Xcode project is generated fro
 - `Packages/OpenStatsKit/Sources/Metrics` — one sampler per metric and `MetricsHub`; power and CPU
   frequency (`PowerSampler`), disk activity and NVMe SMART (`DiskSamplers`), Bluetooth battery,
   the SQLite history store.
-- `Packages/OpenStatsKit/Sources/Cleaner` — cleanup rules, `SafetyGuard`, `CleanEngine`, the app
-  uninstaller's leftover search and the launchd startup-item list.
+- `Packages/OpenStatsKit/Sources/Cleaner` — cleanup rules, `SafetyGuard`, `CleanEngine`, the single
+  deletion funnel (`Deletion/`: `PathPolicy`, `FileIdentity`, `DeletionService`), the app uninstaller's
+  leftover search with its diagnostics, and the launchd startup-item list.
 - `Packages/OpenStatsKit/Sources/Updates` — the update manifest and the download → verify →
   replace → relaunch steps.
 - `Packages/OpenStatsKit/Sources/HelperShared` — the XPC protocol and maintenance commands
@@ -103,23 +104,74 @@ set to manual is left alone, so other fan tools are not overridden. The app keep
 open only while the helper holds state for it (manual fans, lid-closed mode) and otherwise closes it
 10 s after the last call (protocol 5 and later), so the helper exits after its 30 s idle timeout.
 
-## Cleanup
+## Cleanup and uninstall
 
-Every rule lists candidate items; every item passes `SafetyGuard` twice — at scan and again
-right before deletion, because apps start in between.
+### One deletion funnel
 
-- Deny by default: an item must sit strictly inside an allow-listed root under the home
-  folder, never be the root itself, contain no `..` or control characters, and still pass
-  after symlinks are resolved (resolution can only reject, never allow).
-- Under `Application Support`, only folders named like caches (`Code Cache`, `GPUCache`,
-  `CacheStorage`, …) are allowed.
-- Any path component matching a protected keyword (keychains, password managers, VPNs,
-  cookies, history, …) is rejected.
-- Reverse-DNS cache folders whose app is running are skipped; browser rules are blocked while
-  the browser runs; items modified in the last two minutes count as in use.
+All user-data deletion goes through `DeletionService` (`Cleaner/Deletion`): the cleaner, the app
+uninstaller and the large-file "move to Trash" action. A static audit test
+(`DeletionAuditTests`) fails when any other source file calls `removeItem`, `trashItem`,
+`unlink`, `removefile` or `recycle` without a same-line `// SAFE: <reason>` (own temp files and
+the like). An item is checked in a fixed order, and preview (`plan`) and execution (`execute`)
+call the same `evaluate`, so a preview never promises something execution would refuse:
 
-Regenerable caches are deleted outright; user files go to the Trash. Each action is appended
-to `~/Library/Logs/OpenStats/cleanup.log` as a JSON line.
+1. `PathPolicy` — the feature-independent floor. Absolute, no `..`, no control characters; system
+   trees (`/System`, `/usr`, …), top-level folders themselves (`/Applications`, the home folder,
+   `~/Library`, `~/Documents`, …) and credential or sync roots (`~/.ssh`, `Keychains`,
+   `Mobile Documents`) are refused, compared case-insensitively *and* by device+inode, so APFS
+   case aliases, the `/System/Volumes/Data` firmlink and links pointing at them are caught. From the
+   trusted base downwards every component must be a real directory entry; a symlink leaf or
+   ancestor is refused. Resolving links can only make this stricter. Deletion is only allowed
+   inside the home folder, `/Applications` and the per-user cache area (`/var/folders`), so
+   system-level locations (`/Library`, `/Users/Shared`, …) are refused here even if a caller's
+   scope would allow them.
+2. The caller's own scope — `SafetyGuard` for cleanup rules, the scan's candidate list for uninstall.
+   A path that no longer exists is reported as missing before this check.
+3. The item is still the object that was scanned (`FileIdentity`: the parent folder, the type, and
+   for directories the inode). A regular file's own inode may change, because preference writes and
+   `defaults write` replace the file atomically on every save. A request without a scan-time
+   identity is never executed.
+4. Related apps: running → skipped; the running list unreadable (an empty list from the system is
+   treated as unreadable) → skipped, "unknown" never means "idle"; entries named like a running app's
+   bundle id (also with a team-id or `group.` prefix) are skipped; recently modified → skipped. The
+   modification time is read straight from the directory entry (`lstat`), never from `URL.resourceValues`,
+   which caches per URL object.
+
+Known limit: the check and the move are not atomic. The window is microseconds for the standard
+route, but the interactive route (an administrator prompt inside `NSWorkspace`) can leave seconds
+between them; the target is the Trash, so the result is recoverable.
+
+Moving to the Trash goes through a `Trasher`; if it fails the item stays where it is — there is no
+silent fallback to permanent deletion. The Trash location is written to the log. Regenerable caches
+may be deleted outright; everything else goes to the Trash. Every decision, including skips and the
+reason code, is appended to `~/Library/Logs/OpenStats/cleanup.log` as one JSON line (control
+characters in file names are escaped, so a name cannot forge a record).
+
+### Cleanup rules
+
+Every rule lists candidate items. Under `Application Support`, only folders named like caches
+(`Code Cache`, `GPUCache`, …) are allowed; any path component matching a protected keyword
+(keychains, password managers, VPNs, cookies, history, …) is rejected; browser rules are blocked
+while the browser runs.
+
+### Uninstaller
+
+`AppUninstaller.scan` returns evidence-bearing leftovers: each item records why it was claimed
+(`AppLeftover.Evidence`: bundle id, embedded component, app group from the code signature, container
+metadata, name, vendor folder, launch item or native-messaging manifest that points into the app,
+crash report, known path). Shared and name-only matches are not preselected. Matching is by
+bundle-id boundary (`com.foo` never claims `com.foobar`); a name that extends another installed
+app's bundle id (`com.google.Chrome.canary` while uninstalling `com.google.Chrome`) is that app's data
+and is left out, with the reason in the diagnostics. App-group names compare case-insensitively.
+Beyond `~/Library`, it previews **system-level** leftovers (`/Library` data and caches, launch
+daemons, privileged helpers, receipts, `/Users/Shared`) — read-only, marked `location: .system`,
+never preselected and rejected by the uninstall scope, so they cannot reach the funnel.
+
+`AppScanDiagnostics` records what the scan read (per library folder: listed N, missing, denied,
+behind a symlink) and every candidate that matched by name but was dropped, with the reason. A
+folder the system refuses to list is reported as unreadable instead of silently treated as absent.
+The uninstall page shows a banner with a "Copy Diagnostics" button when only the app was found or
+some candidates were skipped.
 
 ## Disk tools
 

@@ -1184,6 +1184,37 @@ macOS 报告的热状态：偏高及以上时，系统会降低性能来降温	T
 内存压力由 macOS 判断：变黄或变红说明内存不够用，系统开始压缩或写入磁盘	Memory pressure is judged by macOS. Yellow or red means memory is short and the system is compressing or swapping to disk
 写到磁盘上的内存。长期使用较多说明内存不够用，会拖慢速度	Memory written to disk. Heavy use over time means memory is short and slows the Mac down
 到探测目标的往返时间	Round-trip time to the probe target
+路径为空	The path is empty
+受保护的位置：{}	Protected location: {}
+目标是符号链接	The target is a symbolic link
+路径经过符号链接或无法读取：{}	The path goes through a symbolic link or can't be read: {}
+不在允许的范围内	Outside the allowed scope
+已经不存在	No longer exists
+路径在扫描之后被替换，请重新扫描	The path was replaced after scanning. Scan again.
+无法确认相关应用是否在运行	Can't tell whether the related app is running
+文件在扫描之后被改过，请重新扫描	The file changed after scanning. Scan again.
+启动项与后台服务	Launch Items & Background Services
+插件与扩展	Plug-ins & Extensions
+特权助手	Privileged Helpers
+安装回执	Install Receipts
+包名 {}	Bundle ID {}
+内嵌组件 {}	Embedded component {}
+应用组 {}	App group {}
+容器记录里的归属 {}	Owner in the container record: {}
+名称 {}	Name {}
+厂商目录下的 {}	{} in a vendor folder
+启动项指向本应用：{}	Launch item runs a program in this app: {}
+原生消息清单指向本应用：{}	Native messaging manifest points into this app: {}
+崩溃报告 {}	Crash report {}
+已知位置 {}	Known location {}
+依据：{}	Basis: {}
+有 {} 项名字匹配的文件没有通过检查，不会被移除。点“复制诊断”可以看到原因。	{} files matched by name did not pass the checks and won't be removed. Click “Copy Diagnostics” to see why.
+只找到了应用本体，没有找到任何残留。如果你确定还有残留，点“复制诊断”反馈给开发者。	Only the app itself was found, with no leftovers. If you're sure there are some, click “Copy Diagnostics” and send it to the developer.
+复制诊断	Copy Diagnostics
+已复制诊断信息，可以粘贴到反馈里	Diagnostics copied. You can paste them into your feedback.
+系统级残留（仅提示）	System-level leftovers (info only)
+这些在 /Library 等系统位置，需要管理员权限，这里不会自动处理。需要时可以在访达里查看。	These are in system locations such as /Library and need administrator access, so they aren't handled here. You can look at them in Finder.
+另有 {} 项系统级残留（在 /Library 等位置）没有处理，需要管理员权限。	{} system-level leftovers (in /Library and similar) were not handled; they need administrator access.
 外网不通	Internet unreachable
 路由器有回应，但路由器之外的网络没有回应	The router replies, but nothing beyond it does
 橙格：路由器有回应，但外网不通	Orange: the router replies but the internet is unreachable

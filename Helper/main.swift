@@ -257,7 +257,7 @@ final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProto
     private func persist() {
         let state = PersistedState(sleepDisabled: sleepDisabledByHelper, fansOverridden: !manualFans.isEmpty)
         guard state.sleepDisabled || state.fansOverridden else {
-            try? FileManager.default.removeItem(at: stateURL)
+            try? FileManager.default.removeItem(at: stateURL) // SAFE: 辅助工具自己的状态文件
             return
         }
         try? FileManager.default.createDirectory(at: stateURL.deletingLastPathComponent(), withIntermediateDirectories: true)

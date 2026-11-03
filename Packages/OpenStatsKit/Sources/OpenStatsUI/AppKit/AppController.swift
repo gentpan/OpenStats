@@ -349,7 +349,7 @@ public enum OpenStatsApplication {
                 L10n.configure(.english)
                 let log = URL(fileURLWithPath: path).appendingPathComponent("untranslated.txt")
                 try? FileManager.default.createDirectory(at: URL(fileURLWithPath: path), withIntermediateDirectories: true)
-                try? FileManager.default.removeItem(at: log)
+                try? FileManager.default.removeItem(at: log) // SAFE: 截图命令自己生成的 untranslated.txt
                 L10n.missLog = log
             }
             app.setActivationPolicy(.prohibited)

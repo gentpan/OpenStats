@@ -52,7 +52,8 @@ import Testing
         func scan(_ app: InstalledApp, installed: [InstalledApp] = [], userCache: URL? = nil,
                   unreadableInstallations: [URL] = []) -> AppUninstallScan {
             AppUninstaller.scan(for: app, home: home.path, identity: AppUninstallIdentity(app: app),
-                                installed: installed, userCache: userCache, unreadableInstallations: unreadableInstallations)
+                                installed: installed, userCache: userCache, unreadableInstallations: unreadableInstallations,
+                                systemRoot: home.appendingPathComponent("__system").path)
         }
     }
 
