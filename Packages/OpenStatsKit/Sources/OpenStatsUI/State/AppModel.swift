@@ -105,8 +105,8 @@ public final class AppModel {
         demand.memory = true
         demand.network = true
         let showing = { (page: PanelTab, item: MenuBarItem) in (window && tab == page) || popover == item }
-        // 监控大屏开着时，它的页面数据要一直采
-        let dashboard = settings.dashboardEnabled
+        // 监控大屏在服务时，它的页面数据要一直采；监听失败了就不必再为它采
+        let dashboard = self.dashboard.isServing
         demand.gpu = overview || (window && tab == .system) || menu.contains(.gpu) || showing(.gpu, .gpu)
         demand.disk = overview || (window && [.system, .cleaner, .disk].contains(tab)) || menu.contains(.disk) || popover == .disk || dashboard
         demand.diskDetail = showing(.disk, .disk)

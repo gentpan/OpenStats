@@ -35,8 +35,7 @@ public struct SettingsDocument: Codable, Equatable, Sendable {
     public var historyEnabled: Bool?
     public var autoCheckUpdates: Bool?
     public var cleanPrefersTrash: Bool?
-    public var dashboardEnabled: Bool?
-    public var dashboardPort: Int?
+    // 监控大屏的开关和端口不在文档里：它们决定这台 Mac 是否、在哪个端口对网络开放，不能让别的设备的设置悄悄替你改
 
     public init() {}
 }
@@ -98,8 +97,6 @@ extension AppSettings {
         doc.historyEnabled = historyEnabled
         doc.autoCheckUpdates = autoCheckUpdates
         doc.cleanPrefersTrash = cleanPrefersTrash
-        doc.dashboardEnabled = dashboardEnabled
-        doc.dashboardPort = dashboardPort
         return doc
     }
 
@@ -151,8 +148,6 @@ extension AppSettings {
         assign(\.historyEnabled, doc.historyEnabled)
         assign(\.autoCheckUpdates, doc.autoCheckUpdates)
         assign(\.cleanPrefersTrash, doc.cleanPrefersTrash)
-        assign(\.dashboardEnabled, doc.dashboardEnabled)
-        assign(\.dashboardPort, option(doc.dashboardPort, in: Self.dashboardPortOptions))
     }
 
     /// 出厂设置对应的文档：用一个空的 defaults 域构造一次即可，不会写盘

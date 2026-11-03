@@ -23,7 +23,7 @@ final class DashboardPayloadBox: @unchecked Sendable {
 }
 
 /// 监控大屏：把 MetricsStore 里的读数每 2 秒整理成一份 JSON，经 DashboardServer 发给局域网里的
-/// 任意设备（平板、旧电脑、电视浏览器），配合全屏模式当监控墙用。数据不出局域网
+/// 任意设备（平板、旧电脑、电视浏览器），配合全屏模式当监控墙用。只接受本机和局域网的访问
 @MainActor
 @Observable
 public final class DashboardController {
@@ -55,6 +55,9 @@ public final class DashboardController {
     private var samples: [Sample] = []
     private var totalDown: Double = 0
     private var totalUp: Double = 0
+    /// 主机名要查系统，可能卡在域名解析上，所以只在后台查一次，查到之前先用占位
+    @ObservationIgnored private var hostname = "Mac"
+    @ObservationIgnored private var isResolvingHostname = false
 
     init(settings: AppSettings, store: MetricsStore) {
         self.settings = settings
@@ -74,14 +77,20 @@ public final class DashboardController {
             return
         }
         let port = settings.dashboardPort
-        if case .running(let running) = availability, running == port { return }
+        switch availability {
+        case .starting(let current), .running(let current):
+            if current == port { return }
+        case .off, .failed:
+            break
+        }
         availability = .starting(port: port)
         server.start(port: UInt16(clamping: port))
+        resolveHostname()
         if sampler == nil {
             sampler = Task { [weak self] in
                 while !Task.isCancelled {
                     let start = Date()
-                    await self?.sampleOnce()
+                    self?.sampleOnce()
                     let elapsed = Date().timeIntervalSince(start)
                     if elapsed < Self.sampleInterval {
                         try? await Task.sleep(for: .seconds(Self.sampleInterval - elapsed))
@@ -89,31 +98,90 @@ public final class DashboardController {
                 }
             }
         }
+        // 监听通常几十毫秒内就绪，不必等下一拍采样才在设置页反映出来
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(300))
+            self?.refreshAvailability()
+        }
     }
 
     public func stop() {
+        guard availability != .off || sampler != nil else { return }
         sampler?.cancel()
         sampler = nil
         server.stop()
         availability = .off
+        samples.removeAll()
+        totalDown = 0
+        totalUp = 0
+        payloadBox.update(Data("{}".utf8))
     }
 
-    /// 展示用地址：优先主网络接口的 IPv4
+    /// 服务在跑或正在启动；监听失败后大屏不再让磁盘、电量和进程一直采集
+    public var isServing: Bool {
+        switch availability {
+        case .starting, .running: true
+        case .off, .failed: false
+        }
+    }
+
+    /// 展示用地址：主网络接口的 IPv4；没有网络时不给地址
     public var address: String? {
-        guard case .running = availability else { return nil }
-        let host = store.networkInterface?.ipv4 ?? "127.0.0.1"
+        guard case .running = availability, let host = store.networkInterface?.ipv4 else { return nil }
         return "http://\(host):\(settings.dashboardPort)/"
+    }
+
+    /// 设置被设置页以外的途径改了而没人通知控制器时，在采样循环里补上
+    private func reconcile() {
+        guard settings.dashboardEnabled else {
+            stop()
+            return
+        }
+        switch availability {
+        case .off:
+            applySettings()
+        case .starting(let port), .running(let port), .failed(let port, _):
+            if port != settings.dashboardPort {
+                applySettings()
+            } else {
+                refreshAvailability()
+            }
+        }
+    }
+
+    /// 监听状态（端口被占用、运行中掉线等）从服务器读回来，最多晚一拍反映到设置页
+    private func refreshAvailability() {
+        let port: Int
+        switch availability {
+        case .off: return
+        case .starting(let current), .running(let current), .failed(let current, _): port = current
+        }
+        let updated: Availability
+        switch server.currentState() {
+        case .ready?: updated = .running(port: port)
+        case .failed(let reason)?: updated = .failed(port: port, reason: reason)
+        case .starting?, nil: return
+        }
+        if updated != availability { availability = updated }
+    }
+
+    private func resolveHostname() {
+        guard !isResolvingHostname else { return }
+        isResolvingHostname = true
+        Task.detached(priority: .utility) { [weak self] in
+            let name = Host.current().localizedName ?? ProcessInfo.processInfo.hostName
+            await self?.setHostname(name)
+        }
+    }
+
+    private func setHostname(_ name: String) {
+        hostname = name
     }
 
     // MARK: 采样
 
     func sampleOnce() {
-        // 监听状态（端口被占用等）在采样循环里轮询，最多晚 2 秒反映到设置页
-        if case .starting(let port) = availability, let state = server.currentState() {
-            availability = state.ready
-                ? .running(port: port)
-                : .failed(port: port, reason: state.reason ?? tr("未知错误"))
-        }
+        reconcile()
 
         let now = Date()
         let network = store.network
@@ -140,7 +208,7 @@ public final class DashboardController {
 
         var system: [String: Any] = [
             "time": sample.time,
-            "hostname": Host.current().localizedName ?? ProcessInfo.processInfo.hostName,
+            "hostname": hostname,
             "cpu": sample.cpu,
             "cpuPercpu": (cpu?.perCore ?? []).map { ($0 * 100).rounded(.toNearestOrAwayFromZero) },
             "load": (cpu?.loadAverage ?? [0, 0, 0]).map { ($0 * 100).rounded() / 100 },
@@ -179,10 +247,12 @@ public final class DashboardController {
         return (try? JSONSerialization.data(withJSONObject: payload)) ?? Data("{}".utf8)
     }
 
-    /// CPU 前六名；CPU 口径与活动监视器一致（单核满载为 100%）
+    /// 当前用户的进程里 CPU 前六名；CPU 口径与活动监视器一致（单核满载为 100%）。
+    /// 主窗口停在进程页时采样会带上系统进程，这里按 isOwned 筛掉，榜单不随本机在看什么而变
     private func topProcesses() -> [[String: Any]] {
         let total = Double(store.memory?.total ?? 0)
         return store.processes
+            .filter(\.isOwned)
             .sorted { $0.cpu > $1.cpu }
             .prefix(6)
             .map { process in
@@ -194,5 +264,4 @@ public final class DashboardController {
                 ] as [String: Any]
             }
     }
-
 }

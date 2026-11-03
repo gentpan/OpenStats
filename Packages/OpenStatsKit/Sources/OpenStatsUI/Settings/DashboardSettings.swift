@@ -10,7 +10,7 @@ struct DashboardSettings: View {
 
         SettingsGroup {
             GroupRow(showsDivider: false) {
-                SettingRow(title: tr("启用监控大屏"), subtitle: tr("同一局域网里的设备（平板、旧电脑、电视的浏览器）打开下面的地址，即可实时查看本机监控，适合挂一块监控屏")) {
+                SettingRow(title: tr("启用监控大屏"), subtitle: tr("同一局域网里的设备（平板、旧电脑、电视的浏览器）打开下面的地址，即可实时查看本机监控，适合挂一块监控屏。只接受本机和局域网的访问，开关和端口不随云端设置同步")) {
                     DSToggle(isOn: Binding(get: { settings.dashboardEnabled },
                                            set: {
                                                settings.dashboardEnabled = $0
@@ -43,7 +43,12 @@ struct DashboardSettings: View {
                 Text(tr("未开启"))
                     .foregroundStyle(DS.Palette.textSecondary)
             }
-        case .starting(let port), .running(let port):
+        case .starting:
+            SettingRow(title: tr("状态")) {
+                Text(tr("启动中…"))
+                    .foregroundStyle(DS.Palette.textSecondary)
+            }
+        case .running(let port):
             SettingRow(title: tr("状态")) {
                 VStack(alignment: .trailing, spacing: DS.Space.s1) {
                     Text(tr("服务运行中 · 端口 \(port)"))
