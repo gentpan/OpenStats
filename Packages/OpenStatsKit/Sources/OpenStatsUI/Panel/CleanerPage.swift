@@ -19,6 +19,7 @@ struct CleanerPage: View {
                 VStack(spacing: DS.Space.s3) {
                     CategoryCard(category: .system)
                     CategoryCard(category: .browser)
+                    CategoryCard(category: .apps)
                 }
                 .frame(maxWidth: .infinity)
                 VStack(spacing: DS.Space.s3) {
@@ -228,7 +229,7 @@ private struct RuleRow: View {
                     ForEach(scan.items.prefix(Self.previewLimit)) { item in
                         Button { cleaner.reveal(item) } label: {
                             HStack {
-                                Text(item.url.lastPathComponent).dsFont(.xs).lineLimit(1).truncationMode(.middle)
+                                Text(item.title).dsFont(.xs).lineLimit(1).truncationMode(.middle)
                                 Spacer(minLength: DS.Space.s2)
                                 Text(verbatim: Format.bytes(item.size, base: .decimal)).dsFont(.xs).monospacedDigit()
                             }

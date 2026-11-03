@@ -43,7 +43,7 @@ public enum CleanEngine {
                 continue
             }
             let size = allocatedSize(of: url)
-            if size > 0 { items.append(CleanItem(url: url, size: size, identity: identity)) }
+            if size > 0 { items.append(CleanItem(url: url, size: size, identity: identity, title: rule.itemLabel?(url))) }
         }
         items.sort { $0.size > $1.size }
         return RuleScan(rule: rule, items: items, skippedCount: skipped, blocked: nil)
@@ -52,7 +52,11 @@ public enum CleanEngine {
     static func deletionService(environment: CleanEnvironment, safety: SafetyGuard, log: CleanLog?) -> DeletionService {
         DeletionService(home: environment.home,
                         scope: { try safety.validate($0) },
-                        running: { environment.runningAppsReadable ? .known(environment.runningBundleIdentifiers()) : .unknown },
+                        running: {
+                            environment.runningAppsReadable
+                                ? .known(environment.runningBundleIdentifiers(), names: environment.runningApplicationNames())
+                                : .unknown
+                        },
                         now: environment.now,
                         standardTrasher: environment.trasher,
                         log: log)
@@ -63,7 +67,9 @@ public enum CleanEngine {
         DeletionRequest(url: url, mode: mode, base: URL(fileURLWithPath: environment.home), size: size, label: rule.id,
                         identity: identity,
                         guardApps: rule.blockingApps.map { GuardApp(bundleID: $0.bundleID, name: $0.name) },
-                        checksOwnerApp: rule.checksOwnerApp, minimumAge: rule.minimumAge)
+                        checksOwnerApp: rule.checksOwnerApp,
+                        guardNames: rule.ownerName?(url).map { [$0] } ?? [],
+                        minimumAge: rule.minimumAge)
     }
 
     /// 实际占用的磁盘空间；不跟随符号链接

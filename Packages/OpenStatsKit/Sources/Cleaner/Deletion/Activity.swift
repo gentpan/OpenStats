@@ -2,7 +2,9 @@ import Foundation
 
 /// 当前在运行的应用。“读不到”和“没有在运行”是两回事：读不到时一律按“可能在运行”处理，不删。
 public enum RunningApps: Sendable {
-    case known(Set<String>)
+    /// `names` 是运行中应用的各种名字（小写）：显示名、应用包的文件名、CFBundleName、可执行文件名、包名最后一段。
+    /// 用来判断“名字不是包名”的目录（Application Support/Slack）属于不属于运行中的应用
+    case known(Set<String>, names: Set<String> = [])
     case unknown
 }
 

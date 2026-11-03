@@ -4,8 +4,10 @@ import Localization
 /// 清理规则。目录清单参考了 Mole 的清理范围（仅参考范围，代码为独立实现）。
 public enum RuleCatalog {
     public static func rules() -> [CleanRule] {
-        [userCaches, logs] + browsers.map(browserRule) + [xcodeDerivedData, simulatorCaches, npmCache, xcodeArchives,
-                                                          incompleteDownloads, installers, trash]
+        [userCaches, logs] + browsers.map(browserRule) + [chromiumAppCaches]
+            + [xcodeDerivedData, simulatorCaches, xcodeCaches, xcodeDeviceSupport, npmCache, frontendToolCaches, pythonToolCaches,
+               rustDownloadCache, swiftPackageCache, xcodeArchives]
+            + [incompleteDownloads, installers, trash]
     }
 
     // MARK: 系统
@@ -15,6 +17,7 @@ public enum RuleCatalog {
         "Google", "Firefox", "Microsoft Edge", "BraveSoftware", "Arc",
         "com.google.Chrome", "com.microsoft.edgemac", "com.brave.Browser", "company.thebrowser.Browser",
         "org.mozilla.firefox", "com.apple.Safari",
+        "Vivaldi", "com.vivaldi.Vivaldi", "com.operasoftware.Opera", "Chromium", "org.chromium.Chromium",
     ]
 
     static let userCaches = CleanRule(
@@ -61,10 +64,17 @@ public enum RuleCatalog {
                 cacheDirectories: [], userDataDirectory: nil),
         Browser(id: "safari", name: "Safari", bundleID: "com.apple.Safari",
                 cacheDirectories: ["com.apple.Safari"], userDataDirectory: nil),
+        Browser(id: "opera", name: "Opera", bundleID: "com.operasoftware.Opera",
+                cacheDirectories: ["com.operasoftware.Opera"], userDataDirectory: nil),
+        Browser(id: "vivaldi", name: "Vivaldi", bundleID: "com.vivaldi.Vivaldi",
+                cacheDirectories: ["Vivaldi", "com.vivaldi.Vivaldi"], userDataDirectory: "Vivaldi"),
+        Browser(id: "chromium", name: "Chromium", bundleID: "org.chromium.Chromium",
+                cacheDirectories: ["Chromium", "org.chromium.Chromium"], userDataDirectory: "Chromium"),
     ]
 
     /// Chromium 配置目录内可安全清理的缓存子目录
-    static let chromiumProfileCaches = ["Code Cache", "GPUCache", "Service Worker/CacheStorage"]
+    static let chromiumProfileCaches = ["Code Cache", "GPUCache", "Service Worker/CacheStorage", "DawnCache", "GrShaderCache",
+                                        "GraphiteDawnCache", "Application Cache"]
 
     static func browserRule(_ browser: Browser) -> CleanRule {
         CleanRule(
@@ -107,6 +117,52 @@ public enum RuleCatalog {
         return FileManager.default.fileExists(atPath: url.appendingPathComponent("Preferences").path)
     }
 
+    // MARK: 应用缓存
+
+    /// Chromium 内核应用在目录里会有这些缓存子目录；有其中之一，才说明这是个 Chromium / Electron 应用
+    static let chromiumMarkers = ["Code Cache", "GPUCache", "DawnCache", "GrShaderCache", "GraphiteDawnCache",
+                                  "DawnGraphiteCache", "DawnWebGPUCache"]
+    /// 确认是 Chromium 应用之后，同一目录里这些也是可再生的缓存。单独存在时不认：`Cache` 这个名字太通用
+    static let chromiumCompanions = ["Cache", "CachedData", "Service Worker/CacheStorage"]
+    /// 浏览器有自己的规则（按配置目录逐个处理），不在这条通用规则里重复处理
+    static let browserSupportFolders: Set<String> = ["google", "microsoft edge", "bravesoftware", "arc", "firefox", "vivaldi",
+                                                     "opera software", "com.operasoftware.opera", "chromium"]
+
+    /// Application Support 下以应用名命名的目录里的 Chromium / Electron 缓存（Slack、Discord、VS Code、Cursor、Notion 等）。
+    /// 只清已知可再生的缓存子目录，登录状态、Cookie、本地数据库都不在里面；对应的应用在运行时整项跳过
+    static let chromiumAppCaches = CleanRule(
+        id: "apps.chromiumCaches", category: .apps, title: tr("网页内核缓存"),
+        detail: tr("Slack、Discord、VS Code、Cursor 等应用的网页、脚本与着色器缓存，不碰登录状态和数据"), symbol: "macwindow",
+        ownerName: applicationSupportOwner, itemLabel: applicationSupportLabel
+    ) { env in
+        let fileManager = FileManager.default
+        func exists(_ url: URL) -> Bool { fileManager.fileExists(atPath: url.path) }
+        var urls: [URL] = []
+        for directory in try childrenIfExists(of: env.home + "/Library/Application Support") {
+            guard (try? directory.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true,
+                  !browserSupportFolders.contains(directory.lastPathComponent.lowercased()) else { continue }
+            let markers = chromiumMarkers.map { directory.appendingPathComponent($0) }.filter(exists)
+            guard !markers.isEmpty else { continue }
+            urls += markers
+            urls += chromiumCompanions.map { directory.appendingPathComponent($0) }.filter(exists)
+        }
+        return urls
+    }
+
+    /// Application Support 下一个条目属于哪个应用文件夹：`.../Application Support/<应用>/...` 里的 <应用>
+    static func applicationSupportOwner(_ url: URL) -> String? {
+        let parts = url.pathComponents
+        guard let index = parts.firstIndex(of: "Application Support"), index + 1 < parts.count else { return nil }
+        return parts[index + 1]
+    }
+
+    /// “Slack › Cache”：带上所属应用，清单里才看得出是谁的
+    static func applicationSupportLabel(_ url: URL) -> String {
+        let parts = url.pathComponents
+        guard let index = parts.firstIndex(of: "Application Support"), index + 2 < parts.count else { return url.lastPathComponent }
+        return parts[index + 1] + " › " + parts[(index + 2)...].joined(separator: "/")
+    }
+
     // MARK: 开发者
 
     static let xcodeDerivedData = CleanRule(
@@ -139,6 +195,89 @@ public enum RuleCatalog {
         selectedByDefault: false, policy: .trash, minimumAge: 0
     ) { env in
         try childrenIfExists(of: env.home + "/Library/Developer/Xcode/Archives")
+    }
+
+    // 以下开发工具缓存默认都不勾选：它们会让下一次构建或安装变慢，由用户自己决定
+    // MARK: 开发者（Xcode）
+
+    static let xcodeCaches = CleanRule(
+        id: "developer.xcodeCaches", category: .developer, title: tr("Xcode 其他缓存"),
+        detail: tr("Xcode 的缓存、Products、Interface Builder 缓存与 XCTest 设备，需要时会重新生成"), symbol: "wrench.and.screwdriver",
+        selectedByDefault: false, blockingApps: [("com.apple.dt.Xcode", "Xcode"), ("com.apple.iphonesimulator", tr("模拟器"))]
+    ) { env in
+        var urls: [URL] = []
+        let cache = env.home + "/Library/Caches/com.apple.dt.Xcode"
+        if FileManager.default.fileExists(atPath: cache) { urls.append(URL(fileURLWithPath: cache)) }
+        for relative in ["Library/Developer/Xcode/Products", "Library/Developer/Xcode/UserData/IB Support", "Library/Developer/XCTestDevices"] {
+            urls += try childrenIfExists(of: env.home + "/" + relative)
+        }
+        return urls
+    }
+
+    /// 每种设备只保留最新的这么多个版本
+    static let deviceSupportKeepCount = 2
+
+    static let xcodeDeviceSupport = CleanRule(
+        id: "developer.deviceSupport", category: .developer, title: tr("Xcode 设备支持文件（旧版本）"),
+        detail: tr("连接设备时生成的符号文件，每个 1–3 GB。每种设备保留最新的 \(deviceSupportKeepCount) 个版本，再连接设备时会重新生成"),
+        symbol: "iphone.gen3", selectedByDefault: false, blockingApps: [("com.apple.dt.Xcode", "Xcode")],
+        itemLabel: { $0.deletingLastPathComponent().lastPathComponent + " › " + $0.lastPathComponent }
+    ) { env in
+        var urls: [URL] = []
+        for platform in ["iOS", "watchOS", "tvOS", "visionOS"] {
+            let versions = try childrenIfExists(of: env.home + "/Library/Developer/Xcode/\(platform) DeviceSupport")
+            // 按修改时间新的在前：直接读目录项，不用会缓存的 URL 资源值
+            let newestFirst = versions.sorted {
+                (FileIdentity.modificationDate(of: $0.path) ?? .distantPast) > (FileIdentity.modificationDate(of: $1.path) ?? .distantPast)
+            }
+            urls += newestFirst.dropFirst(deviceSupportKeepCount)
+        }
+        return urls
+    }
+
+    // MARK: 开发者（其他工具链）
+
+    /// 家目录下这些具体的缓存目录，存在的列出来
+    static func existingItems(_ relatives: [String], home: String) -> [URL] {
+        relatives.map { URL(fileURLWithPath: home + "/" + $0) }.filter { FileManager.default.fileExists(atPath: $0.path) }
+    }
+
+    /// 清单里显示相对家目录的位置，例如 ~/.cache/vite
+    static func homeRelativeLabel(_ url: URL) -> String {
+        url.path.replacingOccurrences(of: NSHomeDirectory(), with: "~")
+    }
+
+    static let frontendToolCaches = CleanRule(
+        id: "developer.frontendCaches", category: .developer, title: tr("前端构建缓存"),
+        detail: tr("~/.cache 下的 vite、webpack、eslint、prettier、typescript、node-gyp、electron，以及 ~/.node-gyp"),
+        symbol: "shippingbox", selectedByDefault: false, itemLabel: homeRelativeLabel
+    ) { env in
+        existingItems([".cache/vite", ".cache/webpack", ".cache/eslint", ".cache/prettier", ".cache/typescript",
+                       ".cache/node-gyp", ".cache/electron", ".node-gyp"], home: env.home)
+    }
+
+    static let pythonToolCaches = CleanRule(
+        id: "developer.pythonCaches", category: .developer, title: tr("Python 工具缓存"),
+        detail: tr("pip、ruff、mypy 的缓存与 pyenv 的下载缓存；虚拟环境和已安装的版本不动"),
+        symbol: "chevron.left.forwardslash.chevron.right", selectedByDefault: false, itemLabel: homeRelativeLabel
+    ) { env in
+        existingItems([".cache/pip", ".cache/ruff", ".cache/mypy", ".pyenv/cache"], home: env.home)
+    }
+
+    static let rustDownloadCache = CleanRule(
+        id: "developer.cargoCache", category: .developer, title: tr("Rust 下载缓存"),
+        detail: tr("~/.cargo/registry/cache 里下载的 .crate 压缩包；已解压的源码、索引和工具链不动"),
+        symbol: "gearshape.2", selectedByDefault: false, itemLabel: homeRelativeLabel
+    ) { env in
+        existingItems([".cargo/registry/cache"], home: env.home)
+    }
+
+    static let swiftPackageCache = CleanRule(
+        id: "developer.swiftPackageCache", category: .developer, title: tr("Swift 包缓存"),
+        detail: tr("~/.cache/swift-package-manager，下次解析依赖时重新下载"),
+        symbol: "swift", selectedByDefault: false, itemLabel: homeRelativeLabel
+    ) { env in
+        existingItems([".cache/swift-package-manager"], home: env.home)
     }
 
     // MARK: 下载

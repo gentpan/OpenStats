@@ -216,9 +216,11 @@ unclean exit restores them at the next boot.
 
 ## Cleanup
 
-- **What it scans.** App caches, logs and crash reports, browser caches (Chrome, Edge,
-  Brave, Arc, Firefox, Safari), Xcode DerivedData, simulator caches, the npm cache, Xcode
-  archives, unfinished downloads, installers and the Trash.
+- **What it scans.** User caches, logs and crash reports, browser caches (Chrome, Edge, Brave,
+  Arc, Opera, Vivaldi, Chromium, Firefox, Safari), caches of Electron / Chromium apps (Slack,
+  Discord, VS Code, …), unfinished downloads, installers and the Trash. Developer-tool caches
+  (Xcode build products and old device support files, simulator caches, npm / frontend
+  toolchain / Python / Cargo / Swift package caches, Xcode archives) are unchecked by default.
 - **Review first.** Sizes by category, every rule expandable to its items, a second click to
   confirm. Caches and logs are deleted outright so the space comes back at once; downloads go
   to the Trash. One switch sends everything to the Trash instead.

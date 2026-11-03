@@ -28,13 +28,15 @@ public struct DeletionRequest: Sendable, Identifiable {
     public var guardApps: [GuardApp] = []
     /// 条目名是反向域名时，对应应用在运行就跳过
     public var checksOwnerApp = false
+    /// 条目所属应用的文件夹名（如 Application Support 下的 Slack）；与运行中某个应用的名字相同就跳过
+    public var guardNames: [String] = []
     /// 最近修改过的视为正在使用
     public var minimumAge: TimeInterval = 0
     public var route: TrashRoute = .standard
 
     public init(url: URL, mode: DeletionMode, base: URL, size: UInt64 = 0, label: String,
                 identity: FileIdentity? = nil, guardApps: [GuardApp] = [], checksOwnerApp: Bool = false,
-                minimumAge: TimeInterval = 0, route: TrashRoute = .standard) {
+                guardNames: [String] = [], minimumAge: TimeInterval = 0, route: TrashRoute = .standard) {
         self.url = url
         self.mode = mode
         self.base = base
@@ -43,6 +45,7 @@ public struct DeletionRequest: Sendable, Identifiable {
         self.identity = identity
         self.guardApps = guardApps
         self.checksOwnerApp = checksOwnerApp
+        self.guardNames = guardNames
         self.minimumAge = minimumAge
         self.route = route
     }
@@ -169,12 +172,13 @@ public struct DeletionService: Sendable {
         // 没有扫描时的身份就无从判断是不是同一个东西：不放行
         guard let expected = request.identity, expected.isStillTheSame(as: current) else { return .identityChanged }
 
-        if !request.guardApps.isEmpty || request.checksOwnerApp {
+        if !request.guardApps.isEmpty || request.checksOwnerApp || !request.guardNames.isEmpty {
             switch running() {
             case .unknown:
                 return .activityUnknown
-            case .known(let apps):
+            case .known(let apps, let names):
                 if let app = request.guardApps.first(where: { apps.contains($0.bundleID) }) { return .appRunning(app.name) }
+                if let name = request.guardNames.first(where: { names.contains($0.lowercased()) }) { return .appRunning(name) }
                 if request.checksOwnerApp,
                    let owner = owningRunningApp(ofEntryNamed: request.url.lastPathComponent, running: apps) {
                     return .appRunning(owner)

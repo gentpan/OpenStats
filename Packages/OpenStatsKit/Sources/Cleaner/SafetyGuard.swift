@@ -35,13 +35,31 @@ public struct SafetyGuard: Sendable {
         "Library/Developer/Xcode/DerivedData",
         "Library/Developer/Xcode/Archives",
         "Library/Developer/CoreSimulator/Caches",
+        "Library/Developer/Xcode/iOS DeviceSupport",
+        "Library/Developer/Xcode/watchOS DeviceSupport",
+        "Library/Developer/Xcode/tvOS DeviceSupport",
+        "Library/Developer/Xcode/visionOS DeviceSupport",
+        "Library/Developer/Xcode/Products",
+        "Library/Developer/Xcode/UserData/IB Support",
+        "Library/Developer/XCTestDevices",
         ".npm",
         "Downloads",
         ".Trash",
     ]
 
+    /// 目录本身就可以整个清理的位置，以及它里面的内容。只列具体的工具缓存目录，不放行它们的上级（比如整个 ~/.cache），
+    /// 其余目录（模型、Hugging Face、钩子缓存等）一律不碰
+    static let allowedItems = [
+        ".cache/vite", ".cache/webpack", ".cache/eslint", ".cache/prettier", ".cache/typescript", ".cache/node-gyp",
+        ".cache/electron", ".node-gyp", ".cache/pip", ".cache/ruff", ".cache/mypy", ".pyenv/cache",
+        ".cargo/registry/cache", ".cache/swift-package-manager",
+    ]
+
     /// Application Support 内只允许删除这些名字的缓存目录（浏览器配置目录下）
-    static let applicationSupportCacheNames: Set<String> = ["Code Cache", "GPUCache", "CacheStorage", "Cache", "cache2", "ShaderCache", "GrShaderCache"]
+    static let applicationSupportCacheNames: Set<String> = [
+        "Code Cache", "GPUCache", "CacheStorage", "Cache", "CachedData", "cache2", "ShaderCache", "GrShaderCache",
+        "DawnCache", "GraphiteDawnCache", "DawnGraphiteCache", "DawnWebGPUCache", "Application Cache",
+    ]
 
     /// 路径任一段包含以下关键词即拒绝（小写匹配）
     static let protectedKeywords = [
@@ -70,10 +88,25 @@ public struct SafetyGuard: Sendable {
         }
     }
 
+    private func checkProtectedKeywords(in components: [Substring]) throws {
+        for component in components {
+            let lower = component.lowercased()
+            if let keyword = Self.protectedKeywords.first(where: { lower.contains($0) }) {
+                throw SafetyError.protectedName(keyword)
+            }
+        }
+    }
+
     private func check(path: String) throws {
         let homePrefix = home + "/"
         guard path.hasPrefix(homePrefix) else { throw SafetyError.outsideAllowedRoots }
         let relative = String(path.dropFirst(homePrefix.count))
+
+        // 具体的工具缓存目录：目录本身与里面的内容都可以，但路径上任何一段都不能带受保护的关键词
+        if Self.allowedItems.contains(where: { relative == $0 || relative.hasPrefix($0 + "/") }) {
+            try checkProtectedKeywords(in: relative.split(separator: "/"))
+            return
+        }
 
         guard let root = Self.allowedRoots.first(where: { relative == $0 || relative.hasPrefix($0 + "/") }) else {
             throw SafetyError.outsideAllowedRoots
@@ -81,12 +114,7 @@ public struct SafetyGuard: Sendable {
         guard relative != root else { throw SafetyError.isRoot }
 
         let inside = relative.dropFirst(root.count + 1)
-        for component in inside.split(separator: "/") {
-            let lower = component.lowercased()
-            if let keyword = Self.protectedKeywords.first(where: { lower.contains($0) }) {
-                throw SafetyError.protectedName(keyword)
-            }
-        }
+        try checkProtectedKeywords(in: inside.split(separator: "/"))
 
         if root == "Library/Application Support" {
             let leaf = (path as NSString).lastPathComponent

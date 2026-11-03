@@ -2,7 +2,7 @@ import Foundation
 import Localization
 
 public enum CleanCategory: String, Sendable, CaseIterable, Identifiable {
-    case system, browser, developer, downloads, trash
+    case system, browser, apps, developer, downloads, trash
 
     public var id: String { rawValue }
 
@@ -10,6 +10,7 @@ public enum CleanCategory: String, Sendable, CaseIterable, Identifiable {
         switch self {
         case .system: tr("系统")
         case .browser: tr("浏览器")
+        case .apps: tr("Electron 应用")
         case .developer: tr("开发者")
         case .downloads: tr("下载")
         case .trash: tr("废纸篓")
@@ -46,6 +47,8 @@ public struct CleanEnvironment: Sendable {
     public var runningBundleIdentifiers: @Sendable () -> Set<String>
     /// 读到的运行列表是否可信。读不到时（例如列表是空的）按“可能在运行”处理，相关条目不删
     public var runningAppsReadable: Bool
+    /// 运行中应用的各种名字（小写），用来认出 Application Support 里以应用名命名的目录属于谁
+    public var runningApplicationNames: @Sendable () -> Set<String>
     public var now: @Sendable () -> Date
     /// 移到废纸篓的执行方式；测试里换成桩，免得真的动用户的废纸篓
     public var trasher: any Trasher
@@ -53,11 +56,13 @@ public struct CleanEnvironment: Sendable {
     public init(home: String = NSHomeDirectory(),
                 runningBundleIdentifiers: @escaping @Sendable () -> Set<String>,
                 runningAppsReadable: Bool = true,
+                runningApplicationNames: @escaping @Sendable () -> Set<String> = { [] },
                 now: @escaping @Sendable () -> Date = Date.init,
                 trasher: any Trasher = FileManagerTrasher()) {
         self.home = home
         self.runningBundleIdentifiers = runningBundleIdentifiers
         self.runningAppsReadable = runningAppsReadable
+        self.runningApplicationNames = runningApplicationNames
         self.now = now
         self.trasher = trasher
     }
@@ -77,6 +82,10 @@ public struct CleanRule: Sendable, Identifiable {
     public let checksOwnerApp: Bool
     /// 最近修改过的条目视为正在使用
     public let minimumAge: TimeInterval
+    /// 条目所属应用的文件夹名；对应应用在运行就跳过该条目（Application Support 里以应用名命名的目录）
+    let ownerName: (@Sendable (URL) -> String?)?
+    /// 清单里条目的显示名；默认是文件名，嵌套条目需要带上所属应用，例如“Slack › Cache”
+    let itemLabel: (@Sendable (URL) -> String)?
     /// 列出候选条目（顶层文件或目录）
     let locate: @Sendable (CleanEnvironment) throws -> [URL]
 
@@ -84,6 +93,8 @@ public struct CleanRule: Sendable, Identifiable {
          selectedByDefault: Bool = true, policy: DeletionPolicy = .delete,
          blockingApps: [(bundleID: String, name: String)] = [], checksOwnerApp: Bool = false,
          minimumAge: TimeInterval = 120,
+         ownerName: (@Sendable (URL) -> String?)? = nil,
+         itemLabel: (@Sendable (URL) -> String)? = nil,
          locate: @escaping @Sendable (CleanEnvironment) throws -> [URL]) {
         self.id = id
         self.category = category
@@ -95,6 +106,8 @@ public struct CleanRule: Sendable, Identifiable {
         self.blockingApps = blockingApps
         self.checksOwnerApp = checksOwnerApp
         self.minimumAge = minimumAge
+        self.ownerName = ownerName
+        self.itemLabel = itemLabel
         self.locate = locate
     }
 }
@@ -105,11 +118,14 @@ public struct CleanItem: Sendable, Identifiable, Hashable {
     public let size: UInt64
     /// 扫描时记下的身份；清理前对不上就放弃，防止预览之后路径被换成了别的东西
     public let identity: FileIdentity?
+    /// 清单里显示的名字
+    public let title: String
 
-    init(url: URL, size: UInt64, identity: FileIdentity? = nil) {
+    init(url: URL, size: UInt64, identity: FileIdentity? = nil, title: String? = nil) {
         self.url = url
         self.size = size
         self.identity = identity
+        self.title = title ?? url.lastPathComponent
     }
 }
 

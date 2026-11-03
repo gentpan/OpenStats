@@ -154,6 +154,20 @@ Every rule lists candidate items. Under `Application Support`, only folders name
 (keychains, password managers, VPNs, cookies, history, …) is rejected; browser rules are blocked
 while the browser runs.
 
+The `apps` category covers Electron / Chromium apps. A folder under `Application Support` is only
+considered when it contains a Chromium marker (`Code Cache`, `GPUCache`, `DawnCache`, …); the marker
+directories are then listed together with the companions that only exist beside them (`Cache`,
+`CachedData`, `Service Worker/CacheStorage`), and one item is produced per app and cache folder
+(`CleanItem.title`, e.g. `Slack › Cache`). Browsers' own profile folders are excluded from this rule.
+Developer-tool rules (Xcode, frontend/Python/Cargo/Swift caches) are `selectedByDefault: false`; a few
+exact `~/.cache` subfolders are allow-listed by name (`SafetyGuard.allowedItems`) instead of opening the
+whole directory, and every component is still checked against the protected keywords.
+
+Running-app checks use bundle ids first and then names (`DeletionRequest.guardNames`, matched
+case-insensitively against localized name, bundle file name and executable name), because a cache
+folder named `Slack` carries no bundle id. When the system returns an empty running-app list the
+check fails closed (`RunningApps.unknown`).
+
 ### Uninstaller
 
 `AppUninstaller.scan` returns evidence-bearing leftovers: each item records why it was claimed

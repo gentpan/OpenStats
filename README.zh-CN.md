@@ -195,8 +195,10 @@ CPU 不分性能核与能效核，部分功耗与频率读数可能不显示。
 
 ## 清理
 
-- **扫描范围**：应用缓存、日志与崩溃报告、浏览器缓存（Chrome、Edge、Brave、Arc、Firefox、Safari）、
-  Xcode 编译缓存、模拟器缓存、npm 缓存、Xcode 归档、未完成的下载、安装包和废纸篓。
+- **扫描范围**：用户缓存、日志与崩溃报告、浏览器缓存（Chrome、Edge、Brave、Arc、Opera、Vivaldi、Chromium、Firefox、Safari）、
+  Electron / Chromium 应用的缓存（Slack、Discord、VS Code 等）、未完成的下载、安装包和废纸篓。
+  开发工具缓存（Xcode 编译缓存与旧设备支持文件、模拟器缓存、npm / 前端工具链 / Python / Cargo / Swift 包缓存、Xcode 归档）
+  默认不勾选，需要时自己勾上。
 - **先预览**：按类别显示大小，每条规则可展开查看具体项目，清理前再确认一次。缓存与日志直接删除，
   空间立即释放；下载目录的内容移到废纸篓。也可以一键改为全部先移到废纸篓。
 - **安全**：只处理白名单目录。钥匙串、密码管理器、VPN、Cookie、历史记录一律不碰。正在运行的应用的缓存

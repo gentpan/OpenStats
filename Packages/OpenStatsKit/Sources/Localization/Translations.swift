@@ -1184,6 +1184,22 @@ macOS 报告的热状态：偏高及以上时，系统会降低性能来降温	T
 内存压力由 macOS 判断：变黄或变红说明内存不够用，系统开始压缩或写入磁盘	Memory pressure is judged by macOS. Yellow or red means memory is short and the system is compressing or swapping to disk
 写到磁盘上的内存。长期使用较多说明内存不够用，会拖慢速度	Memory written to disk. Heavy use over time means memory is short and slows the Mac down
 到探测目标的往返时间	Round-trip time to the probe target
+不在允许删除的区域内（家目录、应用程序文件夹之外）	Outside the areas where deletion is allowed (the home folder and the Applications folder)
+网页内核缓存	Web Engine Caches
+Electron 应用	Electron Apps
+Slack、Discord、VS Code、Cursor 等应用的网页、脚本与着色器缓存，不碰登录状态和数据	Web, script and shader caches of apps such as Slack, Discord, VS Code and Cursor. Sign-in state and data are left alone.
+Xcode 其他缓存	Other Xcode Caches
+Xcode 的缓存、Products、Interface Builder 缓存与 XCTest 设备，需要时会重新生成	Xcode's cache, Products, Interface Builder cache and XCTest devices. They are regenerated when needed.
+Xcode 设备支持文件（旧版本）	Xcode Device Support Files (older versions)
+连接设备时生成的符号文件，每个 1–3 GB。每种设备保留最新的 {} 个版本，再连接设备时会重新生成	Symbol files created when a device is connected, 1–3 GB each. The newest {} versions of each device are kept, and the rest are regenerated the next time the device is connected.
+前端构建缓存	Front-end Build Caches
+~/.cache 下的 vite、webpack、eslint、prettier、typescript、node-gyp、electron，以及 ~/.node-gyp	vite, webpack, eslint, prettier, typescript, node-gyp and electron under ~/.cache, plus ~/.node-gyp
+Python 工具缓存	Python Tool Caches
+pip、ruff、mypy 的缓存与 pyenv 的下载缓存；虚拟环境和已安装的版本不动	Caches of pip, ruff and mypy and pyenv's download cache. Virtual environments and installed versions are untouched.
+Rust 下载缓存	Rust Download Cache
+~/.cargo/registry/cache 里下载的 .crate 压缩包；已解压的源码、索引和工具链不动	The downloaded .crate archives in ~/.cargo/registry/cache. Extracted sources, the index and toolchains are untouched.
+Swift 包缓存	Swift Package Cache
+~/.cache/swift-package-manager，下次解析依赖时重新下载	~/.cache/swift-package-manager, downloaded again the next time dependencies are resolved
 路径为空	The path is empty
 受保护的位置：{}	Protected location: {}
 目标是符号链接	The target is a symbolic link
