@@ -5,8 +5,10 @@ import Localization
 public enum RuleCatalog {
     public static func rules() -> [CleanRule] {
         [userCaches, logs] + browsers.map(browserRule) + [chromiumAppCaches]
-            + [xcodeDerivedData, simulatorCaches, xcodeCaches, xcodeDeviceSupport, npmCache, frontendToolCaches, pythonToolCaches,
-               rustDownloadCache, swiftPackageCache, xcodeArchives]
+            + [deviceBackups, deviceFirmware, macOSInstallers, aiModels, mailDownloads, ollamaModels, containerDisks, virtualMachines]
+            + [xcodeDerivedData, simulatorCaches, xcodeCaches, xcodeDeviceSupport, npmCache, javascriptPackageCaches, frontendToolCaches,
+               pythonToolCaches, rustDownloadCache, swiftPackageCache, gradleCaches, xcodeArchives,
+               unavailableSimulators, unusedSimulatorRuntimes]
             + [incompleteDownloads, installers, trash]
     }
 
@@ -258,10 +260,10 @@ public enum RuleCatalog {
 
     static let pythonToolCaches = CleanRule(
         id: "developer.pythonCaches", category: .developer, title: tr("Python 工具缓存"),
-        detail: tr("pip、ruff、mypy 的缓存与 pyenv 的下载缓存；虚拟环境和已安装的版本不动"),
+        detail: tr("pip、uv、ruff、mypy 的缓存与 pyenv 的下载缓存；虚拟环境和已安装的版本不动"),
         symbol: "chevron.left.forwardslash.chevron.right", selectedByDefault: false, itemLabel: homeRelativeLabel
     ) { env in
-        existingItems([".cache/pip", ".cache/ruff", ".cache/mypy", ".pyenv/cache"], home: env.home)
+        existingItems([".cache/pip", ".cache/uv", ".cache/ruff", ".cache/mypy", ".pyenv/cache"], home: env.home)
     }
 
     static let rustDownloadCache = CleanRule(

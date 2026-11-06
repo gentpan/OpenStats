@@ -219,10 +219,16 @@ unclean exit restores them at the next boot.
 - **What it scans.** User caches, logs and crash reports, browser caches (Chrome, Edge, Brave,
   Arc, Opera, Vivaldi, Chromium, Firefox, Safari), caches of Electron / Chromium apps (Slack,
   Discord, VS Code, …), unfinished downloads, installers and the Trash. Developer-tool caches
-  (Xcode build products and old device support files, simulator caches, npm / frontend
-  toolchain / Python / Cargo / Swift package caches, Xcode archives) are unchecked by default.
-- **Review first.** Sizes by category, every rule expandable to its items, a second click to
-  confirm. Caches and logs are deleted outright so the space comes back at once; downloads go
+  (Xcode build products and old device support files, simulator caches, npm / pnpm / bun /
+  frontend toolchain / Python / uv / Cargo / Swift package / Gradle caches, Xcode archives) are
+  unchecked by default.
+- **Large data.** The big items behind "System Data": iPhone / iPad backups (by device and
+  date), device software updates, macOS installers, Hugging Face and LM Studio models, and Mail
+  attachment copies. All unchecked by default and moved to the Trash. Ollama models, Docker /
+  Colima / OrbStack disks, virtual machines, unavailable simulators and unused simulator runtimes
+  are only listed with their size and how to remove them with their own tools.
+- **Review first.** Sizes by category, every rule expandable to its items (each can be unticked),
+  a second click to confirm. Caches and logs are deleted outright so the space comes back at once; downloads go
   to the Trash. One switch sends everything to the Trash instead.
 - **Safety.** Only allow-listed folders are ever touched. Keychains, password managers,
   VPNs, cookies and history are off limits. Caches of running apps are skipped, browsers must

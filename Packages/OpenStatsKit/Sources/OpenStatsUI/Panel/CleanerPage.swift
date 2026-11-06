@@ -10,7 +10,7 @@ struct CleanerPage: View {
         PageScroll {
             SummaryCard()
             if model.cleaner.needsFullDiskAccess {
-                InfoBanner(icon: "lock.shield", text: tr("部分项目需要“完全磁盘访问权限”才能扫描（Safari 缓存、废纸篓）。"), tone: .warning) {
+                InfoBanner(icon: "lock.shield", text: tr("部分项目需要“完全磁盘访问权限”才能扫描（Safari 缓存、废纸篓、设备备份、邮件附件、Docker 磁盘）。"), tone: .warning) {
                     Button(tr("去授权")) { model.cleaner.openFullDiskAccessSettings() }
                         .buttonStyle(DSButtonStyle(kind: .secondary))
                 }
@@ -19,11 +19,12 @@ struct CleanerPage: View {
                 VStack(spacing: DS.Space.s3) {
                     CategoryCard(category: .system)
                     CategoryCard(category: .browser)
-                    CategoryCard(category: .apps)
+                    CategoryCard(category: .large)
                 }
                 .frame(maxWidth: .infinity)
                 VStack(spacing: DS.Space.s3) {
                     CategoryCard(category: .developer)
+                    CategoryCard(category: .apps)
                     CategoryCard(category: .downloads)
                     CategoryCard(category: .trash)
                 }
@@ -117,7 +118,9 @@ private struct SummaryCard: View {
         switch cleaner.phase {
         case .idle, .scanning: return tr("正在计算可清理空间")
         case .cleaning: return tr("正在清理…")
-        case .ready: return tr("可清理 · 已选 \(cleaner.selectedScans.count) 项")
+        case .ready:
+            let base = tr("可清理 · 已选 \(cleaner.selectedScans.count) 项")
+            return cleaner.manualBytes > 0 ? base + tr(" · 另有 \(Format.bytes(cleaner.manualBytes, base: .decimal)) 需手动处理") : base
         case .finished:
             guard let report = cleaner.report else { return "" }
             var parts = [tr("已释放")]
@@ -130,7 +133,7 @@ private struct SummaryCard: View {
 
     private var confirmationText: String {
         let cleaner = model.cleaner
-        let count = cleaner.selectedScans.reduce(0) { $0 + $1.items.count }
+        let count = cleaner.selectedItemCount
         let trashNote = model.settings.cleanPrefersTrash ? tr("所有内容先移到废纸篓。") : tr("缓存与日志直接删除，下载内容移到废纸篓。")
         return tr("将清理 \(count) 个项目，共 \(Format.bytes(cleaner.selectedBytes, base: .decimal))。\(trashNote)")
     }
@@ -184,15 +187,27 @@ private struct RuleRow: View {
     @Environment(AppModel.self) private var model
     let scan: RuleScan
     @State private var expanded = false
+    @State private var showsAll = false
 
     var body: some View {
         let cleaner = model.cleaner
+        let manual = scan.rule.isManual
         let selected = cleaner.selection.contains(scan.id) && scan.isCleanable
+        let hasItems = scan.blocked == nil && !scan.items.isEmpty
 
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s2) {
-                DSCheckbox(isOn: selected) { cleaner.toggle(scan) }
-                    .disabled(!scan.isCleanable || cleaner.isBusy)
+                if manual {
+                    // 仅提示：占住复选框的位置，不能勾选
+                    Image(systemName: "info.circle")
+                        .dsFont(.sm)
+                        .foregroundStyle(DS.Palette.textTertiary)
+                        .frame(width: DS.Size.iconInline)
+                        .help(tr("只显示占用，需要你自己处理"))
+                } else {
+                    DSCheckbox(isOn: selected, isMixed: cleaner.isPartial(scan)) { cleaner.toggle(scan) }
+                        .disabled(!scan.isCleanable || cleaner.isBusy)
+                }
                 Image(systemName: scan.rule.symbol)
                     .dsFont(.sm)
                     .foregroundStyle(DS.Palette.textSecondary)
@@ -206,12 +221,13 @@ private struct RuleRow: View {
                         .foregroundStyle(scan.blocked == nil ? DS.Palette.textTertiary : DS.Palette.warning)
                         .lineLimit(1)
                 }
+                .help(scan.rule.detail)
                 Spacer(minLength: DS.Space.s1)
-                if scan.isCleanable {
+                if hasItems {
                     Text(verbatim: Format.bytes(scan.totalSize, base: .decimal))
                         .dsFont(.sm, weight: .medium)
                         .monospacedDigit()
-                        .foregroundStyle(DS.Palette.textPrimary)
+                        .foregroundStyle(manual ? DS.Palette.textSecondary : DS.Palette.textPrimary)
                     Button { expanded.toggle() } label: {
                         Image(systemName: expanded ? "chevron.up" : "chevron.down")
                             .dsFont(.xs, weight: .semibold)
@@ -220,45 +236,83 @@ private struct RuleRow: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .help(tr("查看包含的项目"))
+                    .help(manual ? tr("查看包含的项目和处理办法") : tr("查看并挑选包含的项目"))
                 }
             }
 
-            if expanded {
+            if expanded && hasItems {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    ForEach(scan.items.prefix(Self.previewLimit)) { item in
-                        Button { cleaner.reveal(item) } label: {
-                            HStack {
-                                Text(item.title).dsFont(.xs).lineLimit(1).truncationMode(.middle)
-                                Spacer(minLength: DS.Space.s2)
-                                Text(verbatim: Format.bytes(item.size, base: .decimal)).dsFont(.xs).monospacedDigit()
-                            }
+                    if let advice = scan.rule.manualAdvice {
+                        Text(advice)
+                            .dsFont(.xs)
                             .foregroundStyle(DS.Palette.textSecondary)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .help(tr("在访达中显示"))
+                            .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
+                            .padding(.leading, DS.Size.iconStandalone + DS.Space.s2)
+                    }
+                    ForEach(visibleItems) { item in
+                        ItemRow(scan: scan, item: item)
                     }
                     if scan.items.count > Self.previewLimit {
-                        Text(verbatim: tr("另有 \(scan.items.count - Self.previewLimit) 项"))
+                        Button(showsAll ? tr("收起") : tr("显示全部 \(scan.items.count) 项")) { showsAll.toggle() }
+                            .buttonStyle(.plain)
                             .dsFont(.xs)
                             .foregroundStyle(DS.Palette.textTertiary)
+                            .padding(.leading, DS.Size.iconStandalone + DS.Space.s2)
                     }
                 }
-                .padding(.leading, DS.Size.iconInline + DS.Size.iconStandalone + DS.Space.s2 * 2)
+                .padding(.leading, DS.Size.iconInline + DS.Space.s2)
             }
         }
     }
 
     private static let previewLimit = 6
 
+    private var visibleItems: [CleanItem] {
+        showsAll ? scan.items : Array(scan.items.prefix(Self.previewLimit))
+    }
+
     private var statusText: String {
         if let blocked = scan.blocked { return blocked.title }
-        if scan.items.isEmpty { return tr("无需清理") }
-        var text = tr("\(scan.items.count) 项")
+        if scan.items.isEmpty { return scan.rule.isManual ? tr("没有发现") : tr("无需清理") }
+        if scan.rule.isManual { return tr("\(scan.items.count) 项 · 需手动处理") }
+        let chosen = model.cleaner.selectedItems(in: scan).count
+        var text = model.cleaner.isPartial(scan) ? tr("已选 \(chosen)/\(scan.items.count) 项") : tr("\(scan.items.count) 项")
         if scan.skippedCount > 0 { text += tr(" · \(scan.skippedCount) 项使用中") }
         if scan.rule.policy == .trash { text += tr(" · 移到废纸篓") }
         return text
+    }
+}
+
+/// 展开后的一项：可清理的规则可以单独取消勾选；点名字在访达中显示
+private struct ItemRow: View {
+    @Environment(AppModel.self) private var model
+    let scan: RuleScan
+    let item: CleanItem
+
+    var body: some View {
+        let cleaner = model.cleaner
+        HStack(spacing: DS.Space.s2) {
+            // 不可勾选（仅提示）时留出同样的宽度，名字和上面的说明对齐
+            if scan.isCleanable {
+                DSCheckbox(isOn: cleaner.isSelected(item, in: scan)) { cleaner.toggle(item, in: scan) }
+                    .disabled(cleaner.isBusy)
+                    .frame(width: DS.Size.iconStandalone)
+            } else {
+                Color.clear.frame(width: DS.Size.iconStandalone, height: 1)
+            }
+            Button { cleaner.reveal(item) } label: {
+                HStack {
+                    Text(item.title).dsFont(.xs).lineLimit(1).truncationMode(.middle)
+                    Spacer(minLength: DS.Space.s2)
+                    Text(verbatim: Format.bytes(item.size, base: .decimal)).dsFont(.xs).monospacedDigit()
+                }
+                .foregroundStyle(DS.Palette.textSecondary)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(item.url.path)
+        }
     }
 }
 

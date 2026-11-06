@@ -15,6 +15,8 @@ public final class CleanerController {
     public private(set) var lastScan: Date?
     public private(set) var report: CleanReport?
     public var selection: Set<String>
+    /// 选中的规则里，用户单独取消勾选的条目（CleanItem.id）。重新扫描后仍然记得
+    public var excludedItems: Set<String> = []
     public var isConfirming = false
 
     @ObservationIgnored private let settings: AppSettings
@@ -60,9 +62,11 @@ public final class CleanerController {
         let environment = Self.environment()
         let scans = scans
         let selection = selection
+        let excluded = excludedItems
         let preferTrash = settings.cleanPrefersTrash
         task = Task {
-            let result = await CleanEngine.clean(scans, selected: selection, preferTrash: preferTrash, environment: environment)
+            let result = await CleanEngine.clean(scans, selected: selection, excluded: excluded, preferTrash: preferTrash,
+                                                 environment: environment)
             report = result
             tally.recordClean(bytes: result.freedBytes)
             phase = .finished
@@ -73,22 +77,71 @@ public final class CleanerController {
         }
     }
 
+    /// 整条规则：没选或只选了一部分时全选，全选时全不选
     func toggle(_ scan: RuleScan) {
         guard scan.isCleanable else { return }
-        if selection.contains(scan.id) { selection.remove(scan.id) } else { selection.insert(scan.id) }
+        if selection.contains(scan.id) && !isPartial(scan) {
+            selection.remove(scan.id)
+        } else {
+            selection.insert(scan.id)
+        }
+        excludedItems.subtract(scan.items.map(\.id))
         isConfirming = false
+    }
+
+    /// 单个条目。在没选的规则里勾一项，就只选这一项；一项都不剩时整条规则取消
+    func toggle(_ item: CleanItem, in scan: RuleScan) {
+        guard scan.isCleanable else { return }
+        if !selection.contains(scan.id) {
+            selection.insert(scan.id)
+            excludedItems.formUnion(scan.items.map(\.id))
+            excludedItems.remove(item.id)
+        } else if excludedItems.contains(item.id) {
+            excludedItems.remove(item.id)
+        } else {
+            excludedItems.insert(item.id)
+            if scan.items.allSatisfy({ excludedItems.contains($0.id) }) {
+                selection.remove(scan.id)
+                excludedItems.subtract(scan.items.map(\.id))
+            }
+        }
+        isConfirming = false
+    }
+
+    func isSelected(_ item: CleanItem, in scan: RuleScan) -> Bool {
+        scan.isCleanable && selection.contains(scan.id) && !excludedItems.contains(item.id)
+    }
+
+    /// 规则选中了，但其中有条目被取消
+    func isPartial(_ scan: RuleScan) -> Bool {
+        selection.contains(scan.id) && scan.items.contains { excludedItems.contains($0.id) }
+    }
+
+    /// 这条规则里真正会处理的条目
+    func selectedItems(in scan: RuleScan) -> [CleanItem] {
+        guard scan.isCleanable, selection.contains(scan.id) else { return [] }
+        return scan.items.filter { !excludedItems.contains($0.id) }
     }
 
     var totalBytes: UInt64 {
         scans.filter(\.isCleanable).reduce(0) { $0 + $1.totalSize }
     }
 
+    /// 只提示、要用户自己处理的占用
+    var manualBytes: UInt64 {
+        scans.filter { $0.rule.isManual && $0.blocked == nil }.reduce(0) { $0 + $1.totalSize }
+    }
+
     var selectedScans: [RuleScan] {
-        scans.filter { $0.isCleanable && selection.contains($0.id) }
+        scans.filter { !selectedItems(in: $0).isEmpty }
     }
 
     var selectedBytes: UInt64 {
-        selectedScans.reduce(0) { $0 + $1.totalSize }
+        scans.reduce(0) { total, scan in total + selectedItems(in: scan).reduce(0) { $0 + $1.size } }
+    }
+
+    var selectedItemCount: Int {
+        scans.reduce(0) { $0 + selectedItems(in: $1).count }
     }
 
     var needsFullDiskAccess: Bool {
@@ -121,6 +174,9 @@ public final class CleanerController {
         let names = currentRunningApplicationNames()
         // 正常的 Mac 上不可能一个应用都没有（至少有 Finder、程序坞）；空列表说明读取失败，按“可能在运行”处理
         return CleanEnvironment(runningBundleIdentifiers: { running }, runningAppsReadable: !running.isEmpty,
-                                runningApplicationNames: { names })
+                                runningApplicationNames: { names },
+                                interactiveTrasher: WorkspaceTrasher(),
+                                hasFullDiskAccess: FullDiskAccess.isGranted(),
+                                simulators: SimulatorInventory.loader())
     }
 }

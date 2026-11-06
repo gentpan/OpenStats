@@ -168,6 +168,27 @@ case-insensitively against localized name, bundle file name and executable name)
 folder named `Slack` carries no bundle id. When the system returns an empty running-app list the
 check fails closed (`RunningApps.unknown`).
 
+The `large` category (`RuleCatalog+LargeData.swift`) holds the big pieces of "System Data". Rules
+that can be cleaned (device backups, `.ipsw` updates, macOS installers, Hugging Face / LM Studio
+models, Mail attachment copies) are opt-in and use `.trash`. macOS installers are the only items
+outside the home folder: `SafetyGuard` accepts a direct child of `/Applications` only when its name
+starts with `Install macOS` and its bundle id with `com.apple.InstallAssistant`, and the request
+uses `/Applications` as its base and the interactive trasher (they are usually owned by root).
+`SafetyGuard` picks the longest matching allowed root, so `Application Support/MobileSync/Backup`
+does not widen the cache-only rule for the rest of `Application Support`.
+
+Manual rules (`CleanRule(manual:)`, `RuleScan.isCleanable == false`) only measure: Ollama models
+(sizes from their manifests), Docker / Colima / OrbStack / Podman disks, virtual machines, and
+simulator devices and runtimes from `simctl` (run from the selected Xcode, never through `xcrun`,
+which would prompt to install the developer tools). They never reach `DeletionService`, even when
+selected. Rules that read other apps' containers set `requiresFullDiskAccess`; without Full Disk
+Access (`FullDiskAccess.isGranted()`, an `open` of `TCC.db` that fails silently) they are reported
+as blocked instead of touching the container and triggering a consent prompt. The yarn global cache
+is left out on purpose: Yarn PnP projects read packages straight from it.
+
+Selection is per rule plus a set of excluded items (`CleanEngine.clean(excluded:)`), so a single
+backup or model can be kept while the rest of its rule is cleaned.
+
 ### Uninstaller
 
 `AppUninstaller.scan` returns evidence-bearing leftovers: each item records why it was claimed

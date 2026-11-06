@@ -9,6 +9,7 @@ public enum SafetyError: Error, Sendable, Equatable, CustomStringConvertible {
     case isRoot
     case protectedName(String)
     case applicationSupportNotCache
+    case notMacOSInstaller
 
     public var description: String {
         switch self {
@@ -19,6 +20,7 @@ public enum SafetyError: Error, Sendable, Equatable, CustomStringConvertible {
         case .isRoot: tr("不能删除清理目录本身")
         case .protectedName(let name): tr("受保护的项目：\(name)")
         case .applicationSupportNotCache: tr("Application Support 中只允许清理缓存目录")
+        case .notMacOSInstaller: tr("应用程序文件夹里只允许清理 macOS 安装器")
         }
     }
 }
@@ -26,6 +28,8 @@ public enum SafetyError: Error, Sendable, Equatable, CustomStringConvertible {
 /// 所有删除操作的唯一入口校验。默认拒绝，只放行白名单目录内的条目。
 public struct SafetyGuard: Sendable {
     public let home: String
+    /// 应用程序文件夹：只放行其中的 macOS 安装器
+    public let applications: String
 
     /// 相对家目录的允许根目录；条目必须位于其内部（不能是根目录本身）
     static let allowedRoots = [
@@ -45,6 +49,16 @@ public struct SafetyGuard: Sendable {
         ".npm",
         "Downloads",
         ".Trash",
+        // 大件数据：每台设备的备份、系统更新包、打开过的邮件附件副本、按模型分的下载
+        "Library/Application Support/MobileSync/Backup",
+        "Library/iTunes/iPhone Software Updates",
+        "Library/iTunes/iPad Software Updates",
+        "Library/iTunes/iPod Software Updates",
+        "Library/Containers/com.apple.mail/Data/Library/Mail Downloads",
+        ".cache/huggingface/hub",
+        ".lmstudio/models",
+        ".cache/lm-studio/models",
+        ".gradle/wrapper/dists",
     ]
 
     /// 目录本身就可以整个清理的位置，以及它里面的内容。只列具体的工具缓存目录，不放行它们的上级（比如整个 ~/.cache），
@@ -53,6 +67,7 @@ public struct SafetyGuard: Sendable {
         ".cache/vite", ".cache/webpack", ".cache/eslint", ".cache/prettier", ".cache/typescript", ".cache/node-gyp",
         ".cache/electron", ".node-gyp", ".cache/pip", ".cache/ruff", ".cache/mypy", ".pyenv/cache",
         ".cargo/registry/cache", ".cache/swift-package-manager",
+        ".cache/uv", ".gradle/caches", ".bun/install/cache", "Library/pnpm/store",
     ]
 
     /// Application Support 内只允许删除这些名字的缓存目录（浏览器配置目录下）
@@ -69,8 +84,9 @@ public struct SafetyGuard: Sendable {
         "openstats",
     ]
 
-    public init(home: String = NSHomeDirectory()) {
+    public init(home: String = NSHomeDirectory(), applications: String = "/Applications") {
         self.home = (home as NSString).standardizingPath
+        self.applications = (applications as NSString).standardizingPath
     }
 
     public func validate(_ url: URL) throws {
@@ -98,6 +114,12 @@ public struct SafetyGuard: Sendable {
     }
 
     private func check(path: String) throws {
+        // 应用程序文件夹的直接子项：只认 macOS 安装器
+        if (path as NSString).deletingLastPathComponent == applications {
+            guard Self.isMacOSInstaller(URL(fileURLWithPath: path)) else { throw SafetyError.notMacOSInstaller }
+            return
+        }
+
         let homePrefix = home + "/"
         guard path.hasPrefix(homePrefix) else { throw SafetyError.outsideAllowedRoots }
         let relative = String(path.dropFirst(homePrefix.count))
@@ -108,7 +130,8 @@ public struct SafetyGuard: Sendable {
             return
         }
 
-        guard let root = Self.allowedRoots.first(where: { relative == $0 || relative.hasPrefix($0 + "/") }) else {
+        // 取最长的匹配：MobileSync/Backup 在 Application Support 里面，要按更具体的那条判断
+        guard let root = Self.allowedRoots.filter({ relative == $0 || relative.hasPrefix($0 + "/") }).max(by: { $0.count < $1.count }) else {
             throw SafetyError.outsideAllowedRoots
         }
         guard relative != root else { throw SafetyError.isRoot }
@@ -120,5 +143,13 @@ public struct SafetyGuard: Sendable {
             let leaf = (path as NSString).lastPathComponent
             guard Self.applicationSupportCacheNames.contains(leaf) else { throw SafetyError.applicationSupportNotCache }
         }
+    }
+
+    /// “安装 macOS …”应用：文件名是 Install macOS / Install OS X 开头的 .app，包名是苹果安装助理的
+    static func isMacOSInstaller(_ url: URL) -> Bool {
+        let name = url.lastPathComponent
+        guard url.pathExtension == "app", name.hasPrefix("Install macOS ") || name.hasPrefix("Install OS X ") else { return false }
+        let info = NSDictionary(contentsOf: url.appendingPathComponent("Contents/Info.plist"))
+        return (info?["CFBundleIdentifier"] as? String)?.hasPrefix("com.apple.InstallAssistant") == true
     }
 }

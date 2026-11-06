@@ -6,7 +6,7 @@ public enum CleanEngine {
 
     /// 并发扫描所有规则，只读，不修改任何文件
     public static func scan(_ rules: [CleanRule], environment: CleanEnvironment) async -> [RuleScan] {
-        let safety = SafetyGuard(home: environment.home)
+        let safety = SafetyGuard(home: environment.home, applications: environment.applications)
         return await withTaskGroup(of: (Int, RuleScan).self) { group in
             for (index, rule) in rules.enumerated() {
                 group.addTask { (index, scanRule(rule, environment: environment, safety: safety)) }
@@ -18,6 +18,11 @@ public enum CleanEngine {
     }
 
     static func scanRule(_ rule: CleanRule, environment: CleanEnvironment, safety: SafetyGuard) -> RuleScan {
+        if rule.requiresFullDiskAccess && !environment.hasFullDiskAccess {
+            return RuleScan(rule: rule, items: [], skippedCount: 0, blocked: .needsFullDiskAccess)
+        }
+        if let inventory = rule.inventory { return scanManual(rule, inventory: inventory, environment: environment) }
+
         let running = environment.runningBundleIdentifiers()
         if let app = rule.blockingApps.first(where: { running.contains($0.bundleID) }) {
             return RuleScan(rule: rule, items: [], skippedCount: 0, blocked: .appRunning(app.name))
@@ -49,6 +54,25 @@ public enum CleanEngine {
         return RuleScan(rule: rule, items: items, skippedCount: skipped, blocked: nil)
     }
 
+    /// 仅提示的规则：只量大小，不做删除判断（它们本来就不会进删除入口）
+    static func scanManual(_ rule: CleanRule, inventory: @Sendable (CleanEnvironment) throws -> [ManualEntry],
+                           environment: CleanEnvironment) -> RuleScan {
+        let entries: [ManualEntry]
+        do {
+            entries = try inventory(environment)
+        } catch {
+            return RuleScan(rule: rule, items: [], skippedCount: 0, blocked: .needsFullDiskAccess)
+        }
+        var items: [CleanItem] = []
+        for entry in entries {
+            if Task.isCancelled { break }
+            let size = entry.size ?? allocatedSize(of: entry.url)
+            if size > 0 { items.append(CleanItem(url: entry.url, size: size, title: entry.title)) }
+        }
+        items.sort { $0.size > $1.size }
+        return RuleScan(rule: rule, items: items, skippedCount: 0, blocked: nil)
+    }
+
     static func deletionService(environment: CleanEnvironment, safety: SafetyGuard, log: CleanLog?) -> DeletionService {
         DeletionService(home: environment.home,
                         scope: { try safety.validate($0) },
@@ -59,17 +83,26 @@ public enum CleanEngine {
                         },
                         now: environment.now,
                         standardTrasher: environment.trasher,
+                        interactiveTrasher: environment.interactiveTrasher,
                         log: log)
+    }
+
+    /// 应用程序文件夹里的条目（macOS 安装器）以应用程序文件夹为信任的根，走可以请求授权的废纸篓；其余都在家目录里
+    static func isInApplications(_ url: URL, environment: CleanEnvironment) -> Bool {
+        url.deletingLastPathComponent().standardizedFileURL.path == URL(fileURLWithPath: environment.applications).standardizedFileURL.path
     }
 
     static func request(for url: URL, rule: CleanRule, identity: FileIdentity?, mode: DeletionMode, size: UInt64,
                         environment: CleanEnvironment) -> DeletionRequest {
-        DeletionRequest(url: url, mode: mode, base: URL(fileURLWithPath: environment.home), size: size, label: rule.id,
-                        identity: identity,
-                        guardApps: rule.blockingApps.map { GuardApp(bundleID: $0.bundleID, name: $0.name) },
-                        checksOwnerApp: rule.checksOwnerApp,
-                        guardNames: rule.ownerName?(url).map { [$0] } ?? [],
-                        minimumAge: rule.minimumAge)
+        let inApplications = isInApplications(url, environment: environment)
+        return DeletionRequest(url: url, mode: mode,
+                               base: URL(fileURLWithPath: inApplications ? environment.applications : environment.home),
+                               size: size, label: rule.id, identity: identity,
+                               guardApps: rule.blockingApps.map { GuardApp(bundleID: $0.bundleID, name: $0.name) },
+                               checksOwnerApp: rule.checksOwnerApp,
+                               guardNames: rule.ownerName?(url).map { [$0] } ?? [],
+                               minimumAge: rule.minimumAge,
+                               route: inApplications ? .interactive : .standard)
     }
 
     /// 实际占用的磁盘空间；不跟随符号链接
@@ -92,23 +125,25 @@ public enum CleanEngine {
 
     // MARK: 清理
 
-    /// 清理选中规则的扫描结果。每一项都经过删除入口，动手前重新判断：扫描到执行之间应用可能已经启动、路径可能已被替换
-    public static func clean(_ scans: [RuleScan], selected: Set<String>, preferTrash: Bool,
+    /// 清理选中规则的扫描结果，`excluded` 里的条目（按 CleanItem.id）不动。每一项都经过删除入口，动手前重新判断：
+    /// 扫描到执行之间应用可能已经启动、路径可能已被替换。仅提示的规则即使被选中也不会处理
+    public static func clean(_ scans: [RuleScan], selected: Set<String>, excluded: Set<String> = [], preferTrash: Bool,
                              environment: CleanEnvironment, log: CleanLog? = CleanLog()) async -> CleanReport {
-        let safety = SafetyGuard(home: environment.home)
+        let safety = SafetyGuard(home: environment.home, applications: environment.applications)
         let service = deletionService(environment: environment, safety: safety, log: log)
         var report = CleanReport()
 
         for scan in scans where selected.contains(scan.id) && scan.isCleanable {
+            let chosen = scan.items.filter { !excluded.contains($0.id) }
             let running = environment.runningBundleIdentifiers()
             if scan.rule.blockingApps.contains(where: { running.contains($0.bundleID) }) {
-                report.skippedCount += scan.items.count
+                report.skippedCount += chosen.count
                 continue
             }
             // 废纸篓规则本身必须永久删除；其他可再生内容按用户偏好决定
             let useTrash = scan.rule.id != RuleCatalog.trash.id && (scan.rule.policy == .trash || preferTrash)
             let mode: DeletionMode = useTrash ? .trash : .permanent
-            let requests = scan.items.map {
+            let requests = chosen.map {
                 request(for: $0.url, rule: scan.rule, identity: $0.identity, mode: mode, size: $0.size, environment: environment)
             }
             for result in await service.execute(requests) {

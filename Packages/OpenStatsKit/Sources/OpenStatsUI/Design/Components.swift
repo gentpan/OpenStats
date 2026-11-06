@@ -699,6 +699,8 @@ struct DSToggle: View {
 
 struct DSCheckbox: View {
     let isOn: Bool
+    /// 只选了其中一部分：显示横线，点一下全选
+    var isMixed = false
     let action: () -> Void
     @Environment(\.isEnabled) private var isEnabled
 
@@ -708,7 +710,7 @@ struct DSCheckbox: View {
                 .fill(isOn ? DS.Palette.primary : Color.clear)
                 .overlay {
                     if isOn {
-                        Image(systemName: "checkmark")
+                        Image(systemName: isMixed ? "minus" : "checkmark")
                             .font(.system(size: DS.TextSize.xs.rawValue - DS.Space.s1 / 2, weight: .bold))
                             .foregroundStyle(DS.Palette.onPrimary)
                     } else {

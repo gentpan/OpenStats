@@ -197,9 +197,12 @@ CPU 不分性能核与能效核，部分功耗与频率读数可能不显示。
 
 - **扫描范围**：用户缓存、日志与崩溃报告、浏览器缓存（Chrome、Edge、Brave、Arc、Opera、Vivaldi、Chromium、Firefox、Safari）、
   Electron / Chromium 应用的缓存（Slack、Discord、VS Code 等）、未完成的下载、安装包和废纸篓。
-  开发工具缓存（Xcode 编译缓存与旧设备支持文件、模拟器缓存、npm / 前端工具链 / Python / Cargo / Swift 包缓存、Xcode 归档）
+  开发工具缓存（Xcode 编译缓存与旧设备支持文件、模拟器缓存、npm / pnpm / bun / 前端工具链 / Python / uv / Cargo / Swift 包 / Gradle 缓存、Xcode 归档）
   默认不勾选，需要时自己勾上。
-- **先预览**：按类别显示大小，每条规则可展开查看具体项目，清理前再确认一次。缓存与日志直接删除，
+- **大件数据**：“系统数据”里的大头——iPhone / iPad 备份（按设备和日期分条）、设备系统更新包、macOS 安装器、
+  Hugging Face 与 LM Studio 模型、邮件附件副本，默认不勾选，清理时移到废纸篓。Ollama 模型、Docker / Colima / OrbStack
+  虚拟磁盘、虚拟机、不可用的模拟器和没人用的模拟器运行时只列出大小和处理办法，要用它们自己的工具删。
+- **先预览**：按类别显示大小，每条规则可展开查看具体项目并逐项取消，清理前再确认一次。缓存与日志直接删除，
   空间立即释放；下载目录的内容移到废纸篓。也可以一键改为全部先移到废纸篓。
 - **安全**：只处理白名单目录。钥匙串、密码管理器、VPN、Cookie、历史记录一律不碰。正在运行的应用的缓存
   会跳过，浏览器需要先退出，删除前每一项都会再校验一次。所有操作记录在 `~/Library/Logs/OpenStats/cleanup.log`。

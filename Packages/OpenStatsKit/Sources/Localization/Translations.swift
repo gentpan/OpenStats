@@ -1096,7 +1096,6 @@ npm 缓存	npm Cache
 通过 {} 登录	Signed in with {}
 速度与省电介于两者之间	In between on speed and efficiency
 部分网站直连、部分经代理，每个网站走哪个出口见下方。	Some sites connect directly and some go through a proxy. See below for the exit each site uses.
-部分项目需要“完全磁盘访问权限”才能扫描（Safari 缓存、废纸篓）。	Some items need Full Disk Access to scan (Safari caches, Trash).
 配置方式	Configuration
 释放内存	Free Memory
 重做	Redo
@@ -1279,5 +1278,51 @@ Swift 包缓存	Swift Package Cache
 未开启	Off
 服务运行中 · 端口 {}	Running · port {}
 端口 {} 启动失败	Failed to start on port {}
+ · 另有 {} 需手动处理	 · {} more to handle yourself
+Docker Desktop、OrbStack、Colima、Podman 的虚拟磁盘，所有镜像、容器和数据卷都在里面	Virtual disks of Docker Desktop, OrbStack, Colima and Podman, holding every image, container and volume
+Docker 虚拟磁盘	Docker Disks
+Gradle 缓存	Gradle Caches
+Hugging Face 与 LM Studio 下载的模型，按模型分条，删除后需要重新下载	Models downloaded by Hugging Face and LM Studio, one row per model; they must be downloaded again after removal
+Ollama 下载的本地模型，按模型列出	Local models downloaded by Ollama, listed per model
+Ollama 模型	Ollama Models
+Ollama 的模型文件彼此共用，直接删除文件会损坏它的索引。请在终端用 ollama list 查看、用 ollama rm 加模型名删除不用的模型。	Ollama models share files, so deleting them directly breaks its index. In Terminal, run ollama list to see them and ollama rm followed by a model name to remove one.
+UTM、Parallels、VMware Fusion、VirtualBox、Tart 的虚拟机	Virtual machines from UTM, Parallels, VMware Fusion, VirtualBox and Tart
+iPhone / iPad 备份	iPhone / iPad Backups
+macOS 安装器	macOS Installers
+pip、uv、ruff、mypy 的缓存与 pyenv 的下载缓存；虚拟环境和已安装的版本不动	Caches of pip, uv, ruff and mypy, plus pyenv downloads; virtual environments and installed versions are kept
+pnpm / bun 包缓存	pnpm / bun Package Caches
+pnpm 的包仓库与 bun 的下载缓存，下次安装依赖时重新下载	The pnpm store and bun download cache, downloaded again on the next install
+{} 等 {} 个文件	{1} and others ({2} files)
+{} 项 · 需手动处理	{} items · Handle yourself
+~/.gradle/caches 与下载的 Gradle 发行版，下次构建时重新下载	~/.gradle/caches and downloaded Gradle distributions, downloaded again on the next build
+上次使用 {}	Last used {}
+不可用的模拟器	Unavailable Simulators
+不要直接删除这些文件，否则所有镜像、容器和数据卷都会丢失。请在 Docker Desktop 或 OrbStack 的设置里清理，或在终端运行 docker system prune 删除停止的容器和不再使用的镜像。	Do not delete these files directly, or every image, container and volume is lost. Clean up in Docker Desktop or OrbStack settings, or run docker system prune in Terminal to remove stopped containers and unused images.
+从未使用	Never used
+只显示占用，需要你自己处理	Shown for reference only; handle it yourself
+在 Xcode 设置的“组件”里删除不需要的版本（旧版 Xcode 里叫“平台”）。	Remove versions you don't need under Components in Xcode Settings (called Platforms in older Xcode).
+在“邮件”里打开过的附件会另存一份副本，原件仍在邮件里	Attachments opened in Mail are saved as a copy; the originals stay in your mail
+在终端运行 xcrun simctl delete unavailable，会一次删掉所有不可用的模拟器。	Run xcrun simctl delete unavailable in Terminal to remove every unavailable simulator at once.
+大件数据	Large Data
+对应的系统版本已经删掉，这些模拟器打不开了，数据还占着空间	Their runtime has been removed, so these simulators can no longer open, but their data still takes up space
+已下载的模拟器系统（运行时），没有任何模拟器在用，每个 5–10 GB	Downloaded simulator runtimes that no simulator uses, 5–10 GB each
+已选 {}/{} 项	{}/{} selected
+应用程序文件夹里只允许清理 macOS 安装器	Only macOS installers can be cleaned from the Applications folder
+应用程序文件夹里的“安装 macOS”应用，每个 12–15 GB，需要时可以从 App Store 重新下载	"Install macOS" apps in the Applications folder, 12–15 GB each; download them again from the App Store when needed
+数据集 {}	Dataset {}
+显示全部 {} 项	Show all {} items
+本地 AI 模型	Local AI Models
+查看包含的项目和处理办法	Show items and how to handle them
+查看并挑选包含的项目	Show and choose items
+没有发现	None found
+没有模拟器在用的系统版本	Unused Simulator Runtimes
+虚拟机	Virtual Machines
+虚拟机里是完整的系统和你的数据。请在对应的虚拟机软件里删除不再需要的虚拟机，它的快照和配置会一起清掉。	A virtual machine holds a whole system and your data. Delete ones you no longer need in their own app, so their snapshots and settings go too.
+设备系统更新包	Device Software Updates
+访达为 iPhone、iPad 下载的 .ipsw 系统文件，更新或恢复设备时会重新下载	.ipsw system files Finder downloaded for iPhone and iPad, downloaded again when updating or restoring a device
+访达备份到这台 Mac 的设备数据，每个可能有几十 GB。删除后不能再用它恢复设备	Device backups Finder saved on this Mac, often tens of GB each. Once removed, a device can no longer be restored from them
+邮件	Mail
+邮件附件副本	Mail Attachment Copies
+部分项目需要“完全磁盘访问权限”才能扫描（Safari 缓存、废纸篓、设备备份、邮件附件、Docker 磁盘）。	Some items need Full Disk Access to scan (Safari caches, Trash, device backups, Mail attachments, Docker disks).
 """#
 }

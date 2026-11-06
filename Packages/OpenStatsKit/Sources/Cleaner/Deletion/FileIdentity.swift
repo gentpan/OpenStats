@@ -36,6 +36,7 @@ public struct FileIdentity: Sendable, Hashable {
         let mode: mode_t
         var isSymbolicLink: Bool { mode & S_IFMT == S_IFLNK }
         var isDirectory: Bool { mode & S_IFMT == S_IFDIR }
+        var isRegularFile: Bool { mode & S_IFMT == S_IFREG }
     }
 
     /// lstat 的结果；失败时同时给出 errno
