@@ -1,6 +1,7 @@
 import AppKit
 import Localization
 import Metrics
+import SwiftUI
 
 /// 菜单栏上要画的读数，与数据来源解耦，设置页预览可以用示例数据绘制
 struct MenuBarReading {
@@ -40,7 +41,8 @@ struct MenuBarReading {
         diskHistory = disk.map { Array(repeating: $0, count: 30) } ?? []
         upload = store.network?.uploadBytesPerSecond
         download = store.network?.downloadBytesPerSecond
-        temperature = store.sensors?.temperature(.cpu)?.maximum
+        let cpuTemperature = store.sensors?.temperature(.cpu)
+        temperature = model.settings.menuBarTemperatureAverage ? cpuTemperature?.average : cpuTemperature?.maximum
         fanRPM = store.fastestFan?.current
         battery = store.battery?.level
         batteryHistory = battery.map { Array(repeating: $0, count: 30) } ?? []
@@ -163,7 +165,8 @@ enum MenuBarRenderer {
                      networkStyle: settings.networkStyle,
                      colorizeHighLoad: settings.colorizeHighLoad,
                      fahrenheit: settings.useFahrenheit,
-                     itemGap: CGFloat(settings.menuBarItemSpacing))
+                     itemGap: CGFloat(settings.menuBarItemSpacing),
+                     mergeThermal: settings.mergesThermalItems)
     }
 
     static func image(reading: MenuBarReading,
@@ -172,10 +175,22 @@ enum MenuBarRenderer {
                       networkStyle: NetworkMenuStyle,
                       colorizeHighLoad: Bool,
                       fahrenheit: Bool,
-                      itemGap: CGFloat = Metrics.itemGap) -> NSImage {
+                      itemGap: CGFloat = Metrics.itemGap,
+                      mergeThermal: Bool = false) -> NSImage {
         var segments: [Segment] = []
         if reading.keepAwake { segments.append(symbolSegment("cup.and.saucer.fill")) }
+        // 温度与风扇合并：两项都在时，在靠前那一项的位置画成一个双行项目，靠后那一项不再单独画
+        let mergesThermal = mergeThermal && items.contains(.temperature) && items.contains(.fan)
+        var thermalDrawn = false
         for item in items {
+            if mergesThermal, item == .temperature || item == .fan {
+                if !thermalDrawn {
+                    segments.append(thermalSegment(reading: reading, centered: style(.temperature) == .stackedCenter,
+                                                   fahrenheit: fahrenheit))
+                    thermalDrawn = true
+                }
+                continue
+            }
             segments.append(segment(for: item, reading: reading, style: style(item), networkStyle: networkStyle,
                                     colorizeHighLoad: colorizeHighLoad, fahrenheit: fahrenheit))
         }
@@ -247,15 +262,40 @@ enum MenuBarRenderer {
         case .network:
             return networkSegment(upload: reading.upload, download: reading.download, style: networkStyle)
         case .temperature:
-            let text = reading.temperature.map { celsius -> String in
-                let degrees = fahrenheit ? celsius * 9 / 5 + 32 : celsius
-                return "\(Int(degrees.rounded()))°"
-            } ?? "—"
-            return textSegment(item: item, value: text, sample: "100°", style: style)
+            return textSegment(item: item, value: temperatureText(reading, fahrenheit: fahrenheit), sample: "100°", style: style)
         case .fan:
-            return textSegment(item: item, value: reading.fanRPM.map { "\(Int($0))" } ?? "—", sample: "8888", style: style)
+            return textSegment(item: item, value: fanText(reading), sample: "8888", style: style)
         case .battery:
             return batterySegment(reading: reading, style: style, colorizeHighLoad: colorizeHighLoad)
+        }
+    }
+
+    private static func temperatureText(_ reading: MenuBarReading, fahrenheit: Bool) -> String {
+        reading.temperature.map { celsius -> String in
+            let degrees = fahrenheit ? celsius * 9 / 5 + 32 : celsius
+            return "\(Int(degrees.rounded()))°"
+        } ?? "—"
+    }
+
+    private static func fanText(_ reading: MenuBarReading) -> String {
+        reading.fanRPM.map { "\(Int($0))" } ?? "—"
+    }
+
+    /// 温度与风扇合成的双行项目：上面温度、下面转速，字号与网速的两行一致，不带标签以省宽度。
+    /// 宽度按两行里最宽的样本算，数值变化不会挤动旁边的项目
+    private static func thermalSegment(reading: MenuBarReading, centered: Bool, fahrenheit: Bool) -> Segment {
+        let attributes: [NSAttributedString.Key: Any] = [.font: Metrics.networkFont, .foregroundColor: NSColor.labelColor]
+        let temperature = temperatureText(reading, fahrenheit: fahrenheit), fan = fanText(reading)
+        let width = ceil([temperature, fan, "100°", "8888"].map { textWidth($0, attributes) }.max() ?? 0)
+        return Segment(width: width) { rect in
+            let base = baselineOrigin(in: rect)
+            for (text, baseline) in [(temperature, base + Metrics.upperBaseline - 1), (fan, base + Metrics.lowerBaseline)] {
+                if centered {
+                    drawText(text, attributes, centerX: rect.midX, baseline: baseline)
+                } else {
+                    drawText(text, attributes, rightEdge: rect.maxX, baseline: baseline)
+                }
+            }
         }
     }
 
@@ -510,6 +550,11 @@ enum MenuBarRenderer {
         }
     }
 
+    /// 超椭圆圆角的矩形（连续曲率），与界面里的 SwiftUI 圆角一致
+    private static func continuousRect(_ rect: NSRect, radius: CGFloat) -> NSBezierPath {
+        NSBezierPath(cgPath: Path(roundedRect: rect, cornerRadius: radius, style: .continuous).cgPath)
+    }
+
     /// 竖向电量条
     private static func meter(fraction: Double, alert: Bool) -> Segment {
         Segment(width: Metrics.meterSize.width) { rect in
@@ -517,12 +562,12 @@ enum MenuBarRenderer {
                                width: Metrics.meterSize.width, height: Metrics.meterSize.height)
             let radius = Metrics.meterSize.width / 3
             NSColor.labelColor.withAlphaComponent(Metrics.trackAlpha).setFill()
-            NSBezierPath(roundedRect: frame, xRadius: radius, yRadius: radius).fill()
+            continuousRect(frame, radius: radius).fill()
             guard fraction > 0 else { return }
             let filled = NSRect(x: frame.minX, y: frame.minY, width: frame.width,
                                 height: max(radius * 2, frame.height * fraction))
             foreground(alert).setFill()
-            NSBezierPath(roundedRect: filled, xRadius: radius, yRadius: radius).fill()
+            continuousRect(filled, radius: radius).fill()
         }
     }
 
@@ -545,10 +590,8 @@ enum MenuBarRenderer {
         return Segment(width: size.width) { rect in
             let box = NSRect(x: rect.minX, y: rect.midY - size.height / 2, width: size.width, height: size.height)
                 .insetBy(dx: Metrics.logoLine / 2, dy: Metrics.logoLine / 2)
-            // 折线顶点按 App 图标量取：横向 0…1 从左到右，纵向 0…1 从上到下
-            let vertices: [(x: CGFloat, y: CGFloat)] = [(0, 0.54), (0.2, 0.54), (0.41, 0), (0.51, 1), (0.7, 0.27), (0.8, 0.54), (1, 0.54)]
             let path = NSBezierPath()
-            for (index, vertex) in vertices.enumerated() {
+            for (index, vertex) in DS.Brand.pulse.enumerated() {
                 let point = NSPoint(x: box.minX + vertex.x * box.width, y: box.maxY - vertex.y * box.height)
                 if index == 0 { path.move(to: point) } else { path.line(to: point) }
             }

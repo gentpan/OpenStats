@@ -23,7 +23,7 @@ struct ChartPath: Shape {
 struct BarHistoryChart: View {
     let values: [Double]
     var capacity: Int = 24
-    var color: Color = DS.Palette.primary
+    var color: Color = DS.Palette.data
     var warnColor: Color = DS.Palette.warning
     var warnThreshold: Double = 0.8
     var height: CGFloat = DS.Size.chartHeight
@@ -61,7 +61,7 @@ struct BarHistoryChart: View {
             guard current == kind else { continue }
             let barHeight = max(baseline, size.height * value)
             let rect = CGRect(x: x, y: size.height - barHeight, width: barWidth, height: barHeight)
-            path.addPath(Path(roundedRect: rect, cornerRadius: min(DS.Radius.sm / 2, barWidth / 2)))
+            path.addPath(Path(roundedRect: rect, cornerRadius: min(DS.Radius.sm / 2, barWidth / 2), style: .continuous))
         }
         return path
     }
@@ -88,7 +88,7 @@ struct LineHistoryChart: View {
     let values: [Double]
     var capacity: Int = MetricsStore.historyCapacity
     var maxValue: Double = 1
-    var color: Color = DS.Palette.primary
+    var color: Color = DS.Palette.data
     var filled = true
     /// 在 25% / 50% / 75% 画三条淡淡的参考线，图表较高时（主窗口）用来读数
     var grid = false
@@ -146,7 +146,7 @@ struct TimedLineChart: View {
     let points: [TimedValue]
     let duration: TimeInterval
     let end: Date
-    var color: Color = DS.Palette.primary
+    var color: Color = DS.Palette.data
     /// 在 25% / 50% / 75% 画三条淡淡的参考线
     var grid = false
     var height: CGFloat = DS.Size.chartHeight
@@ -295,7 +295,7 @@ struct CoreClusterBars: View {
                     }
                 } else {
                     ChartPath { Self.bars(clusters: clusters, perCore: perCore, total: total, in: $0) { _, value in value < Self.warnThreshold } }
-                        .fill(DS.Palette.primary)
+                        .fill(DS.Palette.data)
                     ChartPath { Self.bars(clusters: clusters, perCore: perCore, total: total, in: $0) { _, value in value >= Self.warnThreshold } }
                         .fill(DS.Palette.warning)
                 }
@@ -341,7 +341,7 @@ struct CoreClusterBars: View {
                 if include(cluster.id, value) {
                     let height = track ? size.height : size.height * value
                     let rect = CGRect(x: x, y: size.height - height, width: barWidth, height: height)
-                    path.addPath(Path(roundedRect: rect, cornerRadius: DS.Radius.sm / 2))
+                    path.addPath(Path(roundedRect: rect, cornerRadius: DS.Radius.sm / 2, style: .continuous))
                 }
                 x += barWidth + barGap
             }
@@ -423,7 +423,7 @@ struct CoreHeatmap: View {
         switch level {
         case emptyLevel: DS.Palette.track
         case warnLevel: DS.Palette.warning
-        default: DS.Palette.primary.opacity(0.08 + 0.92 * Double(level) / Double(steps))
+        default: DS.Palette.data.opacity(0.08 + 0.92 * Double(level) / Double(steps))
         }
     }
 
@@ -458,7 +458,7 @@ struct CoreHeatmap: View {
                 }
                 if level(latest?[safe: core]) == target {
                     let now = CGRect(x: size.width - nowWidth, y: y, width: nowWidth, height: rowHeight)
-                    path.addPath(Path(roundedRect: now, cornerRadius: DS.Radius.sm / 2))
+                    path.addPath(Path(roundedRect: now, cornerRadius: DS.Radius.sm / 2, style: .continuous))
                 }
                 y += rowHeight + gap
             }
@@ -549,7 +549,8 @@ extension Array {
     }
 }
 
-/// 上下镜像的流量图：上半部分上传、下半部分下载，各自按自己的峰值缩放
+/// 上下镜像的流量图：上半部分下载（读取）、下半部分上传（写入），与标题里“先下载、后上传”的顺序一致。
+/// 两半用同一个比例尺（两者里更大的峰值），线的高低能直接比较
 struct MirroredRateChart: View {
     let upload: [Double]
     let download: [Double]
@@ -562,9 +563,10 @@ struct MirroredRateChart: View {
     nonisolated private static let lineStyle = StrokeStyle(lineWidth: DS.Size.chartLine, lineJoin: .round)
 
     var body: some View {
+        let peak = max(upload.max() ?? 0, download.max() ?? 0, Self.floor)
         ZStack {
-            layers(upload, color: Color(nsColor: DS.NetworkPalette.upload), above: true)
-            layers(download, color: Color(nsColor: DS.NetworkPalette.download), above: false)
+            layers(download, peak: peak, color: Color(nsColor: DS.NetworkPalette.download), above: true)
+            layers(upload, peak: peak, color: Color(nsColor: DS.NetworkPalette.upload), above: false)
             ChartPath { Path(CGRect(x: 0, y: $0.height / 2 - DS.Size.stroke / 2, width: $0.width, height: DS.Size.stroke)) }
                 .fill(DS.Palette.border)
         }
@@ -573,18 +575,18 @@ struct MirroredRateChart: View {
     }
 
     @ViewBuilder
-    private func layers(_ values: [Double], color: Color, above: Bool) -> some View {
+    private func layers(_ values: [Double], peak: Double, color: Color, above: Bool) -> some View {
         let capacity = capacity
-        ChartPath { Self.paths(values, capacity: capacity, above: above, in: $0)?.area ?? Path() }
+        ChartPath { Self.paths(values, peak: peak, capacity: capacity, above: above, in: $0)?.area ?? Path() }
             .fill(color.opacity(0.14))
-        ChartPath { Self.paths(values, capacity: capacity, above: above, in: $0)?.line ?? Path() }
+        ChartPath { Self.paths(values, peak: peak, capacity: capacity, above: above, in: $0)?.line ?? Path() }
             .stroke(color, style: Self.lineStyle)
     }
 
     /// 一半高度里的折线与它到中线的面积；下半部分向下翻转
-    nonisolated private static func paths(_ values: [Double], capacity: Int, above: Bool, in size: CGSize) -> (line: Path, area: Path)? {
+    nonisolated private static func paths(_ values: [Double], peak: Double, capacity: Int, above: Bool,
+                                          in size: CGSize) -> (line: Path, area: Path)? {
         let middle = size.height / 2
-        let peak = max(values.max() ?? 0, floor)
         guard var line = LineHistoryChart.path(values: values, capacity: capacity, maxValue: peak,
                                                in: CGSize(width: size.width, height: middle)) else { return nil }
         if !above {
@@ -644,7 +646,7 @@ struct ProbeGrid: View {
             let rect = CGRect(x: CGFloat(index % columns) * (cellWidth + gap),
                               y: CGFloat(index / columns) * (cellHeight + gap),
                               width: cellWidth, height: cellHeight)
-            path.addPath(Path(roundedRect: rect, cornerRadius: DS.Radius.sm / 2))
+            path.addPath(Path(roundedRect: rect, cornerRadius: DS.Radius.sm / 2, style: .continuous))
         }
         return path
     }
@@ -731,7 +733,7 @@ struct ScoreBand: View {
                 .foregroundStyle(DS.Palette.onPrimary)
                 .padding(.horizontal, DS.Space.s1)
                 .frame(height: DS.Size.iconInline)
-                .background(color, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+                .background(color, in: BadgeShape())
             Triangle().fill(color).frame(width: DS.Space.s2, height: DS.Space.s1)
         }
         .fixedSize()

@@ -29,7 +29,8 @@ final class MenuBarController: NSObject {
     /// 布局或显示项目变化时重建；否则只重绘图片
     func update() {
         let settings = model.settings
-        let enabled = settings.drawnMenuBarItems
+        // 温度与风扇合并时，风扇并进温度的图标，不单独占一个
+        let enabled = settings.separateMenuBarItems
         // 没有任何项目时保留一个图标（OpenStats 标志），确保仍能打开面板与主窗口
         let signature: [MenuBarItem?] = settings.menuBarLayout == .separate && !enabled.isEmpty ? enabled : [nil]
         if signature != layoutSignature {
@@ -80,7 +81,12 @@ final class MenuBarController: NSObject {
         let settings = model.settings
         let reading = MenuBarReading(model: model)
         for (index, entry) in items.enumerated() {
-            let itemsToDraw = entry.key.map { [$0] } ?? settings.drawnMenuBarItems
+            let mergesThermal = settings.mergesThermalItems
+            let itemsToDraw: [MenuBarItem] = switch entry.key {
+            case .temperature? where mergesThermal: [.temperature, .fan]
+            case let key?: [key]
+            case nil: settings.drawnMenuBarItems
+            }
             var entryReading = reading
             // 防休眠标记只画在最左侧的图标里
             entryReading.keepAwake = reading.keepAwake && index == 0
@@ -91,7 +97,8 @@ final class MenuBarController: NSObject {
                                               networkStyle: settings.networkStyle,
                                               colorizeHighLoad: settings.colorizeHighLoad,
                                               fahrenheit: settings.useFahrenheit,
-                                              itemGap: CGFloat(settings.menuBarItemSpacing))
+                                              itemGap: CGFloat(settings.menuBarItemSpacing),
+                                              mergeThermal: mergesThermal)
             let key = ObjectIdentifier(entry.statusItem)
             let fingerprint = MenuBarRenderer.fingerprint(of: image)
             if fingerprint == nil || fingerprint != lastFingerprints[key] || button.image == nil {
@@ -117,6 +124,9 @@ final class MenuBarController: NSObject {
     }
 
     func togglePopover(_ item: MenuBarItem, button: NSStatusBarButton? = nil) {
+        // 风扇并进了温度的图标：快捷键等入口要打开风扇详情时，打开温度那一项（两项是同一个弹窗）
+        let item: MenuBarItem = item == .fan && model.settings.menuBarLayout == .separate
+            && model.settings.mergesThermalItems ? .temperature : item
         // 合并模式下没有这一项自己的图标：打开合并面板并切到这一项
         guard let button = button ?? items.first(where: { $0.key == item })?.statusItem.button else {
             toggleCombinedPanel(tab: item, button: nil)

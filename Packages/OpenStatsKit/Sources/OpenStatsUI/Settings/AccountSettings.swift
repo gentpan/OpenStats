@@ -106,7 +106,7 @@ struct AccountSettings: View {
                 GroupRow { InfoBanner(icon: "exclamationmark.triangle", text: message, tone: .error) }
             }
             GroupRow {
-                Text(tr("同步的内容：菜单栏项目、顺序与风格，刷新频率、外观、语言、温度单位、程序坞图标，详情弹窗的区块，连接探测与公网 IP 查询，通知与蓝牙低电量提示，快捷键，风扇安全温度、合盖电量下限，以及 CPU 整机/单核、记录历史数据、自动检查更新、缓存先移到废纸篓这几个开关。当前页面、辅助工具与已记录的历史数据留在本机。"))
+                Text(tr("同步的内容：菜单栏项目、顺序与风格，刷新频率、外观、语言、温度单位、程序坞图标，详情弹窗的区块与排行条数，连接探测与公网 IP 查询，通知与蓝牙低电量提示，快捷键，风扇安全温度、合盖电量下限，以及 CPU 整机/单核、记录历史数据、自动检查更新、缓存先移到废纸篓这几个开关。当前页面、辅助工具与已记录的历史数据留在本机。"))
                     .dsFont(.xs)
                     .foregroundStyle(DS.Palette.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)

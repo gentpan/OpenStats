@@ -38,11 +38,11 @@ struct HistoryPage: View {
                 }
             } else {
                 HistoryChartCard(icon: "cpu", title: "CPU", points: points, start: start, end: end, hover: hover,
-                                 series: [.init(label: tr("平均"), color: DS.Palette.primary, value: \.cpu),
-                                          .init(label: tr("峰值"), color: DS.Palette.primary.opacity(0.35), value: \.cpuMax, filled: false)],
+                                 series: [.init(label: tr("平均"), color: DS.Palette.data, value: \.cpu),
+                                          .init(label: tr("峰值"), color: DS.Palette.data.opacity(0.35), value: \.cpuMax, filled: false)],
                                  maxValue: 1, format: { Format.percent($0) })
                 HistoryChartCard(icon: "memorychip", title: tr("内存"), points: points, start: start, end: end, hover: hover,
-                                 series: [.init(label: tr("已用"), color: DS.Palette.primary, value: \.memory)],
+                                 series: [.init(label: tr("已用"), color: DS.Palette.data, value: \.memory)],
                                  maxValue: 1, format: { Format.percent($0) },
                                  note: criticalNote(points))
                 HistoryChartCard(icon: "network", title: tr("网络"), points: points, start: start, end: end, hover: hover,
@@ -50,7 +50,7 @@ struct HistoryPage: View {
                                           .init(label: tr("上传"), color: Color(nsColor: DS.NetworkPalette.upload), value: \.upload, filled: false)],
                                  maxValue: nil, format: { Format.menuBarRate($0) })
                 HistoryChartCard(icon: "square.3.layers.3d", title: "GPU", points: points, start: start, end: end, hover: hover,
-                                 series: [.init(label: tr("占用"), color: DS.Palette.primary, value: \.gpu)],
+                                 series: [.init(label: tr("占用"), color: DS.Palette.data, value: \.gpu)],
                                  maxValue: 1, format: { Format.percent($0) },
                                  emptyNote: tr("只在菜单栏显示 GPU 或打开 GPU 相关页面时记录"))
                 HistoryChartCard(icon: "thermometer.medium", title: tr("CPU 温度"), points: points, start: start, end: end, hover: hover,

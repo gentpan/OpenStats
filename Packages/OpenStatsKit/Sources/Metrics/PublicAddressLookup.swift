@@ -223,7 +223,9 @@ public enum PublicAddressLookup {
             info.regionEnglish = english.region.flatMap(nonEmpty)
         }
         if let asn = response.network?.asn, asn > 0 { info.asn = "AS\(asn)" }
-        info.organization = response.network?.isp.flatMap(nonEmpty) ?? response.network?.asnName.flatMap(nonEmpty)
+        // 与 cleanip.io 网站和命令行里“运营商 / ASN”一致：先取 ASN 登记名（如“Cyberjet PTE Ltd”），
+        // isp 是缩短的品牌名（如“Cyberjet”），只在没有登记名时用
+        info.organization = response.network?.asnName.flatMap(nonEmpty) ?? response.network?.isp.flatMap(nonEmpty)
         if let hostname = response.hostname.flatMap(nonEmpty), hostname != response.ip { info.hostname = hostname }
         info.networkType = response.network?.networkType.flatMap(nonEmpty)
         info.asnType = response.network?.asnType.flatMap(nonEmpty)?.lowercased()

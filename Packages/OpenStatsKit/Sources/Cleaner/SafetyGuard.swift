@@ -30,6 +30,8 @@ public struct SafetyGuard: Sendable {
     public let home: String
     /// 应用程序文件夹：只放行其中的 macOS 安装器
     public let applications: String
+    /// 当前用户的临时目录：放行其中的直接子项（过期的临时文件）
+    public let temporary: String?
 
     /// 相对家目录的允许根目录；条目必须位于其内部（不能是根目录本身）
     static let allowedRoots = [
@@ -59,6 +61,7 @@ public struct SafetyGuard: Sendable {
         ".lmstudio/models",
         ".cache/lm-studio/models",
         ".gradle/wrapper/dists",
+        ".cache/torch/hub/checkpoints",
     ]
 
     /// 目录本身就可以整个清理的位置，以及它里面的内容。只列具体的工具缓存目录，不放行它们的上级（比如整个 ~/.cache），
@@ -67,7 +70,7 @@ public struct SafetyGuard: Sendable {
         ".cache/vite", ".cache/webpack", ".cache/eslint", ".cache/prettier", ".cache/typescript", ".cache/node-gyp",
         ".cache/electron", ".node-gyp", ".cache/pip", ".cache/ruff", ".cache/mypy", ".pyenv/cache",
         ".cargo/registry/cache", ".cache/swift-package-manager",
-        ".cache/uv", ".gradle/caches", ".bun/install/cache", "Library/pnpm/store",
+        ".cache/uv", ".gradle/caches", ".bun/install/cache", "Library/pnpm/store", ".m2/repository",
     ]
 
     /// Application Support 内只允许删除这些名字的缓存目录（浏览器配置目录下）
@@ -84,9 +87,19 @@ public struct SafetyGuard: Sendable {
         "openstats",
     ]
 
-    public init(home: String = NSHomeDirectory(), applications: String = "/Applications") {
+    public init(home: String = NSHomeDirectory(), applications: String = "/Applications", temporary: String? = nil) {
         self.home = (home as NSString).standardizingPath
         self.applications = (applications as NSString).standardizingPath
+        self.temporary = temporary.map(Self.withoutPrivatePrefix)
+    }
+
+    /// /private/var/folders 与 /var/folders 是同一个地方；标准化有时去掉 /private 有时不去，统一成短的写法再比较
+    static func withoutPrivatePrefix(_ path: String) -> String {
+        var standardized = (path as NSString).standardizingPath
+        for prefix in ["/private/var/", "/private/tmp/"] where standardized.hasPrefix(prefix) {
+            standardized = String(standardized.dropFirst("/private".count))
+        }
+        return standardized
     }
 
     public func validate(_ url: URL) throws {
@@ -121,7 +134,10 @@ public struct SafetyGuard: Sendable {
         }
 
         let homePrefix = home + "/"
-        guard path.hasPrefix(homePrefix) else { throw SafetyError.outsideAllowedRoots }
+        guard path.hasPrefix(homePrefix) else {
+            try checkTemporary(path: path)
+            return
+        }
         let relative = String(path.dropFirst(homePrefix.count))
 
         // 具体的工具缓存目录：目录本身与里面的内容都可以，但路径上任何一段都不能带受保护的关键词
@@ -143,6 +159,17 @@ public struct SafetyGuard: Sendable {
             let leaf = (path as NSString).lastPathComponent
             guard Self.applicationSupportCacheNames.contains(leaf) else { throw SafetyError.applicationSupportNotCache }
         }
+    }
+
+    /// 临时目录（不在家目录里时）：只放行直接子项，不放行临时目录本身和更深的内容
+    private func checkTemporary(path: String) throws {
+        guard let temporary else { throw SafetyError.outsideAllowedRoots }
+        let candidate = Self.withoutPrivatePrefix(path)
+        guard candidate != temporary else { throw SafetyError.isRoot }
+        guard candidate.hasPrefix(temporary + "/") else { throw SafetyError.outsideAllowedRoots }
+        let inside = candidate.dropFirst(temporary.count + 1)
+        guard !inside.contains("/") else { throw SafetyError.outsideAllowedRoots }
+        try checkProtectedKeywords(in: [inside])
     }
 
     /// “安装 macOS …”应用：文件名是 Install macOS / Install OS X 开头的 .app，包名是苹果安装助理的

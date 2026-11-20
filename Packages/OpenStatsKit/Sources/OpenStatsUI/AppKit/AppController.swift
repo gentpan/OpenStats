@@ -53,7 +53,8 @@ public final class AppController: NSObject, NSApplicationDelegate {
             self?.speedTestWindow.show()
         }
         model.quit = { NSApp.terminate(nil) }
-        model.helper.refreshStatus()
+        // 辅助工具随应用自动登记，不用到设置里手动安装
+        model.helper.installIfNeeded()
         // 风扇手动或合盖运行期间与辅助工具保持连接，其余时候用完就断开
         model.helper.holdsSystemState = { [weak model] in
             guard let model else { return true }
@@ -291,7 +292,7 @@ public final class AppController: NSObject, NSApplicationDelegate {
         switch model.settings.appearance {
         case .system: NSApp.appearance = nil
         case .light: NSApp.appearance = NSAppearance(named: .aqua)
-        case .dark: NSApp.appearance = NSAppearance(named: .darkAqua)
+        case .dark, .frosted: NSApp.appearance = NSAppearance(named: .darkAqua)
         }
     }
 

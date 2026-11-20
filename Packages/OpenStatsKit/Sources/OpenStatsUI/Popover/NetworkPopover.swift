@@ -32,7 +32,7 @@ struct NetworkPopover: View {
     }
 }
 
-/// 网络顶部：下载速度与连接摘要（接口、网络名称、本机地址），右侧是上传、延迟与丢包。
+/// 网络顶部：下载与上传并排两列，同样大的数字，各用自己的颜色；下面一行是连接摘要，右侧是延迟与丢包。
 /// 延迟和丢包取自后台的连接探测（最近 60 次），关掉探测时不显示
 private struct NetworkHero: View {
     let rate: NetworkRate?
@@ -48,18 +48,32 @@ private struct NetworkHero: View {
         let routerOnly = latest?.state == .routerOnly
         let loss = probes.isEmpty ? 0 : Double(probes.filter { $0.latency == nil }.count) / Double(probes.count)
 
-        PopoverHero(label: "↓ " + tr("下载"), value: rate.map { Format.menuBarRate($0.downloadBytesPerSecond) } ?? "—",
-                    caption: connectionSummary(network.details),
-                    stats: [
-                        HeroStat(label: "↑ " + tr("上传"), value: rate.map { Format.menuBarRate($0.uploadBytesPerSecond) } ?? "—"),
-                        probing ? HeroStat(label: tr("延迟"),
-                                           value: routerOnly ? tr("外网不通") : latency.map { "\(Int($0.rounded())) ms" } ?? tr("超时"),
-                                           tone: routerOnly ? .warning : latency.map { $0 >= 300 ? .error : $0 >= 100 ? .warning : .neutral } ?? .error,
-                                           help: routerOnly ? tr("路由器有回应，但路由器之外的网络没有回应") : tr("到探测目标的往返时间")) : nil,
-                        probing ? HeroStat(label: tr("丢包"), value: Format.percent(loss),
-                                           tone: loss >= 0.05 ? .error : loss > 0 ? .warning : .neutral,
-                                           help: tr("最近 \(probes.count) 次探测里没有回应的比例")) : nil,
-                    ].compactMap { $0 })
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            // 两列各占一半宽度：数字长短变化时位置不动
+            HStack(alignment: .top, spacing: DS.Space.s3) {
+                RateColumn(arrow: "↓", label: tr("下载"), color: DS.NetworkPalette.download,
+                           value: rate.map { Format.menuBarRate($0.downloadBytesPerSecond) } ?? "—")
+                RateColumn(arrow: "↑", label: tr("上传"), color: DS.NetworkPalette.upload,
+                           value: rate.map { Format.menuBarRate($0.uploadBytesPerSecond) } ?? "—")
+            }
+            HStack(spacing: DS.Space.s3) {
+                Text(verbatim: connectionSummary(network.details))
+                    .dsFont(.xs)
+                    .foregroundStyle(DS.Palette.textSecondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Spacer(minLength: DS.Space.s2)
+                if probing {
+                    ProbeStat(label: tr("延迟"),
+                              value: routerOnly ? tr("外网不通") : latency.map { "\(Int($0.rounded())) ms" } ?? tr("超时"),
+                              tone: routerOnly ? .warning : latency.map { $0 >= 300 ? .error : $0 >= 100 ? .warning : .neutral } ?? .error,
+                              help: routerOnly ? tr("路由器有回应，但路由器之外的网络没有回应") : tr("到探测目标的往返时间"))
+                    ProbeStat(label: tr("丢包"), value: Format.percent(loss),
+                              tone: loss >= 0.05 ? .error : loss > 0 ? .warning : .neutral,
+                              help: tr("最近 \(probes.count) 次探测里没有回应的比例"))
+                }
+            }
+        }
     }
 
     /// “Wi-Fi「家里」· 192.168.1.5”；有 VPN 时在后面注明
@@ -69,6 +83,49 @@ private struct NetworkHero: View {
         if let address = physical.ipv4.first { parts.append(address) }
         if details?.tunnel != nil { parts.append("VPN") }
         return parts.joined(separator: " · ")
+    }
+}
+
+/// 顶部的一列速率：彩色箭头 + 名称一行小字，下面是大号读数
+private struct RateColumn: View {
+    let arrow: String
+    let label: String
+    let color: NSColor
+    let value: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s1 / 2) {
+            HStack(spacing: DS.Space.s1 / 2) {
+                Text(verbatim: arrow).fontWeight(.bold).foregroundStyle(Color(nsColor: color))
+                Text(verbatim: label).foregroundStyle(DS.Palette.textTertiary)
+            }
+            .dsFont(.xs)
+            UnitText(text: value, size: .xl)
+                .minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// 连接摘要右侧的延迟 / 丢包：名称淡色、读数按好坏着色
+private struct ProbeStat: View {
+    let label: String
+    let value: String
+    let tone: Tone
+    let help: String
+
+    var body: some View {
+        HStack(spacing: DS.Space.s1 / 2) {
+            Text(verbatim: label).foregroundStyle(DS.Palette.textTertiary)
+            Text(verbatim: value)
+                .fontWeight(.semibold)
+                .monospacedDigit()
+                .foregroundStyle(tone == .neutral ? DS.Palette.textPrimary : tone.color)
+        }
+        .dsFont(.xs)
+        .lineLimit(1)
+        .fixedSize()
+        .help(help)
     }
 }
 
@@ -98,17 +155,21 @@ private struct TrafficHistorySection: View {
                               height: isDetailPage ? DS.Size.chartHeight * 3 : DS.Size.chartHeight + DS.Space.s2)
             if let totals = store.network {
                 let counted = network.trafficTotals(totals)
-                let sinceReset = network.trafficBaseline != nil
-                InfoRow(label: sinceReset ? tr("重置后下载") : tr("开机后下载"), text: Format.bytes(counted.download, base: .decimal))
-                InfoRow(label: sinceReset ? tr("重置后上传") : tr("开机后上传"), text: Format.bytes(counted.upload, base: .decimal))
-                // 重置：把上传 / 下载从现在起重新累计，标出起算时间
-                HStack(spacing: DS.Space.s2) {
-                    if let since = network.trafficBaseline?.date {
-                        Text(verbatim: tr("自 \(since.formatted(Date.FormatStyle(locale: L10n.locale).month().day().hour().minute())) 起"))
+                // 累计流量并成一行：左边写从什么时候起算，右边是下载、上传与重置按钮
+                HStack(spacing: DS.Space.s3) {
+                    VStack(alignment: .leading, spacing: DS.Space.s1 / 2) {
+                        Text(network.trafficBaseline != nil ? tr("重置后累计") : tr("开机后累计"))
                             .dsFont(.xs)
-                            .foregroundStyle(DS.Palette.textTertiary)
+                            .foregroundStyle(DS.Palette.textSecondary)
+                        if let since = network.trafficBaseline?.date {
+                            Text(verbatim: tr("自 \(since.formatted(Date.FormatStyle(locale: L10n.locale).month().day().hour().minute())) 起"))
+                                .dsFont(.xs)
+                                .foregroundStyle(DS.Palette.textTertiary)
+                        }
                     }
-                    Spacer(minLength: 0)
+                    Spacer(minLength: DS.Space.s2)
+                    total("↓", counted.download, color: DS.NetworkPalette.download)
+                    total("↑", counted.upload, color: DS.NetworkPalette.upload)
                     MiniIconButton(systemName: "arrow.counterclockwise",
                                    help: tr("重置上传与下载统计：从现在起重新累计。重启后自动回到开机后的累计；右键可改回")) {
                         network.resetTraffic(totals)
@@ -123,10 +184,24 @@ private struct TrafficHistorySection: View {
         }
     }
 
+    private func total(_ arrow: String, _ bytes: UInt64, color: NSColor) -> some View {
+        HStack(spacing: DS.Space.s1 / 2) {
+            Text(verbatim: arrow).fontWeight(.bold).foregroundStyle(Color(nsColor: color))
+            Text(verbatim: Format.bytes(bytes, base: .decimal))
+                .fontWeight(.semibold)
+                .monospacedDigit()
+                .foregroundStyle(DS.Palette.textPrimary)
+        }
+        .dsFont(.sm)
+        .lineLimit(1)
+        .fixedSize()
+    }
+
     private func peak(_ arrow: String, _ values: [Double], color: NSColor) -> some View {
         HStack(spacing: DS.Space.s1 / 2) {
             Text(verbatim: arrow).foregroundStyle(Color(nsColor: color)).fontWeight(.semibold)
-            Text(verbatim: Format.menuBarRate(max(values.max() ?? 0, MirroredRateChart.floor)))
+            // 写真实的峰值；图表空闲时按 64 KB/s 缩放只是为了不把噪声放大，不代表读数
+            Text(verbatim: Format.menuBarRate(values.max() ?? 0))
                 .foregroundStyle(DS.Palette.textSecondary)
         }
     }
@@ -226,18 +301,23 @@ private struct AddressSection: View {
                 InfoRow(label: tr("路由器")) { CopyableText(text: physical?.router ?? "—") }
             }
             if lookup {
-                InfoRow(label: tr("公网 IPv4")) { publicValue(publicAddresses?.ipv4, loading: network.isLookingUpPublic) }
+                // 国旗放在公网 IP 前面；国家与城市写在下面的“归属地”一行
+                InfoRow(label: tr("公网 IPv4")) {
+                    HStack(spacing: DS.Space.s2) {
+                        if let code = publicAddresses?.countryCode {
+                            FlagImage(countryCode: code)
+                        }
+                        publicValue(publicAddresses?.ipv4, loading: network.isLookingUpPublic)
+                    }
+                }
                 if let publicIPv6 = publicAddresses?.ipv6 {
                     InfoRow(label: tr("公网 IPv6")) { CopyableText(text: publicIPv6) }
                 }
                 if let publicAddresses, let code = publicAddresses.countryCode {
                     InfoRow(label: tr("归属地")) {
-                        HStack(spacing: DS.Space.s2) {
-                            FlagImage(countryCode: code)
-                            Text(verbatim: location(publicAddresses, code: code))
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-                        }
+                        Text(verbatim: location(publicAddresses, code: code))
+                            .lineLimit(1)
+                            .truncationMode(.tail)
                     }
                 }
                 if let asn = publicAddresses?.asn {
@@ -246,7 +326,7 @@ private struct AddressSection: View {
                 if let organization = publicAddresses?.organization {
                     InfoRow(label: tr("网络运营方")) { Text(verbatim: organization).lineLimit(1).truncationMode(.middle) }
                 }
-                // 原生 / 广播、IP 类型、网络类型做成徽章，一眼看结论；反向解析、住宅概率等细节不在弹窗里占行
+                // 只放两个徽章：原生 / 广播，以及 IP 类型（机房 IP、住宅 IP 等）；反向解析、住宅概率等细节不在弹窗里占行
                 if let publicAddresses, !Self.badges(publicAddresses).isEmpty {
                     FlowLayout(spacing: DS.Space.s2) {
                         ForEach(Self.badges(publicAddresses), id: \.text) { badge in
@@ -323,17 +403,6 @@ private struct AddressSection: View {
                 badges.append(Badge(icon: "questionmark.circle", text: ipType, tone: .neutral))
             }
         }
-        if let asnType = addresses.asnType {
-            switch asnType {
-            case "isp": badges.append(Badge(icon: "wifi.router.fill", text: "ISP", tone: .success))
-            case "mobile": badges.append(Badge(icon: "antenna.radiowaves.left.and.right", text: tr("移动运营商"), tone: .success))
-            case "business": badges.append(Badge(icon: "building.2.fill", text: tr("企业网络"), tone: .success))
-            case "education": badges.append(Badge(icon: "graduationcap.fill", text: tr("教育网"), tone: .success))
-            case "government": badges.append(Badge(icon: "building.columns.fill", text: tr("政府"), tone: .success))
-            case "hosting": badges.append(Badge(icon: "server.rack", text: tr("机房"), tone: .warning))
-            default: break
-            }
-        }
         return badges
     }
 }
@@ -395,16 +464,8 @@ private struct PuritySection: View {
                                 url: addresses?.reportURL ?? CleanIPLink.site,
                                 help: tr("评分由 cleanip.io 提供，点击查看完整报告"))
                 }
+                // 风险评分与风险标记不在这里列出，想看细节点右上角的 cleanip.io 看完整报告
                 ScoreBand(score: purity.score).help(hint)
-                if let risk = addresses?.risk {
-                    InfoRow(label: tr("风险评分")) {
-                        Text(verbatim: "\(risk.score)/100" + (risk.label.map { " · \(Self.riskLabel($0))" } ?? ""))
-                    }
-                    InfoRow(label: tr("风险标记")) {
-                        Text(verbatim: risk.flags.isEmpty ? tr("未检出") : risk.flags.map(Self.flagLabel).joined(separator: "、"))
-                            .foregroundStyle(risk.flags.isEmpty ? DS.Palette.success : DS.Palette.error)
-                    }
-                }
                 if let recommendation = purity.recommendation, !L10n.isEnglish {
                     Text(verbatim: recommendation)
                         .dsFont(.xs)
@@ -469,32 +530,6 @@ private struct PuritySection: View {
     /// 置信度高的绿、中等的灰、低的黄
     static func confidenceColor(_ confidence: Int) -> Color {
         confidence >= 80 ? DS.Palette.success : confidence >= 50 ? DS.Palette.textSecondary : DS.Palette.warning
-    }
-
-    static func riskLabel(_ raw: String) -> String {
-        switch raw.lowercased() {
-        case "very clean": tr("非常干净")
-        case "clean": tr("干净")
-        case "low risk", "low": tr("低风险")
-        case "medium risk", "medium", "moderate": tr("中等风险")
-        case "high risk", "high": tr("高风险")
-        case "very high risk", "critical": tr("极高风险")
-        default: raw
-        }
-    }
-
-    static func flagLabel(_ flag: String) -> String {
-        switch flag {
-        case "vpn": "VPN"
-        case "proxy": tr("代理")
-        case "residentialProxy": tr("住宅代理")
-        case "tor": "Tor"
-        case "relay": tr("中继")
-        case "datacenter": tr("机房")
-        case "hosting": tr("托管")
-        case "abuser": tr("滥用记录")
-        default: flag
-        }
     }
 }
 

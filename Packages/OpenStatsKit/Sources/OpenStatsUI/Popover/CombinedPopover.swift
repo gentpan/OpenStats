@@ -16,16 +16,9 @@ struct CombinedPopoverView: View {
 
         PopoverFrame(width: DS.Size.dashboardPopoverWidth) {
             VStack(spacing: DS.Space.s3) {
+                PopoverHeader(item: tab, showsTitle: false)
                 PopoverTabStrip(items: items, selection: tab) { model.combinedPopoverTab = $0 }
-                if let tab {
-                    PopoverHeader(item: tab)
-                } else {
-                    OverviewHeader {
-                        let page = PanelTab.overview
-                        MiniIconButton(systemName: page.symbol, help: tr("在主窗口打开“\(page.title)”")) { model.openMainWindow(page) }
-                        MiniIconButton(systemName: "gearshape", help: tr("设置")) { model.openSettings() }
-                    }
-                }
+                if tab == nil { OverviewHeader() }
             }
         } content: {
             if let tab {
@@ -121,8 +114,7 @@ private struct DashboardPopover: View {
 // MARK: - 标题
 
 /// 总览标题：状态与评分一行，机器信息一行淡色小字（不再用一排胶囊）
-private struct OverviewHeader<Accessory: View>: View {
-    @ViewBuilder var accessory: Accessory
+private struct OverviewHeader: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
@@ -142,8 +134,7 @@ private struct OverviewHeader<Accessory: View>: View {
                     .dsFont(.xs, weight: .medium)
                     .monospacedDigit()
                     .foregroundStyle(report.tone.color)
-                Spacer(minLength: DS.Space.s2)
-                accessory
+                Spacer(minLength: 0)
             }
             Text(verbatim: machineLine(store))
                 .dsFont(.xs)
@@ -399,7 +390,7 @@ private struct MetersCard: View {
             FanModeMenu(selection: model.fans.mode) { model.requestFanMode($0) }
                 .disabled(fans.isEmpty)
         } graphic: {
-            LineHistoryChart(values: store.fanHistory.elements, capacity: 30, color: DS.Palette.primary, height: Self.curveHeight)
+            LineHistoryChart(values: store.fanHistory.elements, capacity: 30, color: DS.Palette.data, height: Self.curveHeight)
         }
     }
 
@@ -471,7 +462,7 @@ struct FanModeMenu: View {
         .foregroundStyle(DS.Palette.primary)
         .padding(.horizontal, DS.Space.s1 + DS.Space.s1 / 2)
         .frame(height: CellBadge.height)
-        .background(DS.Palette.primary.opacity(0.12), in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+        .background(DS.Palette.primary.opacity(0.12), in: BadgeShape())
         .fixedSize()
     }
 }
@@ -489,7 +480,7 @@ private struct CellBadge: View {
             .lineLimit(1)
             .padding(.horizontal, DS.Space.s1 + DS.Space.s1 / 2)
             .frame(height: Self.height)
-            .background(DS.Palette.track, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+            .background(DS.Palette.track, in: BadgeShape())
             .fixedSize()
     }
 }

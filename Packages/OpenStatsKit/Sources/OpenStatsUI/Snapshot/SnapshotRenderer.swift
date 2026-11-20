@@ -77,6 +77,8 @@ enum SnapshotRenderer {
             notes: [tr("在线升级：发现新版本时显示更新摘要，一键安装并自动重启"), tr("连接探测只在需要时运行，更省电"), tr("进程页刷新频率调整为每 2 秒")],
             changelog: URL(string: "https://getopenstats.com/#changelog")))
 
+        // 截图只拍浅色与深色两套，不受当前是否选了深色磨砂影响
+        DS.isFrosted = false
         for (appearanceName, suffix) in [(NSAppearance.Name.aqua, "light"), (.darkAqua, "dark")] {
             guard let appearance = NSAppearance(named: appearanceName) else { continue }
             NSApp.appearance = appearance

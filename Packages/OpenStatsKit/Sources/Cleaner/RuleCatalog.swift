@@ -4,12 +4,13 @@ import Localization
 /// 清理规则。目录清单参考了 Mole 的清理范围（仅参考范围，代码为独立实现）。
 public enum RuleCatalog {
     public static func rules() -> [CleanRule] {
-        [userCaches, logs] + browsers.map(browserRule) + [chromiumAppCaches]
+        [userCaches, logs, temporaryFiles] + browsers.map(browserRule) + [chromiumAppCaches]
             + [deviceBackups, deviceFirmware, macOSInstallers, aiModels, mailDownloads, ollamaModels, containerDisks, virtualMachines]
             + [xcodeDerivedData, simulatorCaches, xcodeCaches, xcodeDeviceSupport, npmCache, javascriptPackageCaches, frontendToolCaches,
-               pythonToolCaches, rustDownloadCache, swiftPackageCache, gradleCaches, xcodeArchives,
-               unavailableSimulators, unusedSimulatorRuntimes]
+               pythonToolCaches, rustDownloadCache, swiftPackageCache, gradleCaches, mavenRepository, xcodeArchives,
+               unavailableSimulators, unusedSimulatorRuntimes, goModules, androidEmulators]
             + [incompleteDownloads, installers, trash]
+            + [appData, largeFolders]
     }
 
     // MARK: 系统

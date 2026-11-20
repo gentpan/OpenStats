@@ -247,7 +247,7 @@ struct DiskTile: View {
             VStack {
                 Spacer()
                 ProgressTrack(fraction: disk?.usedFraction ?? 0,
-                              color: (disk?.usedFraction ?? 0) > 0.9 ? DS.Palette.warning : DS.Palette.primary,
+                              color: (disk?.usedFraction ?? 0) > 0.9 ? DS.Palette.warning : DS.Palette.data,
                               height: DS.Space.s3)
                 Spacer()
             }
@@ -341,7 +341,7 @@ private struct CoreLoadCard: View {
                 Image(systemName: "square.grid.3x3.fill").dsFont(.xs, weight: .semibold)
                 Text(tr("各核心占用")).dsFont(.xs, weight: .semibold)
                 Spacer()
-                LegendItem(color: DS.Palette.primary, label: tr("用户"), value: cpu.map { Format.percent($0.user) } ?? "—")
+                LegendItem(color: DS.Palette.data, label: tr("用户"), value: cpu.map { Format.percent($0.user) } ?? "—")
                 LegendItem(color: DS.Palette.secondary, label: tr("系统"), value: cpu.map { Format.percent($0.system) } ?? "—")
             }
             .foregroundStyle(DS.Palette.textSecondary)
@@ -419,10 +419,11 @@ struct TopProcessesCard: View {
     @Environment(\.isSnapshot) private var isSnapshot
     /// 上次显示的顺序：仍在前几名的进程留在原位，只更新数值
     @State private var order = StableOrderMemory<Int32>()
-    private static let rowCount = 5
+    private static let defaultRowCount = 5
 
     var body: some View {
-        let processes = order.arrange(model.store.processes, limit: Self.rowCount, id: \.pid)
+        let rowCount = model.settings.rankingRows(default: Self.defaultRowCount)
+        let processes = order.arrange(model.store.processes, limit: rowCount, id: \.pid)
 
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
             HStack(spacing: DS.Space.s1) {
@@ -439,7 +440,7 @@ struct TopProcessesCard: View {
             .foregroundStyle(DS.Palette.textSecondary)
 
             // 数据到达前用等高占位行，避免面板高度变化
-            ForEach(0..<max(0, Self.rowCount - processes.count), id: \.self) { _ in
+            ForEach(0..<max(0, rowCount - processes.count), id: \.self) { _ in
                 PlaceholderLine()
                     .frame(height: DS.TextSize.sm.rawValue * 1.25)
             }

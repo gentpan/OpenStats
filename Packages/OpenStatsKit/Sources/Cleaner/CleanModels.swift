@@ -2,7 +2,7 @@ import Foundation
 import Localization
 
 public enum CleanCategory: String, Sendable, CaseIterable, Identifiable {
-    case system, browser, apps, large, developer, downloads, trash
+    case system, browser, apps, large, developer, downloads, trash, systemData
 
     public var id: String { rawValue }
 
@@ -15,6 +15,7 @@ public enum CleanCategory: String, Sendable, CaseIterable, Identifiable {
         case .developer: tr("开发者")
         case .downloads: tr("下载")
         case .trash: tr("废纸篓")
+        case .systemData: tr("系统数据")
         }
     }
 }
@@ -61,6 +62,10 @@ public struct CleanEnvironment: Sendable {
     public var applications: String
     /// 模拟器设备与运行时的清单（来自 simctl）；测试里换成固定数据，默认不读
     public var simulators: @Sendable () -> SimulatorInventory?
+    /// 当前用户的临时目录（/var/folders/…/T），所有不在沙盒里的进程共用。nil 表示不扫（测试里默认不扫，免得碰到真实的临时文件）
+    public var temporaryDirectory: String?
+    /// 已安装的应用，用来认出数据目录属于谁；nil 表示没读（测试里默认不读），这时不判断“应用已不在”
+    public var installedApps: @Sendable () -> [InstalledApp]?
 
     public init(home: String = NSHomeDirectory(),
                 runningBundleIdentifiers: @escaping @Sendable () -> Set<String>,
@@ -71,7 +76,9 @@ public struct CleanEnvironment: Sendable {
                 interactiveTrasher: (any Trasher)? = nil,
                 hasFullDiskAccess: Bool = false,
                 applications: String = "/Applications",
-                simulators: @escaping @Sendable () -> SimulatorInventory? = { nil }) {
+                simulators: @escaping @Sendable () -> SimulatorInventory? = { nil },
+                temporaryDirectory: String? = nil,
+                installedApps: @escaping @Sendable () -> [InstalledApp]? = { nil }) {
         self.home = home
         self.runningBundleIdentifiers = runningBundleIdentifiers
         self.runningAppsReadable = runningAppsReadable
@@ -82,6 +89,8 @@ public struct CleanEnvironment: Sendable {
         self.hasFullDiskAccess = hasFullDiskAccess
         self.applications = applications
         self.simulators = simulators
+        self.temporaryDirectory = temporaryDirectory
+        self.installedApps = installedApps
     }
 }
 

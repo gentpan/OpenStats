@@ -63,7 +63,7 @@ struct GeneralSettings: View {
                 SettingRow(title: tr("外观"), subtitle: tr("主窗口与弹窗的配色；菜单栏始终跟随系统")) {
                     SegmentedControl(selection: $settings.appearance,
                                      options: AppearanceMode.allCases.map { ($0, $0.title) })
-                        .frame(width: DS.Size.sidebarWidth + DS.Space.s12)
+                        .frame(width: DS.Size.sidebarWidth + DS.Space.s16 * 2)
                 }
             }
             GroupRow {
@@ -96,6 +96,14 @@ struct GeneralSettings: View {
                 SettingRow(title: tr("温度单位")) {
                     SegmentedControl(selection: $settings.useFahrenheit, options: [(false, "°C"), (true, "°F")])
                         .frame(width: DS.Size.sidebarWidth / 2 + DS.Space.s6)
+                }
+            }
+            GroupRow {
+                SettingRow(title: tr("排行显示数量"),
+                           subtitle: tr("CPU、内存弹窗的“按应用汇总”与仪表盘的“高占用进程”列出多少条；默认分别是 6 条和 5 条")) {
+                    SegmentedControl(selection: $settings.rankingRows,
+                                     options: AppSettings.rankingRowOptions.map { ($0, $0 == 0 ? tr("默认") : tr("\($0) 条")) })
+                        .frame(width: DS.Size.sidebarWidth + DS.Space.s12)
                 }
             }
         }
@@ -337,7 +345,10 @@ struct MenuBarSettings: View {
                                 MenuBarItemControls(item: item, index: index)
                             }
                             if settings.isEnabled(item) {
-                                ItemStyleRow(item: item)
+                                // 合并后风扇并进温度那一项，没有自己的风格可选
+                                if !(item == .fan && settings.mergesThermalItems) {
+                                    ItemStyleRow(item: item)
+                                }
                                 if item == .fan, settings.isEnabled(.temperature) {
                                     // 两项共用温度弹窗的同一组区块，只在“CPU 温度”下改一次
                                     SharedPopoverSectionsNote(owner: .temperature)
@@ -369,6 +380,20 @@ struct MenuBarSettings: View {
                 }
             }
             GroupRow {
+                SettingRow(title: tr("菜单栏温度"),
+                           subtitle: tr("最高：最热的 CPU 核心，某个核心瞬时升温就会跳；平均：各核心的平均值，更平稳")) {
+                    SegmentedControl(selection: $settings.menuBarTemperatureAverage,
+                                     options: [(false, tr("最高")), (true, tr("平均"))])
+                        .frame(width: DS.Size.sidebarWidth / 2 + DS.Space.s6)
+                }
+            }
+            GroupRow {
+                SettingRow(title: tr("温度与风扇合并显示"),
+                           subtitle: tr("两项都开启时合成一个双行项目：上面温度、下面风扇转速，更省菜单栏宽度；点击打开温度详情")) {
+                    DSToggle(isOn: $settings.mergeTemperatureFan, label: tr("温度与风扇合并显示"))
+                }
+            }
+            GroupRow {
                 SettingRow(title: tr("在菜单栏显示低电量的蓝牙设备"),
                            subtitle: tr("键盘、鼠标、耳机等低于 20% 时，在菜单栏的电池项目旁显示该设备的图标与电量；需要开启电池项目。系统通知在“通知”里单独设置")) {
                     DSToggle(isOn: $settings.bluetoothLowBatteryInMenuBar, label: tr("在菜单栏显示低电量的蓝牙设备"))
@@ -387,7 +412,8 @@ struct MenuBarSettings: View {
 
     /// 没有电池的 Mac 上，电池项目改为显示蓝牙设备电量
     private func itemSubtitle(_ item: MenuBarItem) -> String {
-        item == .battery && model.store.battery == nil
+        if item == .temperature && model.settings.menuBarTemperatureAverage { return tr("CPU 核心平均温度") }
+        return item == .battery && model.store.battery == nil
             ? tr("这台 Mac 没有电池：菜单栏显示电量最低的蓝牙设备，弹窗只列蓝牙设备")
             : item.subtitle
     }
@@ -460,13 +486,15 @@ private struct ItemStyleRow: View {
     /// 这一项按当前风格、实时读数画出来的样子，底色跟随浅色 / 深色外观
     private var preview: some View {
         let settings = model.settings
-        let image = MenuBarRenderer.image(reading: MenuBarReading(model: model), items: [item],
+        let merged = item == .temperature && settings.mergesThermalItems
+        let image = MenuBarRenderer.image(reading: MenuBarReading(model: model), items: merged ? [.temperature, .fan] : [item],
                                           style: { settings.style(for: $0) }, networkStyle: settings.networkStyle,
-                                          colorizeHighLoad: settings.colorizeHighLoad, fahrenheit: settings.useFahrenheit)
+                                          colorizeHighLoad: settings.colorizeHighLoad, fahrenheit: settings.useFahrenheit,
+                                          mergeThermal: merged)
         return Image(nsImage: MenuBarRenderer.preview(image, dark: colorScheme == .dark))
             .padding(.horizontal, DS.Space.s3)
             .frame(height: DS.Size.segmentHeight + DS.Space.s1)
-            .background(DS.Palette.track, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+            .background(DS.Palette.track, in: ControlShape())
             .accessibilityLabel(tr("该项目在菜单栏里的实时效果"))
     }
 }
@@ -531,8 +559,8 @@ private struct SectionToggleChip: View {
             .padding(.horizontal, DS.Space.s2)
             .frame(height: DS.Size.segmentHeight)
             .background(isOn ? DS.Palette.primary.opacity(0.12) : hovering ? DS.Palette.surfaceHover : .clear,
-                        in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
+                        in: BadgeShape())
+            .overlay(BadgeShape()
                 .strokeBorder(isOn ? DS.Palette.primary.opacity(0.4) : DS.Palette.border, lineWidth: DS.Size.stroke))
             .contentShape(Rectangle())
         }
@@ -576,7 +604,7 @@ private struct StyleCard: View {
                     .padding(.horizontal, DS.Space.s2)
                     .frame(maxWidth: .infinity)
                     .frame(height: DS.Size.controlHeight + DS.Space.s2)
-                    .background(DS.Palette.track, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+                    .background(DS.Palette.track, in: ControlShape())
 
                 HStack(spacing: DS.Space.s1) {
                     Text(style.title).dsFont(.sm, weight: .semibold).foregroundStyle(DS.Palette.textPrimary)
@@ -720,93 +748,6 @@ struct LidBatterySettings: View {
                         .frame(width: DS.Size.sidebarWidth + DS.Space.s12)
                 }
             }
-        }
-    }
-}
-
-// MARK: - 辅助工具
-
-struct HelperSettings: View {
-    @Environment(AppModel.self) private var model
-
-    var body: some View {
-        let helper = model.helper
-
-        SettingsGroup {
-            GroupRow(showsDivider: false) {
-                SettingRow(title: tr("OpenStats 辅助工具"), subtitle: tr("以系统权限运行的后台服务，只接受本应用的请求"), icon: "lock.shield") {
-                    StatusBadge(text: helper.status.title, tone: tone(helper.status))
-                }
-            }
-            GroupRow {
-                VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    Text(tr("它只做这几件事")).dsFont(.sm, weight: .medium).foregroundStyle(DS.Palette.textPrimary)
-                    CapabilityLine(text: tr("设置风扇目标转速，或恢复系统自动控制"))
-                    CapabilityLine(text: tr("开启 / 关闭“合盖后继续运行”（等同 pmset disablesleep）"))
-                    CapabilityLine(text: tr("刷新 DNS 缓存、释放内存、为网络服务设置 DNS 服务器"))
-                    CapabilityLine(text: tr("应用退出或断开连接时，自动恢复风扇与睡眠设置"))
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            GroupRow {
-                HStack(spacing: DS.Space.s2) {
-                    switch helper.status {
-                    case .notInstalled:
-                        Button(tr("安装辅助工具")) { helper.install() }
-                            .buttonStyle(DSButtonStyle(kind: .primary))
-                    case .requiresApproval:
-                        Button(tr("打开登录项设置")) { helper.openLoginItemsSettings() }
-                            .buttonStyle(DSButtonStyle(kind: .primary))
-                        Button(tr("卸载")) { Task { await helper.uninstall() } }
-                            .buttonStyle(DSButtonStyle(kind: .secondary))
-                    case .enabled:
-                        Button(tr("卸载辅助工具")) { Task { await helper.uninstall() } }
-                            .buttonStyle(DSButtonStyle(kind: .secondary))
-                    case .unavailable:
-                        EmptyView()
-                    }
-                    Button(tr("刷新状态")) { helper.refreshStatus() }
-                        .buttonStyle(DSButtonStyle(kind: .ghost))
-                    Spacer()
-                }
-                .disabled(helper.isWorking)
-            }
-        }
-
-        if case .unavailable(let reason) = helper.status {
-            InfoBanner(icon: "exclamationmark.triangle.fill", text: reason, tone: .error)
-        }
-        if helper.isReady && helper.isOutdated {
-            InfoBanner(icon: "arrow.triangle.2.circlepath", text: HelperClient.outdatedMessage, tone: .warning) {
-                Button(tr("重新安装")) { Task { await helper.reinstall() } }
-                    .buttonStyle(DSButtonStyle(kind: .primary))
-                    .disabled(helper.isWorking)
-            }
-        }
-        if let error = helper.lastError {
-            InfoBanner(icon: "exclamationmark.triangle.fill", text: error, tone: .error)
-        }
-    }
-
-    private func tone(_ status: HelperClient.Status) -> Tone {
-        switch status {
-        case .enabled: .success
-        case .requiresApproval: .warning
-        case .notInstalled: .neutral
-        case .unavailable: .error
-        }
-    }
-}
-
-private struct CapabilityLine: View {
-    let text: String
-
-    var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
-            Image(systemName: "checkmark")
-                .dsFont(.xs, weight: .bold)
-                .foregroundStyle(DS.Palette.success)
-            Text(text).dsFont(.sm).foregroundStyle(DS.Palette.textSecondary)
         }
     }
 }

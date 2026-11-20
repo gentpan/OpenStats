@@ -111,3 +111,61 @@ import Testing
         }
     }
 }
+
+@MainActor
+@Suite struct ThermalMergeAndRankingTests {
+    private func settings() -> AppSettings {
+        let name = "OpenStatsUITests.ThermalMerge.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+        return AppSettings(defaults: defaults)
+    }
+
+    @Test func mergingNeedsBothItemsAndTheSwitch() {
+        let settings = settings()
+        settings.menuBarItems = [.cpu, .temperature, .fan]
+        #expect(!settings.mergesThermalItems)
+        #expect(settings.separateMenuBarItems == [.cpu, .temperature, .fan])
+
+        settings.mergeTemperatureFan = true
+        #expect(settings.mergesThermalItems)
+        #expect(settings.separateMenuBarItems == [.cpu, .temperature])
+        // 采集范围仍按两项都在算
+        #expect(settings.drawnMenuBarItems == [.cpu, .temperature, .fan])
+
+        settings.setEnabled(.temperature, false)
+        #expect(!settings.mergesThermalItems)
+        #expect(settings.separateMenuBarItems == [.cpu, .fan])
+    }
+
+    @Test func mergedItemIsNarrowerThanTheTwoApart() {
+        let draw = { (merge: Bool) in
+            MenuBarRenderer.image(reading: .sample, items: [.temperature, .cpu, .fan], style: { _ in .stacked },
+                                  networkStyle: .dots, colorizeHighLoad: false, fahrenheit: false, mergeThermal: merge)
+        }
+        #expect(draw(true).size.width < draw(false).size.width)
+        // 只有一项时开关不起作用
+        let single = { (merge: Bool) in
+            MenuBarRenderer.image(reading: .sample, items: [.temperature], style: { _ in .stacked },
+                                  networkStyle: .dots, colorizeHighLoad: false, fahrenheit: false, mergeThermal: merge)
+        }
+        #expect(single(true).size.width == single(false).size.width)
+    }
+
+    @Test func rankingRowsFallBackToEachListsDefault() {
+        let settings = settings()
+        #expect(settings.rankingRows(default: 6) == 6)
+        #expect(settings.rankingRows(default: 5) == 5)
+        settings.rankingRows = 15
+        #expect(settings.rankingRows(default: 6) == 15)
+
+        var document = SettingsDocument()
+        document.rankingRows = 7
+        document.mergeTemperatureFan = true
+        document.menuBarTemperatureAverage = true
+        settings.apply(document)
+        #expect(settings.rankingRows == 15)
+        #expect(settings.mergeTemperatureFan)
+        #expect(settings.menuBarTemperatureAverage)
+    }
+}

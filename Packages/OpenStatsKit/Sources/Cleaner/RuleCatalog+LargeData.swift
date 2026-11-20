@@ -55,7 +55,7 @@ extension RuleCatalog {
 
     static let aiModels = CleanRule(
         id: "large.aiModels", category: .large, title: tr("本地 AI 模型"),
-        detail: tr("Hugging Face 与 LM Studio 下载的模型，按模型分条，删除后需要重新下载"),
+        detail: tr("Hugging Face、LM Studio 与 PyTorch 下载的模型，按模型分条，删除后需要重新下载"),
         symbol: "brain", selectedByDefault: false, policy: .trash,
         ownerName: aiModelOwner, itemLabel: aiModelLabel
     ) { env in
@@ -70,16 +70,19 @@ extension RuleCatalog {
                 urls += try children(of: publisher.path).filter(isDirectory)
             }
         }
+        // PyTorch Hub 下载的权重文件
+        urls += try childrenIfExists(of: env.home + "/.cache/torch/hub/checkpoints")
         return urls
     }
 
     static func aiModelOwner(_ url: URL) -> String? {
-        url.pathComponents.contains("huggingface") ? nil : "LM Studio"
+        url.pathComponents.contains("huggingface") || url.pathComponents.contains("torch") ? nil : "LM Studio"
     }
 
     /// “Hugging Face › meta-llama/Llama-3-8B”“LM Studio › lmstudio-community/Qwen3-8B-GGUF”
     static func aiModelLabel(_ url: URL) -> String {
         let name = url.lastPathComponent
+        if url.pathComponents.contains("torch") { return "PyTorch › " + name }
         if url.pathComponents.contains("huggingface") {
             if name.hasPrefix("datasets--") {
                 return "Hugging Face › " + tr("数据集 \(name.dropFirst("datasets--".count).replacingOccurrences(of: "--", with: "/"))")

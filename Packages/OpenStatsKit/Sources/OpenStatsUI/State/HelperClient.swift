@@ -4,7 +4,8 @@ import Localization
 import Observation
 import ServiceManagement
 
-/// 与 root 辅助工具的连接。安装通过 SMAppService.daemon，用户需在“登录项”中批准一次。
+/// 与 root 辅助工具的连接。辅助工具随应用一起提供：启动时自动通过 SMAppService.daemon 登记，
+/// 用户只需在“登录项”中批准一次，界面里没有单独的安装 / 卸载入口。
 @MainActor
 @Observable
 public final class HelperClient {
@@ -71,7 +72,15 @@ public final class HelperClient {
         }
     }
 
-    public func install() {
+    /// 启动时调用：还没登记就自动登记。系统会自己发一条“已添加后台项目”的通知，这里不再主动打开系统设置
+    public func installIfNeeded() {
+        refreshStatus()
+        guard status == .notInstalled else { return }
+        install(opensSettings: false)
+    }
+
+    /// `opensSettings`：登记后需要用户批准时，顺手打开“登录项”设置（用户点按钮时为真）
+    public func install(opensSettings: Bool = true) {
         isWorking = true
         defer { isWorking = false }
         lastError = nil
@@ -82,12 +91,13 @@ public final class HelperClient {
             Log.helper.error("安装失败：\(error.localizedDescription, privacy: .public)")
         }
         refreshStatus()
-        if status == .requiresApproval {
+        if opensSettings, status == .requiresApproval {
             SMAppService.openSystemSettingsLoginItems()
         }
     }
 
-    public func uninstall() async {
+    /// 只在重新安装时用：先注销旧的登记
+    private func uninstall() async {
         isWorking = true
         defer { isWorking = false }
         lastError = nil

@@ -18,6 +18,12 @@ struct CPUPopover: View {
     @Environment(AppModel.self) private var model
     @Environment(\.isDetailPage) private var isDetailPage
 
+    /// “按应用汇总”的条数：弹窗默认 6 条，主窗口详情页至少 10 条，设置里可以调多
+    private var appRows: Int {
+        let rows = model.settings.rankingRows(default: 6)
+        return isDetailPage ? max(10, rows) : rows
+    }
+
     var body: some View {
         CPUHero()
 
@@ -94,7 +100,7 @@ struct CPUPopover: View {
                         hint: tr("整机：\(Format.logicalCores) 个核心全部跑满为 100%，与顶部的总占用是同一把尺子。单核：一个核心跑满为 100%，与活动监视器一致，多线程应用可以超过 100%"),
                         trailing: { CPUShareToggle() }) {
                 AppUsageList(apps: AppUsage.group(store.processes).sorted { $0.cpu > $1.cpu },
-                             rowCount: isDetailPage ? 10 : 6, metric: .cpu)
+                             rowCount: appRows, metric: .cpu)
             }
         default:
             EmptyView()
@@ -245,10 +251,10 @@ private struct CPUHero: View {
                     .monospacedDigit()
             }
             if let cpu {
-                WaterlineBar(segments: [(cpu.user, DS.Palette.primary), (cpu.system, DS.Palette.secondary)],
+                WaterlineBar(segments: [(cpu.user, DS.Palette.data), (cpu.system, DS.Palette.secondary)],
                              total: 1, height: DS.Space.s2)
                 HStack(spacing: DS.Space.s3) {
-                    LegendItem(color: DS.Palette.primary, label: tr("用户"), value: Format.percent(cpu.user))
+                    LegendItem(color: DS.Palette.data, label: tr("用户"), value: Format.percent(cpu.user))
                     LegendItem(color: DS.Palette.secondary, label: tr("系统"), value: Format.percent(cpu.system))
                     LegendItem(color: DS.Palette.track, label: tr("空闲"), value: Format.percent(max(0, 1 - cpu.total)))
                 }
@@ -356,6 +362,12 @@ struct MemoryPopover: View {
     @Environment(AppModel.self) private var model
     @Environment(\.isDetailPage) private var isDetailPage
 
+    /// “按应用汇总”的条数：弹窗默认 6 条，主窗口详情页至少 10 条，设置里可以调多
+    private var appRows: Int {
+        let rows = model.settings.rankingRows(default: 6)
+        return isDetailPage ? max(10, rows) : rows
+    }
+
     var body: some View {
         let settings = model.settings
         let store = model.store
@@ -369,10 +381,10 @@ struct MemoryPopover: View {
                 SectionCard(title: section.title) {
                     if let memory {
                         let parts: [(String, UInt64, Color)] = [
-                            ("App", memory.app, DS.Palette.primary),
+                            ("App", memory.app, DS.Palette.data),
                             (tr("联动"), memory.wired, DS.Palette.secondary),
                             (tr("压缩"), memory.compressed, DS.Palette.warning),
-                            (tr("缓存"), memory.cached, DS.Palette.primarySoft),
+                            (tr("缓存"), memory.cached, DS.Palette.dataSoft),
                             (tr("空闲"), memory.free, DS.Palette.track),
                         ]
                         WaterlineBar(segments: parts.map { (Double($0.1), $0.2) }, total: Double(memory.total))
@@ -399,7 +411,7 @@ struct MemoryPopover: View {
             case .memoryApps:
                 SectionCard(title: section.title, trailing: { Text(tr("内存")) }) {
                     AppUsageList(apps: AppUsage.group(store.processes).sorted { $0.memory > $1.memory },
-                                 rowCount: isDetailPage ? 10 : 6, metric: .memory, total: memory?.used)
+                                 rowCount: appRows, metric: .memory, total: memory?.used)
                 }
             default:
                 EmptyView()
@@ -523,7 +535,7 @@ private struct AppUsageList: View {
                               ? (sharePerCore ? tr("占整机：\(Format.machineShare(app.cpu))") : tr("按单核满载为 100% 计：\(Format.coreShare(app.cpu))"))
                               : nil)
                 }
-                ProgressTrack(fraction: peak > 0 ? value / peak : 0, color: DS.Palette.primary, height: DS.Space.s1, showsTrack: false)
+                ProgressTrack(fraction: peak > 0 ? value / peak : 0, color: DS.Palette.data, height: DS.Space.s1, showsTrack: false)
                     .padding(.leading, DS.Size.iconInline + DS.Space.s2)
             }
             .explainable(.init(app.representative))
@@ -593,14 +605,20 @@ private struct ExplainableRow<Content: View>: View {
     }
 }
 
-/// 标题栏里的“释放内存”：执行中显示进度，完成后短暂显示结果再恢复
+/// 释放内存：一颗图标圆钮，进行中转圈，完成后短暂变成对勾（绿）或警告（红），结果写在悬停提示里
 struct PurgeMemoryButton: View {
+    /// 圆钮直径：弹窗顶栏 24pt，主窗口顶栏与其他图标按钮一样 32pt
+    var diameter: CGFloat = DS.Size.segmentHeight
     @Environment(AppModel.self) private var model
     @State private var result: MaintenanceController.Outcome?
+    @State private var hovering = false
 
     var body: some View {
         let maintenance = model.maintenance
         let running = maintenance.running == .purgeMemory
+        let title = running ? tr("正在释放…") : result?.text ?? tr("释放内存")
+        let large = diameter > DS.Size.segmentHeight
+
         Button {
             Task {
                 await maintenance.run(.purgeMemory)
@@ -609,19 +627,29 @@ struct PurgeMemoryButton: View {
                 result = nil
             }
         } label: {
-            HStack(spacing: DS.Space.s1) {
+            Group {
                 if running {
                     ProgressView().controlSize(.mini)
                 } else {
                     Image(systemName: result == nil ? "wind" : result!.isError ? "exclamationmark.triangle" : "checkmark")
                 }
-                Text(running ? tr("正在释放…") : result?.text ?? tr("释放内存")).lineLimit(1).fixedSize()
             }
-            .foregroundStyle(result?.isError == true ? DS.Palette.error : result != nil ? DS.Palette.success : DS.Palette.textPrimary)
+            .dsFont(large ? .sm : .xs, weight: large ? .medium : .semibold)
+            .foregroundStyle(tint ?? (hovering ? DS.Palette.textPrimary : DS.Palette.textSecondary))
+            .frame(width: diameter, height: diameter)
+            .outlinedCircle(hovering: hovering)
+            .contentShape(Circle())
         }
-        .buttonStyle(DSButtonStyle(kind: .secondary))
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
         .disabled(maintenance.running != nil)
-        .help(tr("清理可回收的缓存内存（需要管理员授权或辅助工具）"))
+        .help("\(title) · \(tr("清理可回收的缓存内存（需要管理员授权或辅助工具）"))")
+        .accessibilityLabel(title)
+    }
+
+    private var tint: Color? {
+        guard let result else { return nil }
+        return result.isError ? DS.Palette.error : DS.Palette.success
     }
 }
 

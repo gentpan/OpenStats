@@ -257,7 +257,7 @@ private struct VolumesCard: View {
                             }
                         }
                         ProgressTrack(fraction: volume.usedFraction,
-                                      color: volume.usedFraction > 0.9 ? DS.Palette.warning : DS.Palette.primary, height: DS.Space.s1)
+                                      color: volume.usedFraction > 0.9 ? DS.Palette.warning : DS.Palette.data, height: DS.Space.s1)
                     }
                 }
                 if let outcome = tools.volumeOutcome {
@@ -313,16 +313,16 @@ struct DiskComposition: View {
 
     static func items(_ disk: DiskUsage) -> [(label: String, bytes: UInt64, color: Color, help: String?)] {
         guard let parts = disk.breakdown else {
-            return [(tr("已用"), disk.used, disk.usedFraction > 0.9 ? DS.Palette.warning : DS.Palette.primary, nil),
-                    (tr("可清除"), disk.purgeable, DS.Palette.primarySoft, nil),
+            return [(tr("已用"), disk.used, disk.usedFraction > 0.9 ? DS.Palette.warning : DS.Palette.data, nil),
+                    (tr("可清除"), disk.purgeable, DS.Palette.dataSoft, nil),
                     (tr("空闲"), disk.free, DS.Palette.track, nil)]
         }
         return [
-            (tr("用户数据"), parts.data, DS.Palette.primary, tr("应用、文稿、照片与各种用户资料")),
+            (tr("用户数据"), parts.data, DS.Palette.data, tr("应用、文稿、照片与各种用户资料")),
             (tr("系统"), parts.system, DS.Palette.secondary, tr("只读的 macOS 系统卷")),
             (tr("启动与恢复"), parts.other, DS.Palette.neutral500, tr("启动、恢复、更新等系统辅助卷与快照")),
             (tr("虚拟内存"), parts.virtualMemory, DS.Palette.warning, tr("交换文件与睡眠镜像")),
-            (tr("可清除"), parts.purgeable, DS.Palette.primarySoft, tr("系统随时可以腾出的缓存")),
+            (tr("可清除"), parts.purgeable, DS.Palette.dataSoft, tr("系统随时可以腾出的缓存")),
             (tr("空闲"), parts.free, DS.Palette.track, tr("真正空着的空间，不含可清除的缓存")),
         ]
     }
@@ -344,7 +344,7 @@ private struct ActivityCard: View {
                 rate(tr("写入"), store.diskActivity?.writeRate, color: DS.NetworkPalette.upload)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            // 上半写入、下半读取，与网络流量图同一套配色
+            // 上半读取、下半写入，与网络流量图同一套配色与比例尺规则
             MirroredRateChart(upload: writes, download: reads, height: DS.Size.chartHeight * 2)
             InfoRow(label: tr("60 秒峰值")) {
                 Text(verbatim: tr("读 \(Format.menuBarRate(reads.max() ?? 0)) · 写 \(Format.menuBarRate(writes.max() ?? 0))"))

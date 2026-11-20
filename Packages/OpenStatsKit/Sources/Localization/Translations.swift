@@ -43,6 +43,15 @@ CPU 时间	CPU Time
 CPU 时间 {}	CPU time {}
 CPU 最高	CPU max
 CPU 核心最高温度	Hottest CPU core
+CPU 核心平均温度	Average of the CPU cores
+CPU、内存弹窗的“按应用汇总”与仪表盘的“高占用进程”列出多少条；默认分别是 6 条和 5 条	How many rows By App in the CPU and memory popovers and Top Processes on the dashboard list; the defaults are 6 and 5
+排行显示数量	Ranking Length
+默认	Default
+{} 条	{} rows
+菜单栏温度	Menu Bar Temperature
+最高：最热的 CPU 核心，某个核心瞬时升温就会跳；平均：各核心的平均值，更平稳	Max: the hottest CPU core, which jumps whenever one core spikes. Average: the mean of all cores, which is steadier
+温度与风扇合并显示	Combine Temperature and Fan
+两项都开启时合成一个双行项目：上面温度、下面风扇转速，更省菜单栏宽度；点击打开温度详情	When both are on, they share one two-line item with temperature above fan speed, saving menu bar width. Click it for temperature details
 CPU 温度	CPU Temperature
 CPU 温度 {}	CPU temperature {}
 CPU 温度 {}，已持续超过 1 分钟。可以检查高占用进程，或在“温度与风扇”里提高风扇转速。	CPU temperature has been {} for over a minute. Check busy processes, or raise the fan speed in Temperature & Fans.
@@ -72,7 +81,6 @@ OpenStats {} 已发布	OpenStats {} is available
 OpenStats 控制	Controlled by OpenStats
 OpenStats 控制中	Controlled by OpenStats
 OpenStats 的通知被关闭了，打开的提醒不会显示。	Notifications for OpenStats are turned off, so alerts won't appear.
-OpenStats 辅助工具	OpenStats Helper
 OpenStats 通知测试	OpenStats Test Notification
 OpenStats 防休眠	OpenStats Keep Awake
 OpenStats 需要授权以安装新版本。	OpenStats needs permission to install the new version.
@@ -131,7 +139,6 @@ npm 缓存	npm Cache
 {}{}只剩 {}%，记得充电。	{}{} is down to {}%. Time to charge.
 {}{}（{}）	{}{} ({})
 {}。系统会自动分配任务，不用你操心	{}. macOS assigns work between them automatically.
-{}中	{}
 {}前	{} ago
 {}前检测	Checked {} ago
 {}后充满	Full in {}
@@ -182,8 +189,6 @@ npm 缓存	npm Cache
 严重	Critical
 中位延迟	Median
 中等负载	Moderate load
-中等风险	Medium risk
-中继	Relay
 主显示器	Main display
 主窗口与弹窗的配色；菜单栏始终跟随系统	Colors for the window and popovers; the menu bar always follows the system
 云端只保存邮箱、姓名与设置文档	The cloud only keeps your email, name and the settings document
@@ -206,19 +211,15 @@ npm 缓存	npm Cache
 占整机 CPU 的比例：全部核心跑满为 100%，与系统总占用同一口径	Share of total CPU: all cores fully busy is 100%, the same scale as total usage
 以单核满载为 100%	100% = one full core
 以后再说	Later
-以系统权限运行的后台服务，只接受本应用的请求	A background service with system privileges that only accepts requests from this app
 仪表盘	Dashboard
 企业 IP	Business IP
-企业网络	Business network
 找出应用留下的数据、缓存、容器与登录启动项，勾选后移到废纸篓，可以放回	Finds the app's data, caches, containers, and login items. Select items to move to the Trash; you can put them back.
 会结束这个应用的 {} 个进程，未保存的内容可能会丢失。强制退出会立即结束，不给应用保存的机会。	This ends {} processes of the app and unsaved work may be lost. Force Quit ends them immediately without letting the app save.
 传输速率	Link rate
 位置	Location
 位置：{}	Location: {}
 低负载	Light load
-低风险	Low risk
 住宅 IP	Residential IP
-住宅代理	Residential proxy
 使用 {} 登录	Sign in with {}
 使用云端设置	Use cloud settings
 使用历史	Usage History
@@ -302,8 +303,6 @@ npm 缓存	npm Cache
 到时后自动恢复系统默认的睡眠行为。	Normal sleep behavior resumes when time runs out.
 刷新	Refresh
 刷新 DNS 缓存	Flush DNS Cache
-刷新 DNS 缓存、释放内存、为网络服务设置 DNS 服务器	Flush the DNS cache, free memory, set DNS servers for network services
-刷新状态	Refresh Status
 刷新间隔	Refresh Interval
 刷新频率	Refresh Rate
 剩余 {}	{} left
@@ -324,7 +323,6 @@ npm 缓存	npm Cache
 卸载“{}”？	Uninstall “{}”?
 卸载失败：{}	Uninstall failed: {}
 卸载应用	Uninstaller
-卸载辅助工具	Uninstall Helper
 历史	History
 历史记录	History
 历史记录已关闭，下面是关闭前记录的数据。	History recording is off. Below is data recorded before it was turned off.
@@ -400,7 +398,7 @@ npm 缓存	npm Cache
 同双行文字，但两行各自居中；标签比数值宽时（风扇、温度）不会偏到一边	Same as stacked, but both lines are centered, so a value narrower than its label (fan, temperature) is not pushed to one side
 同步	Sync
 同步失败	Sync failed
-同步的内容：菜单栏项目、顺序与风格，刷新频率、外观、语言、温度单位、程序坞图标，详情弹窗的区块，连接探测与公网 IP 查询，通知与蓝牙低电量提示，快捷键，风扇安全温度、合盖电量下限，以及 CPU 整机/单核、记录历史数据、自动检查更新、缓存先移到废纸篓这几个开关。当前页面、辅助工具与已记录的历史数据留在本机。	What syncs: menu bar items, order and styles; refresh rate, appearance, language, temperature unit and Dock icon; popover sections; connection probe and public IP lookup; notifications and the low Bluetooth battery hint; hotkeys; fan safety temperature and lid-mode battery floor; and the switches for CPU whole-machine/per-core, recording history, automatic update checks and moving caches to the Trash first. The current page, the helper and recorded history stay on this Mac.
+同步的内容：菜单栏项目、顺序与风格，刷新频率、外观、语言、温度单位、程序坞图标，详情弹窗的区块与排行条数，连接探测与公网 IP 查询，通知与蓝牙低电量提示，快捷键，风扇安全温度、合盖电量下限，以及 CPU 整机/单核、记录历史数据、自动检查更新、缓存先移到废纸篓这几个开关。当前页面、辅助工具与已记录的历史数据留在本机。	What syncs: menu bar items, order and styles; refresh rate, appearance, language, temperature unit and Dock icon; popover sections and ranking length; connection probe and public IP lookup; notifications and the low Bluetooth battery hint; hotkeys; fan safety temperature and lid-mode battery floor; and the switches for CPU whole-machine/per-core, recording history, automatic update checks and moving caches to the Trash first. The current page, the helper and recorded history stay on this Mac.
 后台低频探测	Background Probing
 启动中…	Starting…
 启动于	Booted
@@ -443,7 +441,6 @@ npm 缓存	npm Cache
 备用空间低于阈值，建议备份	Spare capacity below threshold; back up your data
 外置硬盘、U 盘、镜像与网络共享	External drives, USB sticks, disk images and network shares
 外观	Appearance
-它只做这几件事	It only does these things
 安全温度	Safety Temperature
 安装	Install
 安装包	Installers
@@ -451,7 +448,6 @@ npm 缓存	npm Cache
 安装包内容不正确：{}	The update package is invalid: {}
 安装包校验值与版本清单不一致，已放弃安装	The update's checksum doesn't match the manifest; installation stopped
 安装失败：{}	Install failed: {}
-安装辅助工具	Install Helper
 安静	Quiet
 定时 ping 一个地址，记录网络是否通畅	Pings an address regularly to record whether the network is reachable
 定时探测网络	Connectivity Probe
@@ -509,7 +505,6 @@ npm 缓存	npm Cache
 已释放	Freed
 已释放 {} 缓存内存	Freed {} of cached memory
 布局	Layout
-干净	Clean
 平均	Average
 平均 {} · 峰值 {}{}	Avg {} · Peak {}{}
 平均 {} · 最高 {}	Avg {} · Max {}
@@ -528,7 +523,6 @@ npm 缓存	npm Cache
 应用正在运行，请先退出	The app is running. Quit it first.
 应用程序文件夹	Applications folder
 应用缓存	App Caches
-应用退出或断开连接时，自动恢复风扇与睡眠设置	Restores fan and sleep settings when the app quits or disconnects
 废纸篓	Trash
 延迟	Latency
 开	On
@@ -539,14 +533,12 @@ npm 缓存	npm Cache
 开发版	Development
 开发者	Developer
 开启	On
-开启 / 关闭“合盖后继续运行”（等同 pmset disablesleep）	Turn “Keep Running with Lid Closed” on or off (same as pmset disablesleep)
 开启后图标出现在菜单栏；按住 ⌘ 键拖动图标可以调整位置	Adds the icon to the menu bar; hold ⌘ and drag the icon to move it
 开始	Start
 开始分析	Analyze
 开始探测	Run
 开机以来	Since boot
-开机后上传	Uploaded since boot
-开机后下载	Downloaded since boot
+开机后累计	Total since boot
 开机后自动在菜单栏显示 OpenStats	Show OpenStats in the menu bar after you log in
 异常断电	Unsafe shutdowns
 弹窗显示	Popover Sections
@@ -588,11 +580,9 @@ npm 缓存	npm Cache
 打包生成的 .xcarchive，删除后无法重新符号化旧版本崩溃日志	.xcarchive bundles; without them old crash logs can't be symbolicated
 打开 OpenStats	Open OpenStats
 打开 SMC 失败 ({})	Failed to open SMC ({})
-打开登录项设置	Open Login Items Settings
 打开网络详情时向 Cloudflare（1.1.1.1）或 ipify 查询一次公网地址，10 分钟内不重复请求；归属地、ASN、网络类型与纯净度由这台 Mac 直接向 cleanip.io 查询，只发送公网地址	When network details open, asks Cloudflare (1.1.1.1) or ipify for your public address, at most once every 10 minutes; location, ASN, network type and cleanliness are looked up by this Mac directly at cleanip.io, sending only the public address
 打开进程页	Show Processes
 打开通知设置	Open Notification Settings
-托管	Hosting
 扫描中	Scanning
 扫描中…	Scanning…
 扫描于 	Scanned 
@@ -635,8 +625,6 @@ npm 缓存	npm Cache
 撤销	Undo
 收起	Collapse
 改回开机后累计	Back to since-boot totals
-政府	Government
-教育网	Education
 数据	Data
 整体风格	Overall style
 整体风格套用到所有项目。想让某个项目不一样，在下面“显示项目”里给它单独选一种，比如 CPU 用圆环、风扇用数字。	The overall style applies to every item. To make one item different, pick a style for it under Items below, say a ring for CPU and plain numbers for the fan.
@@ -700,7 +688,6 @@ npm 缓存	npm Cache
 未完成的下载	Incomplete Downloads
 未开启，Mac 按系统设置休眠	Off; your Mac sleeps as usual
 未找到 AppleSMC 服务	AppleSMC service not found
-未检出	None detected
 未检测到可调节的风扇	No adjustable fans found
 未检测到风扇	No fans detected
 未知状态	Unknown status
@@ -719,10 +706,8 @@ npm 缓存	npm Cache
 本次用掉 {}	{} used
 机型	Model
 机型标识符	Model Identifier
-机房	Data center
 机房 IP	Data center IP
 极好	Excellent
-极高风险	Very high risk
 构建	Build
 查看{}详情	Show {} details
 查看全部进程	All Processes
@@ -826,6 +811,7 @@ npm 缓存	npm Cache
 淘宝	Taobao
 深色	Dark
 深色菜单栏预览	Dark menu bar preview
+深色磨砂	Frosted Dark
 清理	Cleanup
 清理中…	Cleaning…
 清理可回收的缓存内存（需要管理员授权或辅助工具）	Frees reclaimable cached memory (needs admin approval or the helper)
@@ -843,7 +829,6 @@ npm 缓存	npm Cache
 温度传感器	Temperature sensors
 温度单位	Temperature Unit
 满载	Maxed out
-滥用记录	Abuse reports
 点击拷贝	Click to copy
 版本	Version
 版本 {}	Version {}
@@ -909,7 +894,6 @@ npm 缓存	npm Cache
 移到废纸篓	Move to Trash
 移到废纸篓？	Move to the Trash?
 移动网络 IP	Mobile IP
-移动运营商	Mobile carrier
 空	empty
 空格	Space
 空闲	Idle
@@ -1010,7 +994,6 @@ npm 缓存	npm Cache
 设置 · {}	Settings · {}
 设置…	Settings…
 设置改动后 2 秒内上传；启动、唤醒、打开本页与每小时检查一次云端	Changes upload within 2 seconds; the cloud is checked at launch, on wake, when this page opens and every hour
-设置风扇目标转速，或恢复系统自动控制	Set fan target speeds, or return them to automatic
 评分由 cleanip.io 提供，点击查看完整报告	Score by cleanip.io. Click to open the full report
 该项目在菜单栏里的实时效果	Live preview of this item in the menu bar
 详情关闭时，菜单栏显示网络项期间每 {} 秒探测一次，打开详情就能看到最近的连接情况；关闭后只在打开详情时探测，更省电	While details are closed and the network item is in the menu bar, probes every {} seconds so recent results are ready when you open details. Turn off to probe only while details are open and save power.
@@ -1106,11 +1089,11 @@ npm 缓存	npm Cache
 重新生成	Regenerate
 重新读取蓝牙设备电量	Read Bluetooth device batteries again
 重置上传与下载统计：从现在起重新累计。重启后自动回到开机后的累计；右键可改回	Reset the upload and download totals and count from now on. After a restart they go back to since-boot totals; right-click to switch back
-重置后上传	Uploaded since reset
-重置后下载	Downloaded since reset
+重置后累计	Total since reset
 键盘、鼠标、耳机等低于 20% 时，在菜单栏的电池项目旁显示该设备的图标与电量；需要开启电池项目。系统通知在“通知”里单独设置	When a keyboard, mouse, headphones or similar drops below 20%, show its icon and level next to the Battery item in the menu bar; requires the Battery item. System notifications are set separately under Notifications
 闲	Idle
 防休眠	Keep Awake
+防休眠：{}，点一下选择时长	Keep Awake: {}. Click to choose a duration
 阿里云	Alibaba Cloud
 阿里云（223.5.5.5）	Alibaba Cloud (223.5.5.5)
 降温	Cooling
@@ -1122,22 +1105,19 @@ npm 缓存	npm Cache
 需要完全磁盘访问权限	Needs Full Disk Access
 需要注意	Needs attention
 需要管理员权限。已完成的 Time Machine 备份不受影响，只是本机上这些快照对应的时间点无法再从本地恢复。	Requires administrator privileges. Completed Time Machine backups are unaffected; you just won't be able to restore these points in time from this Mac.
-非常干净	Very clean
 风扇	Fans
 风扇 {}	Fan {}
 风扇安全温度	Fan Safety Temperature
 风扇模式	Fan mode
 风扇设置	Fan Settings
 风扇转速	Fan Speed
-风险标记	Risk flags
-风险评分	Risk score
+风扇：{}，点一下切到“{}”	Fans: {}. Click to switch to “{}”
 饼图	Pie
 饼图表示当前占用比例	A pie shows current usage
 首次发送时系统会询问是否允许通知	The system asks for permission the first time
 高占用进程	Top Processes
 高负载	Heavy load
 高负载时着色	Color High Load
-高风险	High risk
 麦克风使用中	Microphone in use
 麦克风未在使用	Microphone not in use
 默认只在菜单栏运行；打开后，主窗口开着时图标出现在程序坞与 ⌘Tab 中	OpenStats lives in the menu bar by default. Turn this on to show its icon in the Dock and ⌘Tab while the main window is open
@@ -1258,14 +1238,9 @@ Swift 包缓存	Swift Package Cache
 一直保持，直到手动关闭	Stays on until you turn it off
 电池健康 {}：图标里的电量格子代表健康度	Battery health {}: the bars in the icon show health
 风扇档位	Fan Mode
-风扇调速	Fan Control
-时长、屏幕与合盖运行	Duration, display and lid-closed mode
-按上次选的档位开启风扇调速	Turn on fan control with the last mode you picked
-交还系统自动控制	Return the fans to automatic control
 已用 {}	{} used
 项目间距	Item Spacing
 合并显示时菜单栏里各项之间的距离，数值越小越紧凑	Spacing between items in the combined menu bar icon; smaller is more compact
-开启防休眠	Turn On Keep Awake
 关闭防休眠	Turn Off Keep Awake
 ，充电中	, charging
 ，已从程序坞移除	, removed from the Dock
@@ -1282,7 +1257,7 @@ Swift 包缓存	Swift Package Cache
 Docker Desktop、OrbStack、Colima、Podman 的虚拟磁盘，所有镜像、容器和数据卷都在里面	Virtual disks of Docker Desktop, OrbStack, Colima and Podman, holding every image, container and volume
 Docker 虚拟磁盘	Docker Disks
 Gradle 缓存	Gradle Caches
-Hugging Face 与 LM Studio 下载的模型，按模型分条，删除后需要重新下载	Models downloaded by Hugging Face and LM Studio, one row per model; they must be downloaded again after removal
+Hugging Face、LM Studio 与 PyTorch 下载的模型，按模型分条，删除后需要重新下载	Models downloaded by Hugging Face, LM Studio and PyTorch, one row per model. They have to be downloaded again after removal
 Ollama 下载的本地模型，按模型列出	Local models downloaded by Ollama, listed per model
 Ollama 模型	Ollama Models
 Ollama 的模型文件彼此共用，直接删除文件会损坏它的索引。请在终端用 ollama list 查看、用 ollama rm 加模型名删除不用的模型。	Ollama models share files, so deleting them directly breaks its index. In Terminal, run ollama list to see them and ollama rm followed by a model name to remove one.
@@ -1291,6 +1266,48 @@ iPhone / iPad 备份	iPhone / iPad Backups
 macOS 安装器	macOS Installers
 pip、uv、ruff、mypy 的缓存与 pyenv 的下载缓存；虚拟环境和已安装的版本不动	Caches of pip, uv, ruff and mypy, plus pyenv downloads; virtual environments and installed versions are kept
 pnpm / bun 包缓存	pnpm / bun Package Caches
+过期的临时文件	Old Temporary Files
+各应用放在用户临时目录里、3 天以上没有改动的文件。正在运行的应用的条目和系统进程的条目不动	Files apps left in your temporary folder that have not changed for 3 days or more. Items of running apps and of system processes are left alone
+临时目录 › {}	Temporary folder › {}
+Maven 本地仓库	Maven Local Repository
+~/.m2/repository 里下载的依赖，下次构建时重新下载；settings.xml 不动	Dependencies downloaded to ~/.m2/repository, downloaded again on the next build. settings.xml is kept
+Go 模块缓存	Go Module Cache
+~/go/pkg/mod 里下载的 Go 模块	Go modules downloaded to ~/go/pkg/mod
+Go 把模块缓存设成只读，直接删除会失败或只删掉一部分。请在终端运行 go clean -modcache，下次构建时会重新下载。	Go makes its module cache read-only, so deleting the files fails or removes only part of them. Run go clean -modcache in Terminal; modules are downloaded again on the next build.
+Android 模拟器与系统镜像	Android Emulators and System Images
+Android 模拟器（AVD）的数据，以及 SDK 里下载的模拟器系统镜像	Data of Android emulators (AVDs) and the emulator system images downloaded into the SDK
+模拟器请在 Android Studio 的 Device Manager 里删除，系统镜像请在 SDK Manager 里取消勾选后应用。直接删除文件会让 Android Studio 的记录对不上。	Delete emulators in Android Studio's Device Manager, and remove system images by unchecking them in the SDK Manager and applying. Deleting the files directly leaves Android Studio's records out of step.
+模拟器 › {}	Emulator › {}
+系统镜像 › {}	System image › {}
+系统数据	System Data
+Application Support、沙盒容器和共享容器里超过 200 MB 的目录，按所属应用列出	Folders over 200 MB in Application Support, sandbox containers and group containers, listed by the app they belong to
+这里是各应用自己的数据，可能有聊天记录、项目和登录状态，OpenStats 不会删除。还在用的应用请在应用里清理；标着“没找到对应的应用”的，确认不再需要后，可以在访达里移到废纸篓。	This is each app's own data and may hold chat history, projects and sign-ins, so OpenStats does not delete it. For apps you still use, clean up inside the app. Folders marked "no matching app found" can be moved to the Trash in Finder once you are sure they are not needed.
+其他大目录	Other Large Folders
+资源库、家目录里的隐藏目录和“共享”文件夹中，超过 500 MB、上面没有归类的目录	Folders over 500 MB in Library, hidden folders in your home folder and the Shared folder that none of the categories above explain
+这些目录不在上面的任何一类里，OpenStats 不会删除它们。点名字可以在访达中查看；确定不再需要时，请用对应的工具或手动移到废纸篓。	These folders are not in any category above, and OpenStats does not delete them. Click a name to show it in Finder. Once you are sure one is not needed, remove it with the tool that made it or move it to the Trash yourself.
+Spotlight 等系统索引	Spotlight and other system indexes
+模拟器设备的数据	Simulator device data
+模拟器系统版本	Simulator runtimes
+Xcode 用户数据与预览	Xcode user data and previews
+Xcode 设备调试镜像	Xcode developer disk images
+Rust 工具链（rustup）	Rust toolchains (rustup)
+Rust 包与工具（cargo）	Rust packages and tools (cargo)
+Node.js 版本（nvm）	Node.js versions (nvm)
+Python 版本（pyenv）	Python versions (pyenv)
+Ruby 版本（rbenv）	Ruby versions (rbenv)
+Java 等工具版本（SDKMAN）	Java and other SDKs (SDKMAN)
+Conda 环境	Conda environments
+VS Code 扩展	VS Code extensions
+Cursor 扩展	Cursor extensions
+Docker 配置与插件	Docker settings and plugins
+~/.local（pipx、uv 等装的工具）	~/.local (tools installed by pipx, uv and others)
+Deno 缓存	Deno cache
+Android NDK	Android NDK
+Android 模拟器程序	Android emulator
+Go 模块与工具（~/go）	Go modules and tools (~/go)
+共享 › {}	Shared › {}
+共享容器	Group container
+没找到对应的应用	no matching app found
 pnpm 的包仓库与 bun 的下载缓存，下次安装依赖时重新下载	The pnpm store and bun download cache, downloaded again on the next install
 {} 等 {} 个文件	{1} and others ({2} files)
 {} 项 · 需手动处理	{} items · Handle yourself
@@ -1323,6 +1340,6 @@ pnpm 的包仓库与 bun 的下载缓存，下次安装依赖时重新下载	The
 访达备份到这台 Mac 的设备数据，每个可能有几十 GB。删除后不能再用它恢复设备	Device backups Finder saved on this Mac, often tens of GB each. Once removed, a device can no longer be restored from them
 邮件	Mail
 邮件附件副本	Mail Attachment Copies
-部分项目需要“完全磁盘访问权限”才能扫描（Safari 缓存、废纸篓、设备备份、邮件附件、Docker 磁盘）。	Some items need Full Disk Access to scan (Safari caches, Trash, device backups, Mail attachments, Docker disks).
+部分项目需要“完全磁盘访问权限”才能扫描（Safari 缓存、废纸篓、设备备份、邮件附件、Docker 磁盘、应用容器）。	Some items need Full Disk Access to scan (Safari caches, Trash, device backups, Mail attachments, Docker disks, app containers).
 """#
 }

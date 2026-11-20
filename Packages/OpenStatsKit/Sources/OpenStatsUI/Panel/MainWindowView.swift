@@ -17,7 +17,6 @@ public struct MainWindowView: View {
             MainSidebar()
                 .frame(width: DS.Size.sidebarWidth)
                 .frame(maxHeight: .infinity)
-                .environment(\.isInsideGlass, true)
 
             // 截图时页面取自身高度，卡片仍然撑满到底：侧边栏更高时，多出来的是卡片的空白
             content
@@ -36,8 +35,8 @@ public struct MainWindowView: View {
         .loadingHUD(isSnapshot ? nil : busyMessage)
         // 内容延伸到透明标题栏下方，由顶栏高度留出红绿灯按钮的位置
         .ignoresSafeArea()
-        // 文案在各视图计算时翻译好，切换语言后整棵视图重建
-        .id(model.settings.language)
+        // 文案在各视图计算时翻译好，切换语言后整棵视图重建；进出深色磨砂主题时也重建，重新取色
+        .id(ThemeKey(language: model.settings.language, frosted: model.settings.appearance == .frosted))
     }
 
     /// 顶栏在上、页面在下。没有用 macOS 26 的 safeAreaBar 让页面从顶栏下面滚过：
@@ -47,7 +46,14 @@ public struct MainWindowView: View {
             // 页面的滚动视图会自动向上延伸到标题栏下面，与顶栏重叠；顶栏必须在它之上，否则开关收不到点击
             PageHeader()
                 .zIndex(1)
-            page
+            // 切换页面时新页面淡入并轻轻上移，旧页面淡出；叠在一起过渡，不会把两页上下排开
+            ZStack(alignment: .top) {
+                page
+                    .id(model.settings.panelTab)
+                    .transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: DS.Space.s2)),
+                                            removal: .opacity))
+            }
+            .frame(maxWidth: .infinity, maxHeight: isSnapshot ? nil : .infinity, alignment: .top)
         }
     }
 
@@ -87,7 +93,6 @@ public struct MainWindowView: View {
             case .settingsDashboard: SettingsTabPage { DashboardSettings() }
             case .settingsNotifications: SettingsTabPage { NotificationSettings() }
             case .settingsAccount: SettingsTabPage { AccountSettings() }
-            case .settingsHelper: SettingsTabPage { HelperSettings() }
             case .settingsAbout: SettingsTabPage { AboutSettings() }
             }
         }
@@ -95,6 +100,11 @@ public struct MainWindowView: View {
         // 截图时页面取自身高度：侧边栏更高时，多出的高度不能分给页面里可伸展的卡片
         .fixedSize(horizontal: false, vertical: isSnapshot)
     }
+}
+
+private struct ThemeKey: Hashable {
+    let language: AppLanguage
+    let frosted: Bool
 }
 
 /// 右侧页面的大卡片：页面底色、圆角裁切，上、右、下三边让出一圈灰底。
@@ -105,7 +115,9 @@ private struct ContentCard: ViewModifier {
         content
             .clipShape(shape)
             .background {
+                // 四周一圈细描边（浅色与深色主题里是透明的，深色磨砂里是淡白线）
                 shape.fill(DS.Palette.background).dsShadow(DS.Shadow.level1)
+                shape.strokeBorder(DS.Palette.cardOutline, lineWidth: DS.Size.stroke)
             }
             .padding([.top, .trailing, .bottom], DS.Size.mainWindowInset)
     }
@@ -117,7 +129,9 @@ private struct WindowBase: View {
     @Environment(\.isSnapshot) private var isSnapshot
 
     var body: some View {
-        if isSnapshot {
+        if DS.isFrosted {
+            FrostedBackdrop(tint: DS.Frosted.windowTint)
+        } else if isSnapshot {
             DS.Palette.windowBase
         } else {
             SidebarMaterial()
@@ -185,14 +199,14 @@ private struct MainSidebar: View {
     private static let edgeFade = DS.Space.s2
 
     private var navigation: some View {
-        // 行与行之间不留空，与系统侧边栏的密度一致；组与组之间靠组标题上方的留白分开
-        VStack(alignment: .leading, spacing: 0) {
+        // 行与行之间留一点空，组与组之间靠组标题上方的留白分开
+        VStack(alignment: .leading, spacing: DS.Space.s1 / 2) {
             group(tr("监控"), PanelTab.monitors)
             group(tr("工具"), PanelTab.tools)
             group(tr("设置"), PanelTab.settings)
         }
         .sidebarGlider()
-        // 光条的发光向左溢出几个点，留出空间避免被滚动区域裁掉
+        // 与侧栏左边缘留一点距离，选中底块不贴边
         .padding(.leading, DS.Space.s2)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -200,7 +214,6 @@ private struct MainSidebar: View {
     private func badge(for tab: PanelTab) -> Tone? {
         switch tab {
         case .settingsAbout: model.updates.release != nil ? .primary : nil
-        case .settingsHelper: model.helper.isReady && model.helper.isOutdated ? .warning : nil
         case .settingsAccount:
             if model.sync.conflict != nil { .primary } else if case .failed = model.sync.phase { .warning } else { nil }
         default: nil
@@ -212,12 +225,13 @@ private struct MainSidebar: View {
         Text(title)
             .dsFont(.xs, weight: .medium)
             .foregroundStyle(DS.Palette.textTertiary)
-            .padding(.horizontal, DS.Space.s2)
-            .padding(.top, DS.Space.s2)
+            .padding(.horizontal, DS.Space.s3)
+            .padding(.top, DS.Space.s4)
             .padding(.bottom, DS.Space.s1)
         ForEach(tabs) { tab in
             SidebarButton(title: tab.title, symbol: tab.symbol, isSelected: model.settings.panelTab == tab, badge: badge(for: tab)) {
-                model.settings.panelTab = tab
+                guard model.settings.panelTab != tab else { return }
+                withAnimation(DS.Motion.page) { model.settings.panelTab = tab }
             }
         }
     }
@@ -254,7 +268,7 @@ private struct PageHeader: View {
             .frame(maxHeight: .infinity)
             .background(WindowDragArea())
 
-            if tab == .memory { PurgeMemoryButton() }
+            if tab == .memory { PurgeMemoryButton(diameter: DS.Size.controlHeight) }
             if tab == .network {
                 Button { model.openSpeedTestWindow() } label: {
                     HStack(spacing: DS.Space.s1) {
@@ -278,7 +292,6 @@ private struct PageHeader: View {
             // 每个监控页都能在这里开关自己的菜单栏项目；温度与风扇页有两项，各带一个小标签
             let items = tab.menuBarItems
             if !items.isEmpty {
-                // macOS 26 上这一组收进一块超椭圆圆角的玻璃
                 HStack(spacing: DS.Space.s3) {
                     Text(tr("在菜单栏显示")).dsFont(.xs).foregroundStyle(DS.Palette.textSecondary)
                     ForEach(items) { item in
@@ -290,27 +303,11 @@ private struct PageHeader: View {
                             .help(tr("开启后图标出现在菜单栏；按住 ⌘ 键拖动图标可以调整位置"))
                     }
                 }
-                .modifier(HeaderControlGroup())
             }
         }
         .padding(.horizontal, DS.Space.s3 + DS.Space.s1)
         // 52pt 高的顶栏里，32pt 的按钮与开关组上下各留 10pt
         .frame(height: DS.Size.windowHeader)
-    }
-}
-
-/// 顶栏右侧的一组控件：macOS 26 上收进一块超椭圆圆角的玻璃，更早的系统直接排开
-private struct HeaderControlGroup: ViewModifier {
-    func body(content: Content) -> some View {
-        if DS.Glass.isAvailable {
-            content
-                .padding(.leading, DS.Space.s4)
-                .padding(.trailing, DS.Space.s2)
-                .frame(height: DS.Size.controlHeight)
-                .dsGlass(in: ControlShape())
-        } else {
-            content
-        }
     }
 }
 

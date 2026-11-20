@@ -265,7 +265,8 @@ extension AppLanguage: Identifiable {
 }
 
 public enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
-    case system, light, dark
+    /// `frosted`：深色磨砂，深色配色加上透出桌面的毛玻璃底板
+    case system, light, dark, frosted
 
     public var id: String { rawValue }
 
@@ -274,6 +275,7 @@ public enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
         case .system: tr("跟随系统")
         case .light: tr("浅色")
         case .dark: tr("深色")
+        case .frosted: tr("深色磨砂")
         }
     }
 }
@@ -281,13 +283,13 @@ public enum AppearanceMode: String, CaseIterable, Identifiable, Sendable {
 /// 主窗口侧边栏的页面
 public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
     case overview, system, history, cpu, gpu, memory, disk, network, thermal, battery, processes, keepAwake, cleaner, uninstaller, startupItems
-    case settingsGeneral, settingsMenuBar, settingsDashboard, settingsNotifications, settingsAccount, settingsHelper, settingsAbout
+    case settingsGeneral, settingsMenuBar, settingsDashboard, settingsNotifications, settingsAccount, settingsAbout
 
     public var id: String { rawValue }
 
     static let monitors: [PanelTab] = [.overview, .system, .history, .cpu, .gpu, .memory, .disk, .network, .thermal, .battery]
     static let tools: [PanelTab] = [.processes, .startupItems, .keepAwake, .cleaner, .uninstaller]
-    static let settings: [PanelTab] = [.settingsGeneral, .settingsMenuBar, .settingsDashboard, .settingsNotifications, .settingsAccount, .settingsHelper, .settingsAbout]
+    static let settings: [PanelTab] = [.settingsGeneral, .settingsMenuBar, .settingsDashboard, .settingsNotifications, .settingsAccount, .settingsAbout]
 
     var isSettings: Bool { Self.settings.contains(self) }
 
@@ -316,7 +318,6 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .settingsDashboard: tr("监控大屏")
         case .settingsNotifications: tr("通知")
         case .settingsAccount: tr("账号与同步")
-        case .settingsHelper: tr("辅助工具")
         case .settingsAbout: tr("关于")
         }
     }
@@ -343,7 +344,6 @@ public enum PanelTab: String, CaseIterable, Identifiable, Sendable {
         case .settingsDashboard: "tv"
         case .settingsNotifications: "bell.badge"
         case .settingsAccount: "person.crop.circle"
-        case .settingsHelper: "lock.shield"
         case .settingsAbout: "info.circle"
         }
     }
@@ -430,6 +430,18 @@ public final class AppSettings {
     public var useFahrenheit: Bool {
         didSet { defaults.set(useFahrenheit, forKey: Keys.useFahrenheit) }
     }
+    /// 菜单栏的 CPU 温度取各核心的平均值；默认取最高值，瞬时波动时跳得更明显
+    public var menuBarTemperatureAverage: Bool {
+        didSet { defaults.set(menuBarTemperatureAverage, forKey: Keys.menuBarTemperatureAverage) }
+    }
+    /// 温度与风扇两项都开着时合成一个双行项目：上面温度、下面转速
+    public var mergeTemperatureFan: Bool {
+        didSet { defaults.set(mergeTemperatureFan, forKey: Keys.mergeTemperatureFan) }
+    }
+    /// 弹窗“按应用汇总”与仪表盘“高占用进程”显示多少条；0 表示各自的默认条数
+    public var rankingRows: Int {
+        didSet { defaults.set(rankingRows, forKey: Keys.rankingRows) }
+    }
     /// 电量低于该值时自动关闭“合盖运行”
     public var lidModeBatteryFloor: Int {
         didSet { defaults.set(lidModeBatteryFloor, forKey: Keys.lidModeBatteryFloor) }
@@ -442,7 +454,10 @@ public final class AppSettings {
         didSet { defaults.set(panelTab.rawValue, forKey: Keys.panelTab) }
     }
     public var appearance: AppearanceMode {
-        didSet { defaults.set(appearance.rawValue, forKey: Keys.appearance) }
+        didSet {
+            defaults.set(appearance.rawValue, forKey: Keys.appearance)
+            DS.isFrosted = appearance == .frosted
+        }
     }
     /// 网络测速里单个节点的时间与流量上限
     public var speedTestBudget: SpeedTestBudget {
@@ -538,6 +553,7 @@ public final class AppSettings {
     public static let batteryFloorOptions = [10, 20, 30, 40]
     public static let fanSafetyOptions = [85, 90, 95, 100]
     public static let menuBarSpacingOptions = [4, 6, 8, 12]
+    public static let rankingRowOptions = [0, 10, 15]
     public static let alertTemperatureOptions = [85, 90, 95, 100]
     public static let alertLoadOptions = [70, 80, 90]
     public static let cpuChartOptions = [60, 180, 300]
@@ -564,12 +580,18 @@ public final class AppSettings {
             ? defaults.integer(forKey: Keys.menuBarItemSpacing) : 8
         bluetoothLowBatteryInMenuBar = defaults.object(forKey: Keys.bluetoothLowBatteryInMenuBar) as? Bool ?? true
         useFahrenheit = defaults.bool(forKey: Keys.useFahrenheit)
+        menuBarTemperatureAverage = defaults.bool(forKey: Keys.menuBarTemperatureAverage)
+        mergeTemperatureFan = defaults.bool(forKey: Keys.mergeTemperatureFan)
+        rankingRows = Self.rankingRowOptions.contains(defaults.integer(forKey: Keys.rankingRows))
+            ? defaults.integer(forKey: Keys.rankingRows) : 0
         lidModeBatteryFloor = Self.batteryFloorOptions.contains(defaults.integer(forKey: Keys.lidModeBatteryFloor))
             ? defaults.integer(forKey: Keys.lidModeBatteryFloor) : 20
         fanSafetyTemperature = Self.fanSafetyOptions.contains(defaults.integer(forKey: Keys.fanSafetyTemperature))
             ? defaults.integer(forKey: Keys.fanSafetyTemperature) : 95
         panelTab = defaults.string(forKey: Keys.panelTab).flatMap(PanelTab.init(rawValue:)) ?? .overview
-        appearance = defaults.string(forKey: Keys.appearance).flatMap(AppearanceMode.init(rawValue:)) ?? .system
+        let appearance = defaults.string(forKey: Keys.appearance).flatMap(AppearanceMode.init(rawValue:)) ?? .system
+        self.appearance = appearance
+        DS.isFrosted = appearance == .frosted
         showDockIcon = defaults.bool(forKey: Keys.showDockIcon)
         speedTestBudget = defaults.string(forKey: Keys.speedTestBudget).flatMap(SpeedTestBudget.init(rawValue:)) ?? .full
         speedTestRoute = defaults.string(forKey: Keys.speedTestRoute).flatMap(SpeedRoute.init(rawValue:)) ?? .direct
@@ -632,6 +654,21 @@ public final class AppSettings {
         menuBarLayout == .iconOnly ? [] : orderedMenuBarItems
     }
 
+    /// 温度与风扇实际合成一项：开了合并，且两项都在菜单栏上
+    var mergesThermalItems: Bool {
+        mergeTemperatureFan && Set(drawnMenuBarItems).isSuperset(of: [.temperature, .fan])
+    }
+
+    /// 每项独立时各占一个图标的项目：合并后风扇并进温度的图标，不再单独占位
+    var separateMenuBarItems: [MenuBarItem] {
+        mergesThermalItems ? drawnMenuBarItems.filter { $0 != .fan } : drawnMenuBarItems
+    }
+
+    /// 排行列表的条数：没有另外设置时用各处自己的默认值
+    func rankingRows(default rows: Int) -> Int {
+        rankingRows == 0 ? rows : rankingRows
+    }
+
     func isEnabled(_ item: MenuBarItem) -> Bool { menuBarItems.contains(item) }
 
     func style(for item: MenuBarItem) -> MenuBarStyle {
@@ -671,6 +708,9 @@ public final class AppSettings {
         static let cpuSharePerCore = "cpuSharePerCore"
         static let bluetoothLowBatteryInMenuBar = "bluetoothLowBatteryInMenuBar"
         static let useFahrenheit = "useFahrenheit"
+        static let menuBarTemperatureAverage = "menuBarTemperatureAverage"
+        static let mergeTemperatureFan = "mergeTemperatureFan"
+        static let rankingRows = "rankingRows"
         static let lidModeBatteryFloor = "lidModeBatteryFloor"
         static let fanSafetyTemperature = "fanSafetyTemperature"
         static let panelTab = "panelTab"

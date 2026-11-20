@@ -9,39 +9,58 @@ public enum DS {}
 extension DS {
     enum Palette {
         // 品牌色（单个视图内不超过 3 种）
-        static let primary = Color.dynamic(light: 0x2563EB, dark: 0x3B82F6)
-        static let primaryHover = Color.dynamic(light: 0x1D4ED8, dark: 0x2563EB)   // 加深约 10%
-        static let secondary = Color.dynamic(light: 0x0D9488, dark: 0x2DD4BF)
+        static let primary = Color.dynamic(light: 0x2563EB, dark: 0x3B82F6, frosted: 0xF5F5F7)
+        static let primaryHover = Color.dynamic(light: 0x1D4ED8, dark: 0x2563EB, frosted: 0xD4D4D8)   // 加深约 10%
+        static let secondary = Color.dynamic(light: 0x0D9488, dark: 0x2DD4BF, frosted: 0xFFFFFF, frostedAlpha: 0.55)
+
+        // 数据色：进度条、图表、热力图的主色。浅色与深色主题就是品牌蓝；
+        // 深色磨砂主题里控件用白色，数据换成系统绿，高负载仍是橙 / 红
+        static let data = Color.dynamic(light: 0x2563EB, dark: 0x3B82F6, frosted: 0x30D158)
+        /// 浅一档的数据色，区分同一图表里的第二类数据（如性能核、峰值）
+        static let dataSoft = Color.dynamic(light: 0x93C5FD, dark: 0x60A5FA, frosted: 0x30D158, frostedAlpha: 0.5)
 
         // 语义色
-        static let success = Color.dynamic(light: 0x16A34A, dark: 0x22C55E)
-        static let warning = Color.dynamic(light: 0xD97706, dark: 0xF59E0B)
-        static let error = Color.dynamic(light: 0xDC2626, dark: 0xF87171)
+        static let success = Color.dynamic(light: 0x16A34A, dark: 0x22C55E, frosted: 0x30D158)
+        static let warning = Color.dynamic(light: 0xD97706, dark: 0xF59E0B, frosted: 0xFF9F0A)
+        static let error = Color.dynamic(light: 0xDC2626, dark: 0xF87171, frosted: 0xFF453A)
 
         // 文字
-        static let textPrimary = Color.dynamic(light: 0x111827, dark: 0xF3F4F6)
-        static let textSecondary = Color.dynamic(light: 0x6B7280, dark: 0x9CA3AF)
-        static let textTertiary = Color.dynamic(light: 0x9CA3AF, dark: 0x6B7280)
-        static let onPrimary = Color.dynamic(light: 0xFFFFFF, dark: 0xFFFFFF)
+        static let textPrimary = Color.dynamic(light: 0x111827, dark: 0xF3F4F6, frosted: 0xFFFFFF, frostedAlpha: 0.94)
+        static let textSecondary = Color.dynamic(light: 0x6B7280, dark: 0x9CA3AF, frosted: 0xFFFFFF, frostedAlpha: 0.62)
+        static let textTertiary = Color.dynamic(light: 0x9CA3AF, dark: 0x6B7280, frosted: 0xFFFFFF, frostedAlpha: 0.42)
+        /// 强调色上的文字。深色磨砂主题的强调色是白色，上面换成近黑
+        static let onPrimary = Color.dynamic(light: 0xFFFFFF, dark: 0xFFFFFF, frosted: 0x111113)
 
         // OpenStats 的统一配色：浅色为白底蓝色，深色为黑底蓝色。
+        // 深色磨砂是单独一套：外层与侧栏是更深的毛玻璃，内容区是稍亮的不透明中性深灰，强调色是白色，
+        // 文字、卡片、分隔线都用不同透明度的白区分层级
         // 窗口、侧边栏、标题栏与弹窗共用同一底色，卡片用浅灰 / 深灰实色区分层级，不加边框
         static let background = Color(nsColor: NSColor.dsBackground)
         /// 主窗口的底层：侧边栏与内容卡片四周那一圈。平时是系统侧边栏材质，这是截图等拍不出材质时的近似实色
         static let windowBase = Color.dynamic(light: 0xE8E9ED, dark: 0x1E1F23)
-        static let surface = Color.dynamic(light: 0xF3F4F6, dark: 0x17181B)
+        /// 卡片底色。深色磨砂主题下是很淡的半透明白，比所在的底板亮一档
+        static let surface = Color.dynamic(light: 0xF3F4F6, dark: 0x17181B, frosted: 0xFFFFFF, frostedAlpha: 0.06)
         /// 卡片上的控件底色（分段选中块、次要按钮、输入框）
-        static let elevated = Color.dynamic(light: 0xFFFFFF, dark: 0x26282D)
-        static let surfaceHover = Color.dynamic(light: 0x000000, lightAlpha: 0.05, dark: 0xFFFFFF, darkAlpha: 0.07)
-        static let border = Color.dynamic(light: 0x000000, lightAlpha: 0.07, dark: 0xFFFFFF, darkAlpha: 0.09)
-        static let track = Color.dynamic(light: 0x000000, lightAlpha: 0.06, dark: 0xFFFFFF, darkAlpha: 0.10)
-        static let neutral300 = Color.dynamic(light: 0xD1D5DB, dark: 0x3F434A)
+        static let elevated = Color.dynamic(light: 0xFFFFFF, dark: 0x26282D, frosted: 0xFFFFFF, frostedAlpha: 0.10)
+        static let surfaceHover = Color.dynamic(light: 0x000000, lightAlpha: 0.05, dark: 0xFFFFFF, darkAlpha: 0.07,
+                                                frosted: 0xFFFFFF, frostedAlpha: 0.06)
+        static let border = Color.dynamic(light: 0x000000, lightAlpha: 0.07, dark: 0xFFFFFF, darkAlpha: 0.09,
+                                          frosted: 0xFFFFFF, frostedAlpha: 0.08)
+        static let track = Color.dynamic(light: 0x000000, lightAlpha: 0.06, dark: 0xFFFFFF, darkAlpha: 0.10,
+                                         frosted: 0xFFFFFF, frostedAlpha: 0.10)
+        static let neutral300 = Color.dynamic(light: 0xD1D5DB, dark: 0x3F434A, frosted: 0xFFFFFF, frostedAlpha: 0.22)
         /// 分段条里表示“剩余 / 空闲”的中性段，深到能衬白字
-        static let neutral500 = Color.dynamic(light: 0x6B7280, dark: 0x4B5563)
+        static let neutral500 = Color.dynamic(light: 0x6B7280, dark: 0x4B5563, frosted: 0xFFFFFF, frostedAlpha: 0.28)
         /// 浅一档的品牌蓝，用来区分同一图表里的第二类数据（如性能核）
-        static let primarySoft = Color.dynamic(light: 0x93C5FD, dark: 0x60A5FA)
+        static let primarySoft = Color.dynamic(light: 0x93C5FD, dark: 0x60A5FA, frosted: 0xFFFFFF, frostedAlpha: 0.55)
         /// 侧边栏选中项的淡蓝底
-        static let sidebarSelected = Color.dynamic(light: 0x2563EB, lightAlpha: 0.12, dark: 0x3B82F6, darkAlpha: 0.22)
+        static let sidebarSelected = Color.dynamic(light: 0x2563EB, lightAlpha: 0.12, dark: 0x3B82F6, darkAlpha: 0.22,
+                                                   frosted: 0xF5F5F7)
+        /// 侧边栏选中项的文字：浅色与深色是品牌蓝，深色磨砂的底块是白色，文字反成近黑
+        static let sidebarSelectedText = Color.dynamic(light: 0x2563EB, dark: 0x3B82F6, frosted: 0x111113)
+        /// 主窗口内容卡片的外描边：只有深色磨砂主题画一圈淡白线
+        static let cardOutline = Color.dynamic(light: 0x000000, lightAlpha: 0, dark: 0x000000, darkAlpha: 0,
+                                               frosted: 0xFFFFFF, frostedAlpha: 0.08)
         /// 全局加载时压暗整个窗口
         /// 网站图标的垫底：深色模式下也保持浅色，黑色字标才看得清
         static let logoTile = Color.dynamic(light: 0xFFFFFF, dark: 0xF3F4F6)
@@ -50,8 +69,8 @@ extension DS {
         /// 核心类型配色：最高性能档为品牌蓝，其次浅蓝，能效核灰色
         static func cluster(_ id: Int) -> Color {
             switch id {
-            case 0: primary
-            case 1: primarySoft
+            case 0: data
+            case 1: dataSoft
             default: neutral300
             }
         }
@@ -59,26 +78,46 @@ extension DS {
 }
 
 extension DS {
-    /// 网速配色：上传绿、下载蓝，面板与菜单栏保持一致
-    enum NetworkPalette {
-        static let upload = NSColor.dynamic(light: 0x16A34A, dark: 0x22C55E)
-        static let download = NSColor.dynamic(light: 0x2563EB, dark: 0x3B82F6)
+    enum Brand {
+        /// OpenStats 标志的脉搏折线，顶点按 App 图标量取：横向 0…1 从左到右，纵向 0…1 从上到下。
+        /// 菜单栏图标与弹窗顶栏共用
+        static let pulse: [(x: CGFloat, y: CGFloat)] = [(0, 0.54), (0.2, 0.54), (0.41, 0), (0.51, 1), (0.7, 0.27), (0.8, 0.54), (1, 0.54)]
     }
 }
 
+extension DS {
+    /// 网速配色：上传绿、下载蓝，面板与菜单栏保持一致
+    enum NetworkPalette {
+        static let upload = NSColor.dynamic(light: 0x16A34A, dark: 0x22C55E, frosted: 0x30D158)
+        static let download = NSColor.dynamic(light: 0x2563EB, dark: 0x3B82F6, frosted: 0xF5F5F7)
+    }
+}
+
+extension DS {
+    /// 深色磨砂主题：深色外观之上，弹窗与主窗口的底板换成系统毛玻璃材质，卡片改成半透明。
+    /// 由 `AppSettings.appearance` 写入；颜色在绘制时读取，切换后根视图整棵重建以重新取色
+    nonisolated(unsafe) static var isFrosted = false
+}
+
 extension Color {
-    static func dynamic(light: UInt32, lightAlpha: CGFloat = 1, dark: UInt32, darkAlpha: CGFloat = 1) -> Color {
-        Color(nsColor: .dynamic(light: light, lightAlpha: lightAlpha, dark: dark, darkAlpha: darkAlpha))
+    /// `frosted` 为深色磨砂主题下的颜色，不给就和深色一样
+    static func dynamic(light: UInt32, lightAlpha: CGFloat = 1, dark: UInt32, darkAlpha: CGFloat = 1,
+                        frosted: UInt32? = nil, frostedAlpha: CGFloat = 1) -> Color {
+        Color(nsColor: .dynamic(light: light, lightAlpha: lightAlpha, dark: dark, darkAlpha: darkAlpha,
+                                frosted: frosted, frostedAlpha: frostedAlpha))
     }
 }
 
 extension NSColor {
     /// 窗口底色，AppKit 窗口背景与 SwiftUI 页面共用
-    static let dsBackground = NSColor.dynamic(light: 0xFFFFFF, dark: 0x0B0B0D)
+    /// 深色磨砂主题下是不透明的中性深灰，比四周的毛玻璃底层亮一档
+    static let dsBackground = NSColor.dynamic(light: 0xFFFFFF, dark: 0x0B0B0D, frosted: 0x1A1A1C)
 
-    static func dynamic(light: UInt32, lightAlpha: CGFloat = 1, dark: UInt32, darkAlpha: CGFloat = 1) -> NSColor {
+    static func dynamic(light: UInt32, lightAlpha: CGFloat = 1, dark: UInt32, darkAlpha: CGFloat = 1,
+                        frosted: UInt32? = nil, frostedAlpha: CGFloat = 1) -> NSColor {
         NSColor(name: nil) { appearance in
             let isDark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            if isDark, DS.isFrosted, let frosted { return NSColor(hex: frosted, alpha: frostedAlpha) }
             return NSColor(hex: isDark ? dark : light, alpha: isDark ? darkAlpha : lightAlpha)
         }
     }
@@ -210,7 +249,7 @@ extension DS {
         static let sidebarWidth: CGFloat = 192
         /// 侧边栏导航一行的高度：比系统侧边栏的中号行（28pt）高约 5%，取 29.5 让 Retina 屏上落在整像素；
         /// 比按钮矮，三组导航在常见的窗口高度里放得下
-        static let sidebarRowHeight: CGFloat = 29.5
+        static let sidebarRowHeight: CGFloat = 34
         /// 主窗口右侧页面卡片与窗口上、右、下边缘的距离
         static let mainWindowInset: CGFloat = DS.Space.s2
         /// 主窗口最窄的宽度：侧边栏、最窄的页面卡片与右侧边距
@@ -235,6 +274,8 @@ extension DS {
 
     enum Motion {
         static let quick = Animation.easeOut(duration: 0.15)
+        /// 主窗口切换页面：新页面淡入并轻轻上移
+        static let page = Animation.easeOut(duration: 0.22)
     }
 
     /// 温度阈值（°C），用于着色

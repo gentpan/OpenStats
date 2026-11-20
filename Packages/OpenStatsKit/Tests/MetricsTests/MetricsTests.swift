@@ -203,11 +203,12 @@ struct LiveSamplerTests {
 
 @Suite struct GeoParsingTests {
     @Test func parsesCleanIPResponse() throws {
-        let json = #"{"ok":true,"ip":"32.5.140.2","hostname":"host.example.net","geo":{"country":"美国","country_code":"US","country_en":"United States","region":"佛罗里达州","city":"玛丽湖"},"geo_sources":[{"source":"maxmind","country_code":"US"},{"source":"ipinfo","region":"Florida","city":"Lake Mary"}],"network":{"asn":7018,"asn_name":"AT&T Enterprises, LLC","isp":"AT&T Enterprises, LLC","network_type":"Residential","connection_type":"Cable/DSL","native_or_broadcast":"NATIVE"},"risk":{"risk_score":2,"risk_label":"Very Clean","is_vpn":false,"is_proxy":false,"is_datacenter":false,"is_abuser":true},"purity":{"score":98,"grade":"A+","confidence":100,"ip_type":"Residential IP","is_native":true,"residential_probability":98,"recommendation":"该 IP 整体较干净"}}"#
+        let json = #"{"ok":true,"ip":"32.5.140.2","hostname":"host.example.net","geo":{"country":"美国","country_code":"US","country_en":"United States","region":"佛罗里达州","city":"玛丽湖"},"geo_sources":[{"source":"maxmind","country_code":"US"},{"source":"ipinfo","region":"Florida","city":"Lake Mary"}],"network":{"asn":7018,"asn_name":"AT&T Enterprises, LLC","isp":"AT&T","network_type":"Residential","connection_type":"Cable/DSL","native_or_broadcast":"NATIVE"},"risk":{"risk_score":2,"risk_label":"Very Clean","is_vpn":false,"is_proxy":false,"is_datacenter":false,"is_abuser":true},"purity":{"score":98,"grade":"A+","confidence":100,"ip_type":"Residential IP","is_native":true,"residential_probability":98,"recommendation":"该 IP 整体较干净"}}"#
         let info = try #require(PublicAddressLookup.parseCleanIP(Data(json.utf8)))
         #expect(info.countryCode == "US")
         #expect(info.city == "玛丽湖" && info.cityEnglish == "Lake Mary" && info.regionEnglish == "Florida")
         #expect(info.asn == "AS7018")
+        // 运营方取 ASN 登记名，不取缩短的 isp
         #expect(info.organization == "AT&T Enterprises, LLC")
         #expect(info.hostname == "host.example.net")
         #expect(info.networkType == "Residential" && info.connectionType == "Cable/DSL")

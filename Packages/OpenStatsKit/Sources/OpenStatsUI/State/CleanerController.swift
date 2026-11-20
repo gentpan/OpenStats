@@ -127,9 +127,9 @@ public final class CleanerController {
         scans.filter(\.isCleanable).reduce(0) { $0 + $1.totalSize }
     }
 
-    /// 只提示、要用户自己处理的占用
+    /// 只提示、要用户自己处理的占用。“系统数据”一栏只是分析，和别的条目可能有重叠，不算进来
     var manualBytes: UInt64 {
-        scans.filter { $0.rule.isManual && $0.blocked == nil }.reduce(0) { $0 + $1.totalSize }
+        scans.filter { $0.rule.isManual && $0.blocked == nil && $0.rule.category != .systemData }.reduce(0) { $0 + $1.totalSize }
     }
 
     var selectedScans: [RuleScan] {
@@ -177,6 +177,8 @@ public final class CleanerController {
                                 runningApplicationNames: { names },
                                 interactiveTrasher: WorkspaceTrasher(),
                                 hasFullDiskAccess: FullDiskAccess.isGranted(),
-                                simulators: SimulatorInventory.loader())
+                                simulators: SimulatorInventory.loader(),
+                                temporaryDirectory: NSTemporaryDirectory(),
+                                installedApps: { AppUninstaller.installedApps() })
     }
 }

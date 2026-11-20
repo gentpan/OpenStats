@@ -10,7 +10,7 @@ struct CleanerPage: View {
         PageScroll {
             SummaryCard()
             if model.cleaner.needsFullDiskAccess {
-                InfoBanner(icon: "lock.shield", text: tr("部分项目需要“完全磁盘访问权限”才能扫描（Safari 缓存、废纸篓、设备备份、邮件附件、Docker 磁盘）。"), tone: .warning) {
+                InfoBanner(icon: "lock.shield", text: tr("部分项目需要“完全磁盘访问权限”才能扫描（Safari 缓存、废纸篓、设备备份、邮件附件、Docker 磁盘、应用容器）。"), tone: .warning) {
                     Button(tr("去授权")) { model.cleaner.openFullDiskAccessSettings() }
                         .buttonStyle(DSButtonStyle(kind: .secondary))
                 }
@@ -20,6 +20,7 @@ struct CleanerPage: View {
                     CategoryCard(category: .system)
                     CategoryCard(category: .browser)
                     CategoryCard(category: .large)
+                    CategoryCard(category: .systemData)
                 }
                 .frame(maxWidth: .infinity)
                 VStack(spacing: DS.Space.s3) {
@@ -152,7 +153,9 @@ private struct CategoryCard: View {
 
     var body: some View {
         let scans = model.cleaner.scans(in: category)
-        let total = scans.filter(\.isCleanable).reduce(0) { $0 + $1.totalSize }
+        // 全是只看不删的分类（系统数据）显示列出的总量；其余显示可清理的总量
+        let analysisOnly = !scans.isEmpty && scans.allSatisfy(\.rule.isManual)
+        let total = scans.filter { analysisOnly ? $0.blocked == nil : $0.isCleanable }.reduce(0) { $0 + $1.totalSize }
 
         Card(padding: DS.Space.s3, spacing: DS.Space.s2) {
             HStack {

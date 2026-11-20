@@ -122,7 +122,7 @@ struct LegendItem: View {
 
 struct ProgressTrack: View {
     let fraction: Double
-    var color: Color = DS.Palette.primary
+    var color: Color = DS.Palette.data
     var height: CGFloat = DS.Size.barHeight
     /// 占比类（容量、电量）画灰色底槽；排行类（按应用汇总）只画彩色条，底槽拉满一整行反而显得杂乱
     var showsTrack = true
@@ -164,8 +164,8 @@ struct TagBadge: View {
         .foregroundStyle(foreground)
         .padding(.horizontal, compact ? DS.Space.s1 : DS.Space.s3)
         .padding(.vertical, compact ? DS.Space.s1 / 2 : DS.Space.s1)
-        .background(fill, in: RoundedRectangle(cornerRadius: compact ? DS.Radius.sm : DS.Radius.md, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: compact ? DS.Radius.sm : DS.Radius.md, style: .continuous).strokeBorder(border, lineWidth: DS.Size.stroke))
+        .background(fill, in: BadgeShape())
+        .overlay(BadgeShape().strokeBorder(border, lineWidth: DS.Size.stroke))
         .lineLimit(1)
         .fixedSize()
     }
@@ -319,7 +319,7 @@ struct StatusBadge: View {
         }
         .padding(.horizontal, DS.Space.s2)
         .padding(.vertical, DS.Space.s1 / 2)
-        .background(tone.color.opacity(0.12), in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+        .background(tone.color.opacity(0.12), in: BadgeShape())
         .lineLimit(1)
     }
 }
@@ -330,6 +330,23 @@ struct StatusBadge: View {
 /// 设计规则是 CSS `corner-shape: squircle` 下“半径约为高度的 0.46 倍”；连续曲率圆角同样半径下更圆，
 /// 再乘 0.54 后视觉一致：32pt 高的按钮约 8pt。
 /// `nestedPadding` 用于嵌在另一个控件里的选中块：按外层的高度取半径再减去两者之间的内边距，保持同心
+/// 徽章、小标签、复选框这类小元素的外形：超椭圆圆角，半径约为高度的三分之一。
+/// 比按钮（ControlShape）更圆一些，小尺寸下也看得出超椭圆的弧度，但又不是两头全圆的胶囊
+struct BadgeShape: InsettableShape {
+    private var inset: CGFloat = 0
+
+    func path(in rect: CGRect) -> Path {
+        let box = rect.insetBy(dx: inset, dy: inset)
+        return RoundedRectangle(cornerRadius: box.height * 0.32, style: .continuous).path(in: box)
+    }
+
+    func inset(by amount: CGFloat) -> BadgeShape {
+        var shape = self
+        shape.inset += amount
+        return shape
+    }
+}
+
 struct ControlShape: InsettableShape {
     var nestedPadding: CGFloat = 0
     private var inset: CGFloat = 0
@@ -370,31 +387,9 @@ private struct DSButtonBody: View {
     let kind: DSButtonStyle.Kind
     @State private var hovering = false
     @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.isInsideGlass) private var isInsideGlass
 
     var body: some View {
-        if DS.Glass.isAvailable {
-            glassBody
-        } else {
-            solidBody
-        }
-    }
 
-    /// macOS 26：超椭圆圆角的玻璃按钮。主按钮是蓝色玻璃，次要按钮是透明玻璃，文字按钮不加玻璃
-    private var glassBody: some View {
-        configuration.label
-            .dsFont(.sm, weight: .medium)
-            .foregroundStyle(foreground)
-            .padding(.horizontal, DS.Space.s4)
-            .frame(height: DS.Size.controlHeight)
-            .contentShape(ControlShape())
-            .modifier(GlassButtonSurface(kind: kind, active: active, isInsideGlass: isInsideGlass))
-            .opacity(isEnabled ? 1 : 0.5)
-            .onHover { hovering = $0 }
-            .animation(DS.Motion.quick, value: hovering)
-    }
-
-    private var solidBody: some View {
         configuration.label
             .dsFont(.sm, weight: .medium)
             .foregroundStyle(foreground)
@@ -436,17 +431,14 @@ struct IconButton: View {
     let help: String
     let action: () -> Void
     @State private var hovering = false
-    @Environment(\.isInsideGlass) private var isInsideGlass
 
     var body: some View {
-        // macOS 26 上是圆形玻璃按钮（与系统设置的前进后退一致）；已经在玻璃面板里时只有悬停底色
-        let glass = DS.Glass.isAvailable && !isInsideGlass
         Button(action: action) {
             Image(systemName: systemName)
                 .dsFont(.sm, weight: .medium)
-                .foregroundStyle(hovering ? DS.Palette.primary : glass ? DS.Palette.textPrimary : DS.Palette.textSecondary)
+                .foregroundStyle(hovering ? DS.Palette.primary : DS.Palette.textSecondary)
                 .frame(width: DS.Size.controlHeight, height: DS.Size.controlHeight)
-                .modifier(IconButtonSurface(hovering: hovering, glass: glass))
+                .outlinedCircle(hovering: hovering)
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -456,42 +448,19 @@ struct IconButton: View {
     }
 }
 
-/// 玻璃按钮的底：主按钮蓝色玻璃，次要按钮透明玻璃；文字按钮、或已在玻璃面板里的次要按钮只有悬停底色
-private struct GlassButtonSurface: ViewModifier {
-    let kind: DSButtonStyle.Kind
-    let active: Bool
-    let isInsideGlass: Bool
-
-    func body(content: Content) -> some View {
-        switch kind {
-        case .primary:
-            content.dsGlass(in: ControlShape(), tint: DS.Palette.primary, interactive: true)
-        case .secondary where !isInsideGlass:
-            content.dsGlass(in: ControlShape(), interactive: true)
-        default:
-            content.background(active ? DS.Palette.surfaceHover : .clear, in: ControlShape())
-        }
-    }
-}
-
-private struct IconButtonSurface: ViewModifier {
-    let hovering: Bool
-    let glass: Bool
-
-    func body(content: Content) -> some View {
-        if glass {
-            content.dsGlass(in: Circle(), interactive: true)
-        } else if DS.Glass.isAvailable {
-            content.background(hovering ? DS.Palette.surfaceHover : .clear, in: Circle())
-        } else {
-            content.background(hovering ? DS.Palette.surfaceHover : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
-        }
+extension View {
+    /// 图标按钮的底：一圈细描边的圆钮，悬停时垫一层淡底；`isOn` 为真时（开关类按钮打开）填成强调色
+    func outlinedCircle(hovering: Bool, isOn: Bool = false) -> some View {
+        background(isOn ? DS.Palette.primary : hovering ? DS.Palette.surfaceHover : .clear, in: Circle())
+            .overlay {
+                if !isOn { Circle().strokeBorder(DS.Palette.border, lineWidth: DS.Size.stroke) }
+            }
     }
 }
 
 // MARK: - 侧边栏
 
-/// 侧边栏的一项。选中态不填色：由容器上的 `sidebarGlider()` 画左侧滑动的蓝色光条与淡淡的高亮
+/// 侧边栏的一项。选中态的底块由容器上的 `sidebarGlider()` 画，切换时滑过去
 struct SidebarButton: View {
     let title: String
     let symbol: String
@@ -500,13 +469,16 @@ struct SidebarButton: View {
     var badge: Tone?
     let action: () -> Void
     @State private var hovering = false
+    /// 每次被选中加一，触发图标轻跳一下
+    @State private var selectCount = 0
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: DS.Space.s2) {
+            HStack(spacing: DS.Space.s2 + DS.Space.s1 / 2) {
                 Image(systemName: symbol)
                     .dsFont(.sm, weight: .medium)
                     .frame(width: DS.Size.iconStandalone)
+                    .symbolEffect(.bounce, value: selectCount)
                 Text(title).dsFont(.sm, weight: isSelected ? .semibold : .regular)
                 Spacer()
                 if let badge {
@@ -514,18 +486,37 @@ struct SidebarButton: View {
                         .accessibilityLabel(tr("需要注意"))
                 }
             }
-            .foregroundStyle(isSelected ? DS.Palette.primary : hovering ? DS.Palette.textPrimary : DS.Palette.textSecondary)
+            .foregroundStyle(isSelected ? DS.Palette.sidebarSelectedText
+                             : hovering ? DS.Palette.textPrimary : DS.Palette.textSecondary)
             .padding(.leading, DS.Space.s3)
             .padding(.trailing, DS.Space.s2)
             .frame(height: DS.Size.sidebarRowHeight)
+            .background {
+                // 悬停时垫一层淡淡的底；选中项的底由 sidebarGlider 画
+                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                    .fill(DS.Palette.surfaceHover)
+                    .opacity(hovering && !isSelected ? 1 : 0)
+            }
             .contentShape(Rectangle())
             .animation(DS.Motion.quick, value: isSelected)
             .animation(DS.Motion.quick, value: hovering)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(SidebarPressStyle())
         .onHover { hovering = $0 }
+        .onChange(of: isSelected) { _, selected in
+            if selected { selectCount += 1 }
+        }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .anchorPreference(key: SidebarRowsKey.self, value: .bounds) { [SidebarRow(isSelected: isSelected, bounds: $0)] }
+    }
+}
+
+/// 侧边栏按下时略微缩小，松开回弹
+private struct SidebarPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
     }
 }
 
@@ -540,75 +531,24 @@ struct SidebarRowsKey: PreferenceKey {
 }
 
 extension View {
-    /// 放在包含 SidebarButton 的容器上，画出选中态。
-    /// macOS 26：选中项垫一块淡蓝色圆角底，切换时滑过去（侧边栏本身是玻璃面板，里面不再叠玻璃）；
-    /// 更早的系统：左侧一条两端渐隐的细线，选中项位置有一段发光的蓝色光条，带回弹地滑过去
-    @ViewBuilder
+    /// 放在包含 SidebarButton 的容器上，画出选中态：选中项垫一块超椭圆圆角的底块，切换时滑过去。
+    /// 三个主题结构一致，底块与文字的颜色由 sidebarSelected / sidebarSelectedText 决定
     func sidebarGlider() -> some View {
-        if DS.Glass.isAvailable {
-            backgroundPreferenceValue(SidebarRowsKey.self) { rows in
-                GeometryReader { proxy in
-                    if let selected = rows.first(where: \.isSelected).map({ proxy[$0.bounds] }) {
-                        RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                            .fill(DS.Palette.sidebarSelected)
-                            .frame(width: selected.width, height: selected.height)
-                            .offset(x: selected.minX, y: selected.minY)
-                            .animation(.spring(response: 0.35, dampingFraction: 0.8), value: selected)
-                    }
-                }
-                .allowsHitTesting(false)
-            }
-        } else {
-            overlayPreferenceValue(SidebarRowsKey.self) { rows in
-                GeometryReader { proxy in
-                    SidebarGlider(frames: rows.map { proxy[$0.bounds] },
-                                  selected: rows.first(where: \.isSelected).map { proxy[$0.bounds] })
-                }
-                .allowsHitTesting(false)
-            }
-        }
-    }
-}
-
-private struct SidebarGlider: View {
-    let frames: [CGRect]
-    let selected: CGRect?
-
-    private static let barWidth: CGFloat = 2
-    private static let glowWidth = DS.Space.s1 + DS.Space.s1 / 2
-
-    var body: some View {
-        if let first = frames.min(by: { $0.minY < $1.minY }), let last = frames.max(by: { $0.maxY < $1.maxY }) {
-            ZStack(alignment: .topLeading) {
-                // 底轨：整列的细线，上下两端渐隐
-                Rectangle()
-                    .fill(LinearGradient(colors: [.clear, DS.Palette.border, DS.Palette.border, .clear], startPoint: .top, endPoint: .bottom))
-                    .frame(width: DS.Size.stroke, height: last.maxY - first.minY)
-                    .offset(x: first.minX, y: first.minY)
-
-                if let selected {
-                    Rectangle()
-                        .fill(LinearGradient(colors: [DS.Palette.primary.opacity(0.14), DS.Palette.primary.opacity(0)],
-                                             startPoint: .leading, endPoint: .trailing))
+        backgroundPreferenceValue(SidebarRowsKey.self) { rows in
+            GeometryReader { proxy in
+                if let selected = rows.first(where: \.isSelected).map({ proxy[$0.bounds] }) {
+                    RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                        .fill(DS.Palette.sidebarSelected)
                         .frame(width: selected.width, height: selected.height)
                         .offset(x: selected.minX, y: selected.minY)
-                    Capsule()
-                        .fill(DS.Palette.primary)
-                        .frame(width: Self.glowWidth, height: selected.height * 0.6)
-                        .blur(radius: DS.Space.s2)
-                        .offset(x: selected.minX - Self.glowWidth / 2, y: selected.midY - selected.height * 0.3)
-                    Rectangle()
-                        .fill(LinearGradient(colors: [DS.Palette.primary.opacity(0), DS.Palette.primary, DS.Palette.primary.opacity(0)],
-                                             startPoint: .top, endPoint: .bottom))
-                        .frame(width: Self.barWidth, height: selected.height)
-                        .offset(x: selected.minX - Self.barWidth / 2, y: selected.minY)
+                        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: selected)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .animation(.spring(response: 0.45, dampingFraction: 0.6), value: selected)
+            .allowsHitTesting(false)
         }
     }
 }
+
 
 // MARK: - 分段控件
 
@@ -658,27 +598,13 @@ struct SegmentedControl<Value: Hashable>: View {
 struct DSToggle: View {
     @Binding var isOn: Bool
     var label: String = ""
-    @Environment(\.isSnapshot) private var isSnapshot
-
     var body: some View {
-        // 离屏截图时窗口不在前台，系统开关会画成灰色，截图里用自绘的蓝色开关
-        if DS.Glass.isAvailable, !isSnapshot {
-            // macOS 26 的系统开关自带液态玻璃（拖动时滑块变成玻璃），颜色沿用品牌蓝
-            Toggle(isOn: $isOn) { Text(label) }
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .tint(DS.Palette.primary)
-        } else {
-            solidBody
-        }
-    }
-
-    private var solidBody: some View {
+        // 自绘开关：三个主题同一个样子，颜色跟随主题
         Button {
             isOn.toggle()
         } label: {
             ZStack(alignment: isOn ? .trailing : .leading) {
-                Capsule().fill(isOn ? DS.Palette.primary : DS.Palette.neutral300)
+                Capsule(style: .continuous).fill(isOn ? DS.Palette.primary : DS.Palette.neutral300)
                 Circle()
                     .fill(DS.Palette.onPrimary)
                     .frame(width: DS.Size.switchKnob, height: DS.Size.switchKnob)
@@ -686,7 +612,7 @@ struct DSToggle: View {
                     .padding(DS.Space.s1)
             }
             .frame(width: DS.Size.switchWidth, height: DS.Size.switchHeight)
-            .contentShape(Capsule())
+            .contentShape(Capsule(style: .continuous))
         }
         .buttonStyle(.plain)
         .animation(DS.Motion.quick, value: isOn)
@@ -706,7 +632,7 @@ struct DSCheckbox: View {
 
     var body: some View {
         Button(action: action) {
-            RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
+            BadgeShape()
                 .fill(isOn ? DS.Palette.primary : Color.clear)
                 .overlay {
                     if isOn {
@@ -714,7 +640,7 @@ struct DSCheckbox: View {
                             .font(.system(size: DS.TextSize.xs.rawValue - DS.Space.s1 / 2, weight: .bold))
                             .foregroundStyle(DS.Palette.onPrimary)
                     } else {
-                        RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
+                        BadgeShape()
                             .strokeBorder(DS.Palette.neutral300, lineWidth: DS.Size.chartLine)
                     }
                 }
@@ -835,9 +761,9 @@ struct DSSlider: View {
             let knob = DS.Size.switchKnob
             let x = (width - knob) * min(1, max(0, value))
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).fill(DS.Palette.track)
+                Capsule(style: .continuous).fill(DS.Palette.track)
                     .frame(height: DS.Space.s1 + DS.Space.s1 / 2)
-                RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).fill(DS.Palette.primary)
+                Capsule(style: .continuous).fill(DS.Palette.primary)
                     .frame(width: x + knob / 2, height: DS.Space.s1 + DS.Space.s1 / 2)
                 Circle()
                     .fill(DS.Palette.elevated)
@@ -930,7 +856,7 @@ struct Chip: View {
         .padding(.horizontal, DS.Space.s2)
         .padding(.vertical, DS.Space.s1 / 2)
         .background(tone == .neutral ? DS.Palette.track : tone.color.opacity(0.12),
-                    in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
+                    in: BadgeShape())
         .lineLimit(1)
         .fixedSize()
     }
@@ -944,27 +870,6 @@ struct ChipButton: View {
     @State private var hovering = false
 
     var body: some View {
-        if DS.Glass.isAvailable {
-            // macOS 26：每个选项是一块超椭圆圆角的玻璃，选中的是蓝色玻璃
-            Button(action: action) {
-                Text(title)
-                    .dsFont(.xs, weight: isSelected ? .semibold : .medium)
-                    .foregroundStyle(isSelected ? DS.Palette.onPrimary : DS.Palette.textPrimary)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: DS.Size.segmentHeight)
-                    .contentShape(ControlShape())
-                    .dsGlass(in: ControlShape(), tint: isSelected ? DS.Palette.primary : nil, interactive: true)
-            }
-            .buttonStyle(.plain)
-            .animation(DS.Motion.quick, value: isSelected)
-            .accessibilityAddTraits(isSelected ? .isSelected : [])
-        } else {
-            solidBody
-        }
-    }
-
-    private var solidBody: some View {
         Button(action: action) {
             Text(title)
                 .dsFont(.xs, weight: isSelected ? .semibold : .medium)
@@ -972,8 +877,8 @@ struct ChipButton: View {
                 .lineLimit(1)
                 .frame(maxWidth: .infinity)
                 .frame(height: DS.Size.segmentHeight)
-                .background(background, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
+                .background(background, in: BadgeShape())
+                .overlay(BadgeShape()
                     .strokeBorder(isSelected ? DS.Palette.primary.opacity(0.4) : DS.Palette.border, lineWidth: DS.Size.stroke))
                 .contentShape(Rectangle())
         }

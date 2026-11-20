@@ -2,7 +2,8 @@ import AppKit
 import SwiftUI
 
 /// 国旗：使用包内由 flag-icons（MIT）渲染好的 PNG，不使用 emoji。
-/// 不直接读 SVG：系统的 SVG 渲染器对嵌套 <use> 等写法支持不好，中国、乌兹别克斯坦等旗子会画错（见 Scripts/render_flags.sh）
+/// 不直接读 SVG：系统的 SVG 渲染器对嵌套 <use> 等写法支持不好，中国、乌兹别克斯坦等旗子会画错（见 Scripts/render_flags.sh）。
+/// 显示成 1:1 的正方形直角：从 4:3 的图里居中裁出，外面一圈细边，白底的国旗在浅色背景上也看得出边界
 struct FlagImage: View {
     let countryCode: String
     var height: CGFloat = DS.Space.s3
@@ -11,10 +12,10 @@ struct FlagImage: View {
         if let image = FlagCache.shared.image(for: countryCode) {
             Image(nsImage: image)
                 .resizable()
-                .aspectRatio(4 / 3, contentMode: .fit)
-                .frame(height: height)
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm / 2, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: DS.Radius.sm / 2, style: .continuous).strokeBorder(DS.Palette.border, lineWidth: DS.Size.stroke))
+                .aspectRatio(contentMode: .fill)
+                .frame(width: height, height: height)
+                .clipped()
+                .overlay(Rectangle().strokeBorder(DS.Palette.border, lineWidth: DS.Size.stroke))
                 .accessibilityHidden(true)
         }
     }

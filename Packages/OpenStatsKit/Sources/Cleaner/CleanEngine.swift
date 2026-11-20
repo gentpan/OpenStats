@@ -6,7 +6,7 @@ public enum CleanEngine {
 
     /// 并发扫描所有规则，只读，不修改任何文件
     public static func scan(_ rules: [CleanRule], environment: CleanEnvironment) async -> [RuleScan] {
-        let safety = SafetyGuard(home: environment.home, applications: environment.applications)
+        let safety = safetyGuard(environment)
         return await withTaskGroup(of: (Int, RuleScan).self) { group in
             for (index, rule) in rules.enumerated() {
                 group.addTask { (index, scanRule(rule, environment: environment, safety: safety)) }
@@ -73,6 +73,17 @@ public enum CleanEngine {
         return RuleScan(rule: rule, items: items, skippedCount: 0, blocked: nil)
     }
 
+    static func safetyGuard(_ environment: CleanEnvironment) -> SafetyGuard {
+        SafetyGuard(home: environment.home, applications: environment.applications, temporary: environment.temporaryDirectory)
+    }
+
+    /// 临时目录里的条目以临时目录为信任的根
+    static func isInTemporaryDirectory(_ url: URL, environment: CleanEnvironment) -> Bool {
+        guard let directory = environment.temporaryDirectory else { return false }
+        let temporary = SafetyGuard.withoutPrivatePrefix(directory)
+        return SafetyGuard.withoutPrivatePrefix(url.deletingLastPathComponent().path) == temporary
+    }
+
     static func deletionService(environment: CleanEnvironment, safety: SafetyGuard, log: CleanLog?) -> DeletionService {
         DeletionService(home: environment.home,
                         scope: { try safety.validate($0) },
@@ -95,8 +106,10 @@ public enum CleanEngine {
     static func request(for url: URL, rule: CleanRule, identity: FileIdentity?, mode: DeletionMode, size: UInt64,
                         environment: CleanEnvironment) -> DeletionRequest {
         let inApplications = isInApplications(url, environment: environment)
+        let base = inApplications ? environment.applications
+            : isInTemporaryDirectory(url, environment: environment) ? environment.temporaryDirectory ?? environment.home : environment.home
         return DeletionRequest(url: url, mode: mode,
-                               base: URL(fileURLWithPath: inApplications ? environment.applications : environment.home),
+                               base: URL(fileURLWithPath: base),
                                size: size, label: rule.id, identity: identity,
                                guardApps: rule.blockingApps.map { GuardApp(bundleID: $0.bundleID, name: $0.name) },
                                checksOwnerApp: rule.checksOwnerApp,
@@ -129,7 +142,7 @@ public enum CleanEngine {
     /// 扫描到执行之间应用可能已经启动、路径可能已被替换。仅提示的规则即使被选中也不会处理
     public static func clean(_ scans: [RuleScan], selected: Set<String>, excluded: Set<String> = [], preferTrash: Bool,
                              environment: CleanEnvironment, log: CleanLog? = CleanLog()) async -> CleanReport {
-        let safety = SafetyGuard(home: environment.home, applications: environment.applications)
+        let safety = safetyGuard(environment)
         let service = deletionService(environment: environment, safety: safety, log: log)
         var report = CleanReport()
 

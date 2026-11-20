@@ -17,6 +17,9 @@ public struct SettingsDocument: Codable, Equatable, Sendable {
     public var cpuSharePerCore: Bool?
     public var bluetoothLowBatteryInMenuBar: Bool?
     public var useFahrenheit: Bool?
+    public var menuBarTemperatureAverage: Bool?
+    public var mergeTemperatureFan: Bool?
+    public var rankingRows: Int?
     public var lidModeBatteryFloor: Int?
     public var fanSafetyTemperature: Int?
     public var appearance: String?
@@ -46,11 +49,11 @@ extension SettingsDocument {
     static let describedFields: Set<String> = [
         // 菜单栏项目、顺序与风格
         "menuBarItems", "menuBarOrder", "menuBarStyle", "networkStyle", "styleOverrides", "menuBarLayout",
-        "menuBarItemSpacing", "colorizeHighLoad",
+        "menuBarItemSpacing", "colorizeHighLoad", "menuBarTemperatureAverage", "mergeTemperatureFan",
         // 刷新频率、外观、语言、温度单位、程序坞图标
         "refreshSeconds", "appearance", "language", "useFahrenheit", "showDockIcon",
-        // 详情弹窗的区块
-        "hiddenPopoverSections",
+        // 详情弹窗的区块与排行条数
+        "hiddenPopoverSections", "rankingRows",
         // 连接探测与公网 IP 查询
         "probeEnabled", "probeInBackground", "probeTarget", "publicIPLookup",
         // 通知与蓝牙低电量提示
@@ -79,6 +82,9 @@ extension AppSettings {
         doc.cpuSharePerCore = cpuSharePerCore
         doc.bluetoothLowBatteryInMenuBar = bluetoothLowBatteryInMenuBar
         doc.useFahrenheit = useFahrenheit
+        doc.menuBarTemperatureAverage = menuBarTemperatureAverage
+        doc.mergeTemperatureFan = mergeTemperatureFan
+        doc.rankingRows = rankingRows
         doc.lidModeBatteryFloor = lidModeBatteryFloor
         doc.fanSafetyTemperature = fanSafetyTemperature
         doc.appearance = appearance.rawValue
@@ -126,6 +132,9 @@ extension AppSettings {
         assign(\.cpuSharePerCore, doc.cpuSharePerCore)
         assign(\.bluetoothLowBatteryInMenuBar, doc.bluetoothLowBatteryInMenuBar)
         assign(\.useFahrenheit, doc.useFahrenheit)
+        assign(\.menuBarTemperatureAverage, doc.menuBarTemperatureAverage)
+        assign(\.mergeTemperatureFan, doc.mergeTemperatureFan)
+        assign(\.rankingRows, option(doc.rankingRows, in: Self.rankingRowOptions))
         assign(\.lidModeBatteryFloor, option(doc.lidModeBatteryFloor, in: Self.batteryFloorOptions))
         assign(\.fanSafetyTemperature, option(doc.fanSafetyTemperature, in: Self.fanSafetyOptions))
         assign(\.appearance, doc.appearance.flatMap(AppearanceMode.init(rawValue:)))
