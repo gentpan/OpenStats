@@ -335,6 +335,143 @@
       <!-- 由 Scripts/sync_changelog.py 从 CHANGELOG.md 生成，请勿手改。 -->
       <div class="log">
         <article class="log__day">
+          <div class="log__head"><time datetime="2026-11-20">2026-11-20</time><span class="log__tag">0.7.4</span></div>
+          <p class="log__counts">新增 3</p>
+          <ul class="log__list">
+            <li><span class="log__kind">新增</span>菜单栏的温度与风扇可以合并成一个双行项目：上面温度、下面风扇转速，不带标签，比两项分开更省宽度。在「设置 · 菜单栏 · 其他」里打开“温度与风扇合并显示”，两项都开启时生效；每项独立时风扇不再单独占一个图标，点合并后的图标打开温度详情。</li>
+            <li><span class="log__kind">新增</span>菜单栏温度可以选“最高”或“平均”：最高是最热的 CPU 核心，某个核心瞬时升温就会跳；平均是各核心的平均值，更平稳。默认仍是最高，弹窗、仪表盘与过热提醒不受影响。</li>
+            <li><span class="log__kind">新增</span>「设置 · 通用」新增“排行显示数量”：CPU、内存弹窗的“按应用汇总”与仪表盘的“高占用进程”可以改成 10 条或 15 条；默认仍分别是 6 条和 5 条。</li>
+          </ul>
+        </article>
+        <article class="log__day">
+          <div class="log__head"><time datetime="2026-11-08">2026-11-08</time><span class="log__tag">0.7.4</span></div>
+          <p class="log__counts">新增 4 · 调整 6</p>
+          <ul class="log__list">
+            <li><span class="log__kind">新增</span>外观新增“深色磨砂”：深色配色之上，弹窗与主窗口的底板换成透出桌面的毛玻璃，卡片半透明，强调色是白色，图表与进度条用绿色。</li>
+            <li><span class="log__kind">新增</span>清理新增“系统数据”一栏，只分析不删除：按所属应用列出 Application Support、沙盒容器和共享容器里超过 200 MB 的目录，再列出资源库、家目录隐藏目录和“共享”文件夹里超过 500 MB、没有归类的目录。这些目录里可能有聊天记录、项目和登录状态，删不删由你在访达里决定。</li>
+            <li><span class="log__kind">新增</span>清理新增“过期的临时文件”：用户临时目录里 3 天以上没有改动的条目，正在运行的应用和系统进程的条目不动。</li>
+            <li><span class="log__kind">新增</span>开发者类别新增 Maven 本地仓库（默认不勾选），以及只提示的 Go 模块缓存、Android 模拟器与系统镜像；本地 AI 模型加上 PyTorch Hub 下载的权重。</li>
+            <li><span class="log__kind">调整</span>弹窗顶栏换成 OpenStats 的脉搏线标志加当前项名称；风扇与防休眠从底部的两块快捷开关挪到顶栏右侧的小圆钮：风扇点一下换下一档，防休眠点一下选时长。</li>
+            <li><span class="log__kind">调整</span>网络弹窗顶部改成下载、上传并排两列同样大的数字；累计流量并成一行；流量图上半是下载、下半是上传，两半用同一个比例尺，高低可以直接比较。磁盘读写图同样处理。</li>
+            <li><span class="log__kind">调整</span>公网 IP 前面显示国旗，国旗改成带细边的正方形；IP 纯净度只留“原生 / 广播”和 IP 类型两个徽章，风险评分与风险标记不再列出，细节到 cleanip.io 看完整报告。运营商优先显示 ASN 登记名，与 cleanip.io 网站一致。</li>
+            <li><span class="log__kind">调整</span>释放内存改成顶栏里的一颗图标圆钮，进行中转圈，完成后短暂显示对勾或警告。</li>
+          </ul>
+          <details class="log__rest">
+            <summary>还有 2 项</summary>
+            <ul class="log__list">
+              <li><span class="log__kind">调整</span>辅助工具随应用自动登记，只需在系统“登录项”里批准一次；设置里不再有单独的“辅助工具”页。</li>
+              <li><span class="log__kind">调整</span>侧边栏选中项改成一块滑动的圆角底块，切换页面时新页面淡入；开关、按钮与分段控件改为自绘，三个主题样子一致，不再使用 macOS 26 的液态玻璃。</li>
+            </ul>
+          </details>
+        </article>
+        <article class="log__day">
+          <div class="log__head"><time datetime="2026-11-06">2026-11-06</time><span class="log__tag">0.7.4</span></div>
+          <p class="log__counts">新增 4 · 调整 1</p>
+          <ul class="log__list">
+            <li><span class="log__kind">新增</span>清理新增“大件数据”类别，对应系统设置里“系统数据”的大头，全部默认不勾选，清理时移到废纸篓：<ul class="log__sub"><li>iPhone / iPad 备份：按设备名和上次备份日期分条，一小时内还在写入的备份不动。</li><li>设备系统更新包：访达为 iPhone、iPad 下载的 <code>.ipsw</code> 文件。</li><li>macOS 安装器：应用程序文件夹里的“安装 macOS”应用，名字和包名都要对得上；安装器正在运行时不动，移到废纸篓时需要管理员授权。</li><li>本地 AI 模型：Hugging Face 与 LM Studio 下载的模型按模型分条，LM Studio 在运行时跳过它的模型。</li><li>邮件附件副本：在“邮件”里打开过的附件留下的副本，“邮件”在运行时跳过。</li></ul></li>
+            <li><span class="log__kind">新增</span>清理新增只提示的项目：Ollama 模型、Docker / Colima / OrbStack / Podman 的虚拟磁盘、虚拟机（UTM、Parallels、VMware Fusion、VirtualBox、Tart）、不可用的模拟器、没有模拟器在用的模拟器系统版本。只显示占用，展开后说明该用什么工具或命令删除，不会被勾选或删除。</li>
+            <li><span class="log__kind">新增</span>开发者类别新增 Gradle 缓存、pnpm / bun 包缓存，Python 工具缓存加上 uv，默认不勾选。yarn 的全局缓存不清：Yarn 默认的 PnP 项目直接从那里读包。</li>
+            <li><span class="log__kind">新增</span>清理页每条规则展开后可以逐项取消勾选，只选了一部分时规则的勾选框显示横线；超过 6 项时可以展开全部。</li>
+            <li><span class="log__kind">调整</span>要读取其他应用容器的项目（设备备份、邮件附件、Docker 磁盘、UTM 虚拟机）只在拿到“完全磁盘访问权限”后才扫描，没有权限时显示“需要完全磁盘访问权限”，不会让系统逐个弹出授权框。</li>
+          </ul>
+        </article>
+        <details class="log__older">
+          <summary>更早的更新（28 天）</summary>
+        <article class="log__day">
+          <div class="log__head"><time datetime="2026-11-04">2026-11-04</time><span class="log__tag">0.7.4</span></div>
+          <p class="log__counts">新增 1</p>
+          <ul class="log__list">
+            <li><span class="log__kind">新增</span>设置新增「监控大屏」：开启后向局域网提供只读网页仪表盘（默认端口 8790，可选 8791/8888，一次只监听一个），同一网络里的平板、旧电脑、电视用浏览器打开即可实时查看本机监控——CPU（总占用与各核心）、内存、网络速率、磁盘、负载、电量与当前用户的进程 TOP，配 5 分钟走势，页面自适应横竖屏，断网自动重连。只接受来自本机、局域网和链路本地地址的连接，并校验请求里的主机名，公网和 DNS 重绑定的访问会被拒绝。默认关闭，开关和端口都不随云端设置同步，每台 Mac 需要各自开启。</li>
+          </ul>
+        </article>
+        <article class="log__day">
+          <div class="log__head"><time datetime="2026-11-03">2026-11-03</time><span class="log__tag">0.7.4</span></div>
+          <p class="log__counts">调整 9 · 修复 6</p>
+          <ul class="log__list">
+            <li><span class="log__kind">调整</span>清理、卸载、大文件“移到废纸篓”的删除统一走同一个入口，并在动手前逐项核对：<ul class="log__sub"><li>路径本身：系统目录、顶层目录（应用程序、家目录、资源库、文稿、桌面等）以及钥匙串、SSH 密钥、iCloud 同步目录一律拒绝，大小写别名和指向它们的符号链接也拦得住。</li><li>路径沿途必须是真实目录，不能经过符号链接；只允许在家目录、应用程序文件夹和用户缓存区里删，<code>/Library</code> 等系统位置在这一层就被拒绝。</li><li>还是不是扫描时的那个文件：目录被换成另一个目录、文件换成目录、父目录换了，都会拒绝；偏好设置这类每次保存都会原子替换的文件不受影响。</li><li>相关应用是否在运行：读不到运行状态（系统返回空列表）时按“可能在运行”处理，不删；带团队前缀或 <code>group.</code> 前缀的容器目录也能认出它属于哪个运行中的应用。</li><li>移到废纸篓失败就保留在原处，不会悄悄改成永久删除。</li><li>清理日志现在多记一次运行编号、方式，以及文件在废纸篓里的位置，跳过的项也记下原因。</li></ul></li>
+            <li><span class="log__kind">调整</span>卸载应用时找到的每个残留都带上依据（靠哪个包名、应用组、容器记录或名字认领的），在清单里悬停就能看到。</li>
+            <li><span class="log__kind">调整</span>卸载多找几类位置：服务与工作流、输入法、屏保与预览插件、自动保存、同步偏好、内容指向本应用的启动项、指向本应用的浏览器原生消息清单。</li>
+            <li><span class="log__kind">调整</span>卸载会预览系统级残留：<code>/Library</code> 里的数据、缓存、日志、启动守护进程、特权助手、安装回执和 <code>/Users/Shared</code>。它们需要管理员权限，只提示、不预选、不会被删除。</li>
+            <li><span class="log__kind">调整</span>卸载页新增“复制诊断”：只找到应用本体，或有名字匹配的文件没通过检查时出现，内容是每个目录读到了什么、哪些候选被丢弃以及原因，家目录统一写成 <code>~</code>。</li>
+            <li><span class="log__kind">调整</span>清理新增“Electron 应用”类别（其下“网页内核缓存”一项）：Slack、Discord、VS Code 等 Electron / Chromium 应用的缓存（代码缓存、GPU 缓存、Service Worker 缓存等）按应用分条列出，展开可看到“应用 › 缓存名”。目录里没有 Chromium 特征缓存的应用不会动，登录态、Cookie、IndexedDB 等数据不碰。</li>
+            <li><span class="log__kind">调整</span>浏览器缓存增加 Opera、Vivaldi、Chromium。</li>
+            <li><span class="log__kind">调整</span>清理新增开发工具缓存，全部默认不勾选：Xcode 编译缓存与旧设备支持文件（保留最新两个版本）、npm 之外的前端工具链缓存（Vite、Webpack、ESLint、Prettier 等）、Python 工具缓存、Cargo 下载缓存、Swift 包缓存。Xcode 或模拟器在运行时对应项自动跳过。</li>
+          </ul>
+          <details class="log__rest">
+            <summary>还有 7 项</summary>
+            <ul class="log__list">
+              <li><span class="log__kind">调整</span>“应用是否在运行”的判断多一道按名字的核对：缓存目录用应用名命名时（例如 <code>Slack</code>），即使没有包名也能认出它属于哪个运行中的应用。</li>
+              <li><span class="log__kind">修复</span>“最近修改过的视为正在使用”和大文件“扫描之后被改过”的判断读到的是缓存的旧修改时间（同一个 URL 对象取过一次就会缓存），扫描之后再改的文件检测不到。现在直接读目录项。</li>
+              <li><span class="log__kind">修复</span>大文件“移到废纸篓”：身份是在点击那一刻才采集的，等于拿自己跟自己比。现在在扫描结束时采集，移动前对不上、或根本没有扫描时的身份都拒绝。</li>
+              <li><span class="log__kind">修复</span>卸载 Chrome 时，Chrome Canary 这类“包名是本应用包名延伸”的另一个已安装应用的数据，会被当成 Chrome 自己的并默认勾选。现在不再认领，诊断里写明原因；其他按包名派生的组件（辅助程序等）照常认领。</li>
+              <li><span class="log__kind">修复</span>诊断报告里文件名带换行可以伪造出新的一行，启动项与原生消息清单的证据里也会露出家目录路径。现在控制字符会转义，家目录统一写成 <code>~</code>。</li>
+              <li><span class="log__kind">修复</span>卸载应用时，目录系统不让读取（权限、完全磁盘访问等）会被当成“不存在”而悄悄跳过，页面上只剩应用本体、没有任何提示。现在这类目录会出现在“无法读取”的提示里并写进诊断。</li>
+              <li><span class="log__kind">修复</span>共享的应用组容器与应用脚本目录只靠名字匹配时区分大小写：包名是 <code>…-mac</code>、组目录是 <code>group.…-Mac</code> 就漏掉了。现在不区分大小写，Application Scripts 里的同类目录也会找到。</li>
+            </ul>
+          </details>
+        </article>
+        <article class="log__day">
+          <div class="log__head"><time datetime="2026-10-30">2026-10-30</time><span class="log__tag">0.7.4</span></div>
+          <p class="log__counts">修复 10 · 调整 6</p>
+          <ul class="log__list">
+            <li><span class="log__kind">修复</span>探测目标选“路由器”时，路由器亮红灯（上联断了、家里没网）格子仍一直是绿色。原来只看路由器有没有回应，而这时本机到路由器那一跳其实还是通的。现在路由器有回应后会再确认外网（同时 ping 阿里云 223.5.5.5 和 Cloudflare 1.1.1.1，有一个回应就算通）：外网不通显示橙格，顶部的延迟读数显示“外网不通”。选其他探测目标不受影响。</li>
+            <li><span class="log__kind">修复</span>探测目标选“路由器”时，拔掉网线或 Wi-Fi 断开后读不到路由器地址，探测会直接跳过、不记录结果，格子里一直留着断网前的绿格。现在这种情况记为不通（红格）。后台低频探测时也会每次重新读取路由器地址，换了网络不再继续 ping 旧地址。</li>
+            <li><span class="log__kind">修复</span>开着“合盖后继续运行”时，辅助工具重启（重新安装辅助工具、版本校验后重启、被系统拉起）后，合盖运行会悄悄失效：界面仍显示“合盖运行”，实际一合盖 Mac 就睡。原因是新的辅助工具进程启动时会先把睡眠设置恢复成系统默认，而应用以为设置还在生效，重连后没有重新下发。现在重连后一定会重新下发；下发失败时界面如实显示已关闭并给出错误。</li>
+            <li><span class="log__kind">修复</span>合盖运行的电量保护合上盖子后不起作用。合盖后屏幕睡眠，指标采样随之暂停，而电量保护只挂在采样上，于是使用电池、电量低于下限时也不会自动关闭合盖运行，Mac 会在包里一直跑到没电。现在合盖运行期间每分钟自己看一次电量（只读电量与供电来源，开销很小）。关闭失败时不再提示“已关闭”，下次检查会再试。</li>
+            <li><span class="log__kind">修复</span>防休眠页上的“合盖后继续运行”开关，在防休眠关着时只记下选择：开关亮着，实际合盖照样睡。现在和弹窗里一致，打开时一并开启防休眠。</li>
+            <li><span class="log__kind">修复</span>弹窗底部的防休眠快捷开关，在合盖运行开着时会在状态里写出“合盖运行”，不用展开菜单才知道。</li>
+            <li><span class="log__kind">修复</span>进程页的 CPU 数值和仪表盘、CPU 页差核数倍。进程页固定按“单核满载为 100%”显示，另外两处默认按“整机”（全部核心跑满为 100%）显示，同一个进程在两页看起来差十几倍。现在三处共用同一个口径设置，默认整机，进程页工具栏也加了“整机/单核”切换；切到单核就是原来的写法（活动监视器的算法）。</li>
+            <li><span class="log__kind">修复</span>点“电池健康度下降”“蓝牙设备电量低”的通知，会打开本机信息页，而那一页不显示电池和蓝牙设备。现在打开电池页。</li>
+          </ul>
+          <details class="log__rest">
+            <summary>还有 8 项</summary>
+            <ul class="log__list">
+              <li><span class="log__kind">修复</span>窗口较窄时，磁盘页“文件系统检查”“本地快照”卡片标题右侧的文字被截断成“上次检…”“读”。现在标题右侧只留按钮，上次检查时间和快照个数挪进卡片里。</li>
+              <li><span class="log__kind">修复</span>账号与同步页的“同步的内容”漏了几项实际会同步的设置（温度单位、程序坞图标、高负载着色、CPU 整机/单核、记录历史数据、自动检查更新等），还写着历史记录留在本机，却没提“记录历史数据”这个开关会同步。现在按实际同步的字段重写，并加了测试：同步文档里新增字段却没登记，测试会失败。</li>
+              <li><span class="log__kind">调整</span>“菜单栏”页的“蓝牙设备电量低时提示”改名为“在菜单栏显示低电量的蓝牙设备”，并写明系统通知在“通知”里单独设置；“通知”页那一项也写明菜单栏上的提示在“菜单栏”里设置。两处的阈值（20% 与 15%）不变。</li>
+              <li><span class="log__kind">调整</span>同一个量统一叫“健康度”：电池页顶部、仪表盘电池卡、菜单栏合并面板里原来写“健康”的地方改为“健康度”。辅助工具页里的“合盖不睡眠”改为“合盖后继续运行”，与防休眠页的开关同名。</li>
+              <li><span class="log__kind">调整</span>去掉同一页里重复出现的内容：<ul class="log__sub"><li>本机信息页头部的“芯片”“内存”两个标签（下面的“处理器”“内存与图形”里就有）、“系统版号”行（头部已经写了系统版本和版号）、“启动于”行（改成“已运行”标签的悬停提示）。</li><li>内存页没用交换时，“压缩与交换”里不再重复写“交换区 未使用”（顶部已经写了）；用了交换时仍显示已用 / 总量。“内存水位”卡标题右侧的总容量也去掉了（顶部已写“共 64 GB”）。</li><li>温度与风扇页“功耗”卡标题右侧的“整机 X W”（卡里第一行就是它）。</li><li>菜单栏设置里，温度和风扇两项共用同一组弹窗区块，原来两项都开着时同样的开关出现两遍、改一边另一边跟着变。现在只在“CPU 温度”下显示，风扇下写明与它共用。</li></ul></li>
+              <li><span class="log__kind">调整</span>网络页的累计流量（开机后 / 重置后的下载与上传）和重置按钮，从“接口”卡挪到“流量历史”卡里；“接口”卡只剩网卡信息，卡里第一行原来也叫“接口”，改叫“网卡”。</li>
+              <li><span class="log__kind">调整</span>仪表盘的“核心负载”改名“各核心占用”，与 CPU 页同名。</li>
+              <li><span class="log__kind">调整</span>关于页去掉“致谢”一栏（对 exelban/stats 的说明已经写在官网和 GitHub 上）。</li>
+            </ul>
+          </details>
+        </article>
+        <article class="log__day">
+          <div class="log__head"><time datetime="2026-10-27">2026-10-27</time><span class="log__tag">0.7.4</span></div>
+          <p class="log__counts">修复 1</p>
+          <ul class="log__list">
+            <li><span class="log__kind">修复</span>电池健康度和“系统设置 › 电池”里的最大容量对不上，例如系统显示 100%，OpenStats 显示 98%。原来是用标称满充容量除以设计容量算的，现在健康度直接读系统给出的最大容量（每小时读一次）；原来的算法保留为“推算健康度”，在电池弹窗的“电池健康”里另起一行显示。读不到系统的值时，健康度仍用推算值。</li>
+          </ul>
+        </article>
+        <article class="log__day">
+          <div class="log__head"><time datetime="2026-10-25">2026-10-25</time><span class="log__tag">0.7.4</span></div>
+          <p class="log__counts">修复 3 · 调整 5 · 样式 1</p>
+          <ul class="log__list">
+            <li><span class="log__kind">修复</span>CPU、内存、网络、GPU 等弹窗和主窗口里带实时图表的页面，打开期间多占约 190 MB 内存（活动监视器里 OpenStats 约 300 MB）。图表改用另一种画法后，这些页面约 90–100 MB，画面与原来一致。</li>
+            <li><span class="log__kind">修复</span>主窗口、出口与分流、网络测速、软件更新这几个窗口关掉后，界面仍在后台随每次采样刷新，页面里的定时任务也不停。现在关窗就释放，下次打开再重建。</li>
+            <li><span class="log__kind">修复</span>主窗口被其他窗口完全挡住、切到别的桌面、⌘H 隐藏或锁屏时，仍按“正在看”的频率采样（例如进程页每 2 秒列一次全系统进程，网络页每秒探测一次）。现在这些情况都按没在看处理，重新露出来时恢复；出口与分流、网络测速窗口被挡住时也暂停轮询，正在跑的测速不受影响。</li>
+            <li><span class="log__kind">调整</span>降低空闲时的耗电：<ul class="log__sub"><li>菜单栏图标画出来和上次一样时不再重新设置，省掉多数重绘。</li><li>只有菜单栏显示风扇时只读转速。</li><li>GPU 功耗只订阅需要的那一个计数器，电池页不再读 GPU 功耗与频率。</li><li>磁盘可清除空间 5 分钟统计一次（磁盘页打开时每次都统计）。</li></ul></li>
+            <li><span class="log__kind">调整</span>网络后台低频探测从每 10 秒一次改为每分钟一次；断网提醒不依赖它，不受影响。</li>
+            <li><span class="log__kind">调整</span>账号同步改为每小时检查一次云端，启动、唤醒与打开账号页时照常立即检查。</li>
+            <li><span class="log__kind">调整</span>用不着辅助工具时（风扇为自动、没有开合盖运行）不再一直连着，辅助工具会在空闲 30 秒后自行退出。辅助工具断开时只恢复它自己改过的风扇设置，不再把其他风扇软件设的手动转速改回自动。更新后第一次启动时，旧的辅助工具会自动换成新版本。</li>
+            <li><span class="log__kind">调整</span>桌面小组件的 CPU 占用改为与上次刷新之间的平均值，不再每次停半秒采样；刷新间隔改为每 15 分钟。</li>
+          </ul>
+          <details class="log__rest">
+            <summary>还有 1 项</summary>
+            <ul class="log__list">
+              <li><span class="log__kind">样式</span>主窗口侧边栏滚动时不再显示滚动条。</li>
+            </ul>
+          </details>
+        </article>
+        <article class="log__day">
+          <div class="log__head"><time datetime="2026-10-24">2026-10-24</time><span class="log__tag">0.7.4</span></div>
+          <p class="log__counts">修复 1</p>
+          <ul class="log__list">
+            <li><span class="log__kind">修复</span>用了分流代理、Cloudflare 与 cleanip.io 从不同出口出去时，网络详情的归属地会把两边拼在一起，比如 IP 与城市是本地直连的塔什干，国家却是代理节点的美国。现在国家与省、城市、ASN 一样取 cleanip.io 的结果，cleanip.io 没给国家时才用 Cloudflare 的；之前存下的拼错的结果不再沿用。</li>
+          </ul>
+        </article>
+        <article class="log__day">
           <div class="log__head"><time datetime="2026-10-21">2026-10-21</time><span class="log__tag">0.7.3</span></div>
           <p class="log__counts">调整 1 · 样式 1 · 修复 1</p>
           <ul class="log__list">
@@ -360,8 +497,6 @@
             <li><span class="log__kind">调整</span>去掉各页面重复的内容：仪表盘的“快捷开关”卡片（防休眠、风扇调速已在侧边栏，合盖运行移到侧边栏防休眠的右键菜单）；本机信息的电池、蓝牙设备与存储卡（分别看电池页与磁盘页，充电上限提示移到电池健康里）；清理页的“系统维护”卡（释放内存在内存页顶栏，刷新 DNS 缓存在网络页的 DNS 区块）；电池详情的功耗区块（看温度与风扇页）。</li>
           </ul>
         </article>
-        <details class="log__older">
-          <summary>更早的更新（19 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-10-19">2026-10-19</time><span class="log__tag">0.7.1</span></div>
           <p class="log__counts">调整 1 · 修复 1</p>

@@ -7,7 +7,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-HOST="${SITE_HOST:-root@166.0.22.243}"
+HOST="${SITE_HOST:-root@40.160.241.124}"
 KEY="${SITE_KEY:-$HOME/.ssh/gentpan.pem}"
 ROOT="${SITE_ROOT:-/var/www/getopenstats.com}"
 TAP="${TAP:-gentpan/homebrew-tap}"
