@@ -17,10 +17,15 @@ private func isolatedDefaults() -> UserDefaults {
         let defaults = isolatedDefaults()
         defaults.set(7, forKey: "refreshSeconds")
         defaults.set("bogus", forKey: "panelTab")
+        defaults.set("bogus", forKey: "temperatureMode")
+        defaults.set(99, forKey: "topAppsCount")
         let settings = AppSettings(defaults: defaults)
         #expect(settings.refreshSeconds == 2)
         #expect(settings.panelTab == .overview)
         #expect(settings.menuBarItems == [.cpu, .memory, .network])
+        #expect(settings.temperatureMode == .average)
+        #expect(!settings.combineTemperatureAndFan)
+        #expect(settings.topAppsCount == 6)
         #expect(settings.probeEnabled && settings.probeInBackground && settings.autoCheckUpdates)
         // 从未调整过弹窗区块时，默认隐藏的区块生效；走势默认 1 分钟
         #expect(settings.hiddenPopoverSections == PopoverSection.hiddenByDefault)
@@ -34,11 +39,20 @@ private func isolatedDefaults() -> UserDefaults {
         settings.menuBarItems = [.gpu, .fan]
         settings.probeInBackground = false
         settings.hiddenPopoverSections = [.cpuHeatmap]
+        settings.temperatureMode = .maximum
+        settings.combineTemperatureAndFan = true
+        settings.topAppsCount = 15
         let reloaded = AppSettings(defaults: defaults)
         #expect(reloaded.menuBarItems == [.gpu, .fan])
         #expect(!reloaded.probeInBackground)
         #expect(reloaded.hiddenPopoverSections == [.cpuHeatmap])
         #expect(reloaded.orderedMenuBarItems == [.gpu, .fan])
+        #expect(reloaded.temperatureMode == .maximum)
+        #expect(reloaded.combineTemperatureAndFan)
+        #expect(!reloaded.combinesTemperatureAndFan)
+        reloaded.menuBarItems.insert(.temperature)
+        #expect(reloaded.combinesTemperatureAndFan)
+        #expect(reloaded.topAppsCount == 15)
     }
 }
 
@@ -301,6 +315,9 @@ private func isolatedDefaults() -> UserDefaults {
         source.menuBarStyle = .ring
         source.styleOverrides = [.gpu: .pie]
         source.refreshSeconds = 5
+        source.temperatureMode = .maximum
+        source.combineTemperatureAndFan = true
+        source.topAppsCount = 15
         source.useFahrenheit = true
         source.hiddenPopoverSections = [.cpuHeatmap, .networkDNS]
         source.probeTarget = .aliyun
@@ -318,6 +335,9 @@ private func isolatedDefaults() -> UserDefaults {
         #expect(target.menuBarStyle == .ring)
         #expect(target.styleOverrides == [.gpu: .pie])
         #expect(target.refreshSeconds == 5)
+        #expect(target.temperatureMode == .maximum)
+        #expect(target.combineTemperatureAndFan)
+        #expect(target.topAppsCount == 15)
         #expect(target.useFahrenheit)
         #expect(target.hiddenPopoverSections == [.cpuHeatmap, .networkDNS])
         #expect(target.probeTarget == .aliyun)
@@ -335,12 +355,16 @@ private func isolatedDefaults() -> UserDefaults {
         document.menuBarItems = ["cpu", "hologram"]
         document.menuBarStyle = "neon"
         document.refreshSeconds = 7
+        document.temperatureMode = "median"
+        document.topAppsCount = 42
         document.probeTarget = "mars"
         document.language = "english"
         settings.apply(document)
         #expect(settings.menuBarItems == [.cpu])
         #expect(settings.menuBarStyle == .stacked)
         #expect(settings.refreshSeconds == 2)
+        #expect(settings.temperatureMode == .average)
+        #expect(settings.topAppsCount == 6)
         #expect(settings.probeTarget == .cloudflare)
         #expect(settings.language == .english)
         settings.language = .system
@@ -436,5 +460,33 @@ private func isolatedDefaults() -> UserDefaults {
             Issue.record("回调之后 phase 应为 failed，实际是 \(controller.phase)")
             return
         }
+    }
+}
+
+@MainActor
+@Suite struct MenuBarThermalTests {
+    @Test func temperatureModeSelectsAverageOrMaximum() {
+        let summary = TemperatureSummary(group: .cpu, average: 52.4, maximum: 71.8, sensorCount: 8)
+        #expect(MenuBarTemperatureMode.average.value(from: summary) == 52.4)
+        #expect(MenuBarTemperatureMode.maximum.value(from: summary) == 71.8)
+    }
+
+    @Test func combinedThermalSegmentIsNarrowerThanSeparateSegments() {
+        let separate = MenuBarRenderer.image(reading: .sample, items: [.temperature, .fan],
+                                             style: { _ in .stacked }, networkStyle: .dots,
+                                             colorizeHighLoad: false, fahrenheit: false, combineThermal: false)
+        let combined = MenuBarRenderer.image(reading: .sample, items: [.temperature, .fan],
+                                             style: { _ in .stacked }, networkStyle: .dots,
+                                             colorizeHighLoad: false, fahrenheit: false, combineThermal: true)
+        #expect(combined.size.width < separate.size.width)
+
+        // 只开一项时，合并开关不改变单项宽度
+        let singleOff = MenuBarRenderer.image(reading: .sample, items: [.temperature],
+                                              style: { _ in .stacked }, networkStyle: .dots,
+                                              colorizeHighLoad: false, fahrenheit: false, combineThermal: false)
+        let singleOn = MenuBarRenderer.image(reading: .sample, items: [.temperature],
+                                             style: { _ in .stacked }, networkStyle: .dots,
+                                             colorizeHighLoad: false, fahrenheit: false, combineThermal: true)
+        #expect(singleOn.size.width == singleOff.size.width)
     }
 }

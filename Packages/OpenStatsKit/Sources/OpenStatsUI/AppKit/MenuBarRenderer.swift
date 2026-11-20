@@ -40,7 +40,7 @@ struct MenuBarReading {
         diskHistory = disk.map { Array(repeating: $0, count: 30) } ?? []
         upload = store.network?.uploadBytesPerSecond
         download = store.network?.downloadBytesPerSecond
-        temperature = store.sensors?.temperature(.cpu)?.maximum
+        temperature = store.sensors?.temperature(.cpu).map { model.settings.temperatureMode.value(from: $0) }
         fanRPM = store.fastestFan?.current
         battery = store.battery?.level
         batteryHistory = battery.map { Array(repeating: $0, count: 30) } ?? []
@@ -121,6 +121,7 @@ enum MenuBarRenderer {
         @MainActor static let inlineLabelFont = NSFont.systemFont(ofSize: 10, weight: .regular)
         @MainActor static let inlineValueFont = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .medium)
         @MainActor static let networkFont = NSFont.monospacedDigitSystemFont(ofSize: 9, weight: .regular)
+        @MainActor static let thermalStackedFont = NSFont.monospacedDigitSystemFont(ofSize: 9, weight: .medium)
         static let barHeight: CGFloat = 22
         static let upperBaseline: CGFloat = 13
         static let lowerBaseline: CGFloat = 3
@@ -163,7 +164,8 @@ enum MenuBarRenderer {
                      networkStyle: settings.networkStyle,
                      colorizeHighLoad: settings.colorizeHighLoad,
                      fahrenheit: settings.useFahrenheit,
-                     itemGap: CGFloat(settings.menuBarItemSpacing))
+                     itemGap: CGFloat(settings.menuBarItemSpacing),
+                     combineThermal: settings.combineTemperatureAndFan)
     }
 
     static func image(reading: MenuBarReading,
@@ -172,10 +174,23 @@ enum MenuBarRenderer {
                       networkStyle: NetworkMenuStyle,
                       colorizeHighLoad: Bool,
                       fahrenheit: Bool,
-                      itemGap: CGFloat = Metrics.itemGap) -> NSImage {
+                      itemGap: CGFloat = Metrics.itemGap,
+                      combineThermal: Bool = false) -> NSImage {
         var segments: [Segment] = []
         if reading.keepAwake { segments.append(symbolSegment("cup.and.saucer.fill")) }
+        let shouldCombineThermal = combineThermal && items.contains(.temperature) && items.contains(.fan)
+        var drewThermal = false
         for item in items {
+            if shouldCombineThermal && (item == .temperature || item == .fan) {
+                guard !drewThermal else { continue }
+                drewThermal = true
+                let centered = style(.temperature) == .stackedCenter
+                segments.append(thermalCombinedSegment(temperature: reading.temperature,
+                                                       fanRPM: reading.fanRPM,
+                                                       fahrenheit: fahrenheit,
+                                                       centered: centered))
+                continue
+            }
             segments.append(segment(for: item, reading: reading, style: style(item), networkStyle: networkStyle,
                                     colorizeHighLoad: colorizeHighLoad, fahrenheit: fahrenheit))
         }
@@ -313,6 +328,32 @@ enum MenuBarRenderer {
             return combine([meter(fraction: fraction, alert: alert), stacked])
         case .dot:
             return combine([levelDot(fraction: fraction), stacked])
+        }
+    }
+
+    /// 温度与风扇合并为上下两行显示：上方温度，下方风扇转速，节省菜单栏横向空间
+    private static func thermalCombinedSegment(temperature: Double?, fanRPM: Double?,
+                                               fahrenheit: Bool, centered: Bool) -> Segment {
+        let tempText = temperature.map { celsius -> String in
+            let degrees = fahrenheit ? celsius * 9 / 5 + 32 : celsius
+            return "\(Int(degrees.rounded()))°"
+        } ?? "—"
+        let fanText = fanRPM.map { "\(Int($0))" } ?? "—"
+        let attributes: [NSAttributedString.Key: Any] = [.font: Metrics.thermalStackedFont, .foregroundColor: NSColor.labelColor]
+        let width = ceil([tempText, fanText, "100°", "8888"].map { textWidth($0, attributes) }.max() ?? 0)
+        return Segment(width: width) { rect in
+            let base = baselineOrigin(in: rect)
+            let rows: [(String, CGFloat)] = [
+                (tempText, base + Metrics.upperBaseline - 1),
+                (fanText, base + Metrics.lowerBaseline),
+            ]
+            for (text, baseline) in rows {
+                if centered {
+                    drawText(text, attributes, centerX: rect.midX, baseline: baseline)
+                } else {
+                    drawText(text, attributes, rightEdge: rect.maxX, baseline: baseline)
+                }
+            }
         }
     }
 

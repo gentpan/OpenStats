@@ -7,6 +7,14 @@ extension Translations {
     }
 
     static let english = #"""
+CPU 核心温度	CPU core temperature
+平均温度	Average
+最高温度	Maximum
+温度读数	Temperature reading
+合并显示温度与风扇	Combine temperature and fan
+同时开启 CPU 温度与风扇转速时，合并为上下两行显示（上温度、下转速），节省菜单栏宽度	When both CPU temperature and fan speed are enabled, stack them into two rows (temperature above, RPM below) to save menu bar space
+高占用排行条数	Top apps list size
+CPU 与内存弹窗中“按应用汇总”显示的条数	Number of apps shown in By App for CPU and Memory popovers
 合并显示时，用每项右侧的上移、下移按钮调整菜单栏顺序。顺序会保存，关闭再开启项目也会保持。	In combined mode, use the up and down buttons next to each item to change the menu bar order. The order is saved, including when items are turned off and back on.
 将{}向前移动	Move {} earlier
 将{}向后移动	Move {} later

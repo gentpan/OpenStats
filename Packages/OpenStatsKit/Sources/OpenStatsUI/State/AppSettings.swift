@@ -28,7 +28,7 @@ public enum MenuBarItem: String, CaseIterable, Identifiable, Sendable {
         case .network: tr("上传与下载速度、IP 地址、DNS")
         case .gpu: tr("GPU 占用")
         case .disk: tr("启动磁盘已用占比")
-        case .temperature: tr("CPU 核心最高温度")
+        case .temperature: tr("CPU 核心温度")
         case .fan: tr("转速最高的风扇")
         case .battery: tr("电量与充电状态；没有电池的 Mac 显示蓝牙设备电量")
         }
@@ -251,6 +251,30 @@ public enum NetworkMenuStyle: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+/// 菜单栏 CPU 温度的取值方式
+public enum MenuBarTemperatureMode: String, CaseIterable, Identifiable, Sendable {
+    /// 各核心传感器的平均温度，读数更平稳
+    case average
+    /// 各核心里的最高温度，反映最热核心的瞬时峰值
+    case maximum
+
+    public var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .average: tr("平均温度")
+        case .maximum: tr("最高温度")
+        }
+    }
+
+    func value(from summary: TemperatureSummary) -> Double {
+        switch self {
+        case .average: summary.average
+        case .maximum: summary.maximum
+        }
+    }
+}
+
 extension AppLanguage: Identifiable {
     public var id: String { rawValue }
 
@@ -421,6 +445,18 @@ public final class AppSettings {
     public var menuBarItemSpacing: Int {
         didSet { defaults.set(menuBarItemSpacing, forKey: Keys.menuBarItemSpacing) }
     }
+    /// 菜单栏 CPU 温度显示平均温度还是最高温度
+    public var temperatureMode: MenuBarTemperatureMode {
+        didSet { defaults.set(temperatureMode.rawValue, forKey: Keys.temperatureMode) }
+    }
+    /// 同时开启 CPU 温度与风扇转速时，在菜单栏合并为上下两行显示
+    public var combineTemperatureAndFan: Bool {
+        didSet { defaults.set(combineTemperatureAndFan, forKey: Keys.combineTemperatureAndFan) }
+    }
+    /// CPU 与内存弹窗中“按应用汇总”排行显示的条数
+    public var topAppsCount: Int {
+        didSet { defaults.set(topAppsCount, forKey: Keys.topAppsCount) }
+    }
     /// 键盘、鼠标、耳机等蓝牙设备电量低时，在菜单栏电池项旁提示
     public var bluetoothLowBatteryInMenuBar: Bool {
         didSet { defaults.set(bluetoothLowBatteryInMenuBar, forKey: Keys.bluetoothLowBatteryInMenuBar) }
@@ -531,6 +567,7 @@ public final class AppSettings {
     public static let alertTemperatureOptions = [85, 90, 95, 100]
     public static let alertLoadOptions = [70, 80, 90]
     public static let cpuChartOptions = [60, 180, 300]
+    public static let topAppsCountOptions = [6, 10, 15]
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -551,6 +588,10 @@ public final class AppSettings {
         cpuSharePerCore = defaults.bool(forKey: Keys.cpuSharePerCore)
         menuBarItemSpacing = Self.menuBarSpacingOptions.contains(defaults.integer(forKey: Keys.menuBarItemSpacing))
             ? defaults.integer(forKey: Keys.menuBarItemSpacing) : 8
+        temperatureMode = defaults.string(forKey: Keys.temperatureMode).flatMap(MenuBarTemperatureMode.init(rawValue:)) ?? .average
+        combineTemperatureAndFan = defaults.bool(forKey: Keys.combineTemperatureAndFan)
+        topAppsCount = Self.topAppsCountOptions.contains(defaults.integer(forKey: Keys.topAppsCount))
+            ? defaults.integer(forKey: Keys.topAppsCount) : 6
         bluetoothLowBatteryInMenuBar = defaults.object(forKey: Keys.bluetoothLowBatteryInMenuBar) as? Bool ?? true
         useFahrenheit = defaults.bool(forKey: Keys.useFahrenheit)
         lidModeBatteryFloor = Self.batteryFloorOptions.contains(defaults.integer(forKey: Keys.lidModeBatteryFloor))
@@ -618,6 +659,11 @@ public final class AppSettings {
         menuBarLayout == .iconOnly ? [] : orderedMenuBarItems
     }
 
+    /// 温度与风扇同时开启且开启合并开关时生效
+    var combinesTemperatureAndFan: Bool {
+        combineTemperatureAndFan && menuBarItems.contains(.temperature) && menuBarItems.contains(.fan)
+    }
+
     func isEnabled(_ item: MenuBarItem) -> Bool { menuBarItems.contains(item) }
 
     func style(for item: MenuBarItem) -> MenuBarStyle {
@@ -654,6 +700,9 @@ public final class AppSettings {
         static let refreshSeconds = "refreshSeconds"
         static let colorizeHighLoad = "colorizeHighLoad"
         static let menuBarItemSpacing = "menuBarItemSpacing"
+        static let temperatureMode = "temperatureMode"
+        static let combineTemperatureAndFan = "combineTemperatureAndFan"
+        static let topAppsCount = "topAppsCount"
         static let cpuSharePerCore = "cpuSharePerCore"
         static let bluetoothLowBatteryInMenuBar = "bluetoothLowBatteryInMenuBar"
         static let useFahrenheit = "useFahrenheit"

@@ -93,8 +93,9 @@ struct CPUPopover: View {
             SectionCard(title: section.title,
                         hint: tr("整机：\(Format.logicalCores) 个核心全部跑满为 100%，与顶部的总占用是同一把尺子。单核：一个核心跑满为 100%，与活动监视器一致，多线程应用可以超过 100%"),
                         trailing: { CPUShareToggle() }) {
+                let rows = isDetailPage ? max(10, model.settings.topAppsCount) : model.settings.topAppsCount
                 AppUsageList(apps: AppUsage.group(store.processes).sorted { $0.cpu > $1.cpu },
-                             rowCount: isDetailPage ? 10 : 6, metric: .cpu)
+                             rowCount: rows, metric: .cpu)
             }
         default:
             EmptyView()
@@ -396,8 +397,9 @@ struct MemoryPopover: View {
                 }
             case .memoryApps:
                 SectionCard(title: section.title, trailing: { Text(tr("内存")) }) {
+                    let rows = isDetailPage ? max(10, model.settings.topAppsCount) : model.settings.topAppsCount
                     AppUsageList(apps: AppUsage.group(store.processes).sorted { $0.memory > $1.memory },
-                                 rowCount: isDetailPage ? 10 : 6, metric: .memory, total: memory?.used)
+                                 rowCount: rows, metric: .memory, total: memory?.used)
                 }
             default:
                 EmptyView()

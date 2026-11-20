@@ -338,6 +338,9 @@ struct MenuBarSettings: View {
                             }
                             if settings.isEnabled(item) {
                                 ItemStyleRow(item: item)
+                                if item == .temperature {
+                                    TemperatureModeRow()
+                                }
                                 PopoverSectionPicker(item: item)
                             }
                         }
@@ -361,6 +364,19 @@ struct MenuBarSettings: View {
                                          options: AppSettings.menuBarSpacingOptions.map { ($0, "\($0) pt") })
                             .frame(width: DS.Size.sidebarWidth + DS.Space.s12)
                     }
+                }
+            }
+            GroupRow {
+                SettingRow(title: tr("合并显示温度与风扇"),
+                           subtitle: tr("同时开启 CPU 温度与风扇转速时，合并为上下两行显示（上温度、下转速），节省菜单栏宽度")) {
+                    DSToggle(isOn: $settings.combineTemperatureAndFan, label: tr("合并显示温度与风扇"))
+                }
+            }
+            GroupRow {
+                SettingRow(title: tr("高占用排行条数"), subtitle: tr("CPU 与内存弹窗中“按应用汇总”显示的条数")) {
+                    SegmentedControl(selection: $settings.topAppsCount,
+                                     options: AppSettings.topAppsCountOptions.map { ($0, tr("\($0) 项")) })
+                        .frame(width: DS.Size.sidebarWidth + DS.Space.s6)
                 }
             }
             GroupRow {
@@ -455,14 +471,37 @@ private struct ItemStyleRow: View {
     /// 这一项按当前风格、实时读数画出来的样子，底色跟随浅色 / 深色外观
     private var preview: some View {
         let settings = model.settings
-        let image = MenuBarRenderer.image(reading: MenuBarReading(model: model), items: [item],
+        let combinedThermal = settings.combinesTemperatureAndFan && (item == .temperature || item == .fan)
+        let previewItems: [MenuBarItem] = combinedThermal ? [.temperature, .fan] : [item]
+        let image = MenuBarRenderer.image(reading: MenuBarReading(model: model), items: previewItems,
                                           style: { settings.style(for: $0) }, networkStyle: settings.networkStyle,
-                                          colorizeHighLoad: settings.colorizeHighLoad, fahrenheit: settings.useFahrenheit)
+                                          colorizeHighLoad: settings.colorizeHighLoad, fahrenheit: settings.useFahrenheit,
+                                          combineThermal: combinedThermal)
         return Image(nsImage: MenuBarRenderer.preview(image, dark: colorScheme == .dark))
             .padding(.horizontal, DS.Space.s3)
             .frame(height: DS.Size.segmentHeight + DS.Space.s1)
             .background(DS.Palette.track, in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             .accessibilityLabel(tr("该项目在菜单栏里的实时效果"))
+    }
+}
+
+/// 菜单栏 CPU 温度取值方式：平均温度更平稳，最高温度反映最热核心的峰值
+private struct TemperatureModeRow: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        @Bindable var settings = model.settings
+        HStack(spacing: DS.Space.s3) {
+            Text(tr("温度读数"))
+                .dsFont(.xs)
+                .foregroundStyle(DS.Palette.textSecondary)
+                .fixedSize()
+            SegmentedControl(selection: $settings.temperatureMode,
+                             options: MenuBarTemperatureMode.allCases.map { ($0, $0.title) })
+                .frame(width: DS.Size.sidebarWidth)
+            Spacer(minLength: 0)
+        }
+        .padding(.leading, DS.Size.iconStandalone + DS.Space.s3)
     }
 }
 

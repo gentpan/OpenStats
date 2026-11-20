@@ -14,6 +14,9 @@ public struct SettingsDocument: Codable, Equatable, Sendable {
     public var refreshSeconds: Int?
     public var colorizeHighLoad: Bool?
     public var menuBarItemSpacing: Int?
+    public var temperatureMode: String?
+    public var combineTemperatureAndFan: Bool?
+    public var topAppsCount: Int?
     public var cpuSharePerCore: Bool?
     public var bluetoothLowBatteryInMenuBar: Bool?
     public var useFahrenheit: Bool?
@@ -51,6 +54,9 @@ extension AppSettings {
         doc.refreshSeconds = refreshSeconds
         doc.colorizeHighLoad = colorizeHighLoad
         doc.menuBarItemSpacing = menuBarItemSpacing
+        doc.temperatureMode = temperatureMode.rawValue
+        doc.combineTemperatureAndFan = combineTemperatureAndFan
+        doc.topAppsCount = topAppsCount
         doc.cpuSharePerCore = cpuSharePerCore
         doc.bluetoothLowBatteryInMenuBar = bluetoothLowBatteryInMenuBar
         doc.useFahrenheit = useFahrenheit
@@ -98,6 +104,9 @@ extension AppSettings {
         assign(\.refreshSeconds, option(doc.refreshSeconds, in: Self.refreshOptions))
         assign(\.colorizeHighLoad, doc.colorizeHighLoad)
         assign(\.menuBarItemSpacing, option(doc.menuBarItemSpacing, in: Self.menuBarSpacingOptions))
+        assign(\.temperatureMode, doc.temperatureMode.flatMap(MenuBarTemperatureMode.init(rawValue:)))
+        assign(\.combineTemperatureAndFan, doc.combineTemperatureAndFan)
+        assign(\.topAppsCount, option(doc.topAppsCount, in: Self.topAppsCountOptions))
         assign(\.cpuSharePerCore, doc.cpuSharePerCore)
         assign(\.bluetoothLowBatteryInMenuBar, doc.bluetoothLowBatteryInMenuBar)
         assign(\.useFahrenheit, doc.useFahrenheit)
