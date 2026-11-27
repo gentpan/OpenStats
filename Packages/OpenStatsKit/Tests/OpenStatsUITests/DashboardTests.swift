@@ -13,6 +13,32 @@ import Testing
         return defaults
     }
 
+    // MARK: 页面
+
+    @Test func lightThemeOverridesEveryColorOfTheDarkOne() throws {
+        let page = String(decoding: DashboardPage.html, as: UTF8.self)
+        func variables(after marker: String) throws -> [String: String] {
+            let start = try #require(page.range(of: marker))
+            let block = page[start.upperBound...].prefix { $0 != "}" }
+            var result: [String: String] = [:]
+            for item in block.split(separator: ";") {
+                let pair = item.split(separator: ":", maxSplits: 1)
+                if pair.count == 2, pair[0].hasPrefix("--") { result[String(pair[0])] = String(pair[1]) }
+            }
+            return result
+        }
+        let dark = try variables(after: ":root{")
+        let light = try variables(after: ":root[data-theme=light]{")
+        #expect(dark.count > 10)
+        #expect(Set(light.keys) == Set(dark.keys))
+        // 两套配色取自应用的 DS.Palette：深色与浅色的数据色分别是品牌蓝的两档
+        #expect(dark["--data"] == "#3b82f6")
+        #expect(light["--data"] == "#2563eb")
+        // 带主题参数的网址仍然是同一个页面
+        let html = Data("<html/>".utf8)
+        #expect(DashboardServer.makeResponse(path: "/?theme=light", html: html, metrics: Data()).body == html)
+    }
+
     // MARK: 设置
 
     @Test func dashboardDefaultsAreOffOn8790() {
@@ -255,7 +281,22 @@ import Testing
         #expect(processes.map { $0["name"] as? String } == ["demo"])
         #expect(processes.first?["cpu"] as? Double == 1.5)
 
+        // 与主窗口仪表盘同样的内容：健康分、内存压力、磁盘余量、电池状态、各卡片的文字
+        #expect((system["health"] as? [String: Any])?["score"] as? Int == 100)
+        #expect((system["memPressure"] as? [String: Any])?["tone"] as? String == "success")
+        #expect(system["memText"] as? String == "\(Format.bytes(UInt64(10 << 30))) / \(Format.bytes(UInt64(16 << 30)))")
+        #expect(system["diskCapacity"] as? String == Format.capacity(500_000_000_000, base: .decimal))
+        #expect((system["battery"] as? [String: Any])?["level"] as? Double == 0.55)
+        #expect(system["cpuUser"] as? String == Format.percent(0.3))
+        #expect(processes.first?["memText"] as? String == Format.bytes(UInt64(1 << 30)))
+        #expect(processes.first?["tone"] as? String == "neutral")
+        // 这次采样没有 GPU、温度和风扇读数：对应的键不出现，页面显示占位
+        #expect(system["gpu"] == nil)
+        #expect(system["cpuTemp"] == nil)
+        #expect(system["fan"] == nil)
+
         let history = try #require(payload["history"] as? [String: Any])
+        #expect(history["gpu"] as? [Double] == [0, 0])
         #expect(history["cpu"] as? [Double] == [50, 50])
         #expect(history["netDown"] as? [Double] == [200, 400])
         #expect((history["time"] as? [Double])?.count == 2)

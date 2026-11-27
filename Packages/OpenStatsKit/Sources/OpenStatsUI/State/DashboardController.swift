@@ -3,6 +3,7 @@ import Foundation
 import Localization
 import Metrics
 import Observation
+import SMC
 
 /// 线程间传递最新 /metrics 内容的小盒子
 final class DashboardPayloadBox: @unchecked Sendable {
@@ -49,6 +50,9 @@ public final class DashboardController {
         let time: TimeInterval
         let cpu: Double
         let memory: Double
+        /// GPU 占用（%）与最快那台风扇的转速占比（%）；没有读数时为 0
+        var gpu: Double = 0
+        var fan: Double = 0
         let totalDown: Double
         let totalUp: Double
     }
@@ -191,6 +195,8 @@ public final class DashboardController {
         let sample = Sample(time: now.timeIntervalSince1970,
                             cpu: (store.cpu?.total ?? 0) * 100,
                             memory: (store.memory?.usedFraction ?? 0) * 100,
+                            gpu: (store.gpu?.utilization ?? 0) * 100,
+                            fan: (store.fastestFan?.fraction ?? 0) * 100,
                             totalDown: totalDown,
                             totalUp: totalUp)
         samples.append(sample)
@@ -205,6 +211,7 @@ public final class DashboardController {
         let disk = store.disk
         let gigabyte = 1_000_000_000.0
         let gibibyte = 1_073_741_824.0
+        let fahrenheit = settings.useFahrenheit
 
         var system: [String: Any] = [
             "time": sample.time,
@@ -230,9 +237,86 @@ public final class DashboardController {
         }
         system["processes"] = topProcesses()
 
+        // 以下与主窗口的仪表盘是同一套内容和措辞：文字在这边按应用的语言与单位设置排好，网页只管摆放
+        let health = HealthReport(store: store)
+        system["health"] = ["score": health.score, "summary": health.summary, "tone": Self.name(health.tone)]
+        let brand = store.topology.brand
+        var chips = [brand.hasPrefix("Apple ") ? String(brand.dropFirst("Apple ".count)) : brand,
+                     Format.capacity(ProcessInfo.processInfo.physicalMemory), store.system.osVersion]
+        if let boot = store.system.bootDate { chips.append(tr("已运行 ") + Format.uptime(since: boot)) }
+        chips.append(store.system.modelName)
+        system["chips"] = chips.filter { !$0.isEmpty }
+
+        let load = cpu?.loadAverage.first.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "—"
+        system["cpuFooter"] = tr("\(loadLevel(cpu?.total ?? 0)) · 负载 \(load)/\(store.topology.logicalCores)")
+        system["cpuUser"] = cpu.map { Format.percent($0.user) } ?? "—"
+        system["cpuSystem"] = cpu.map { Format.percent($0.system) } ?? "—"
+        // 与应用里的各核心占用一致：按性能档分组，高性能档在前
+        system["clusters"] = store.topology.clusters
+            .sorted { ($0.coreIndices.first ?? 0) > ($1.coreIndices.first ?? 0) }
+            .map { ["name": "\($0.name) · \($0.coreIndices.count)", "cores": $0.coreIndices] as [String: Any] }
+        for (key, group) in [("cpuTemp", TemperatureGroup.cpu), ("gpuTemp", .gpu)] {
+            if let summary = store.sensors?.temperature(group) {
+                system[key] = ["text": Format.temperature(summary.maximum, fahrenheit: fahrenheit),
+                               "tone": Self.name(.forTemperatureText(summary.maximum))]
+            }
+        }
+        if let gpu = store.gpu {
+            system["gpu"] = ["percent": (gpu.utilization * 100).rounded(),
+                             "footer": [loadLevel(gpu.utilization), gpu.coreCount.map { tr("\($0) 核") }]
+                                .compactMap { $0 }.joined(separator: " · ")] as [String: Any]
+        }
+        if let memory {
+            system["memText"] = "\(Format.bytes(memory.used)) / \(Format.bytes(memory.total))"
+            system["memPressure"] = ["text": tr("压力 \(memory.pressure.title)"), "tone": Self.name(memory.pressure.tone)]
+        }
+        if let disk {
+            system["diskCapacity"] = Format.capacity(disk.total, base: .decimal)
+            system["diskFooter"] = tr("可用 \(Format.bytes(disk.available, base: .decimal))")
+        }
+        if let interface = store.networkInterface {
+            system["interface"] = interface.displayName == tr("VPN 隧道") ? "VPN" : interface.displayName
+        }
+        if let network = store.network {
+            system["netTotalText"] = Format.menuBarRate(network.downloadBytesPerSecond + network.uploadBytesPerSecond)
+            system["netDownText"] = Format.menuBarRate(network.downloadBytesPerSecond)
+            system["netUpText"] = Format.menuBarRate(network.uploadBytesPerSecond)
+        }
+        let fans = store.sensors?.fans ?? []
+        if let fastest = store.fastestFan {
+            let average = fans.map(\.fraction).reduce(0, +) / Double(fans.count)
+            system["fan"] = ["rpm": Int(fastest.current).formatted(),
+                             "rpmValue": fastest.current.rounded(),
+                             "chip": tr("转速 \(Format.percent(average))"),
+                             "footer": fans.map { Format.rpm($0.current) }.joined(separator: " · "),
+                             // 每台风扇的真实转速与占最高转速的比例：网页上的扇叶按它转
+                             "fans": fans.map { ["rpm": $0.current.rounded(), "fraction": ($0.fraction * 1000).rounded() / 1000] }] as [String: Any]
+        }
+        if let battery = store.battery {
+            var detail: [String] = []
+            if let minutes = battery.minutesRemaining {
+                detail.append(battery.isCharging ? tr("\(Format.duration(minutes: minutes))后充满") : tr("剩余 \(Format.duration(minutes: minutes))"))
+            }
+            if let cycles = battery.cycleCount { detail.append(tr("循环 \(cycles) 次")) }
+            var info: [String: Any] = ["percent": Format.percent(battery.level), "level": battery.level,
+                                       "state": battery.stateText, "tone": Self.name(battery.tone),
+                                       "detail": detail.joined(separator: " · ")]
+            if let health = battery.health {
+                info["health"] = ["text": tr("健康度 \(Format.percent(health))"), "tone": health < 0.8 ? "warning" : "neutral"]
+            }
+            if let watts = battery.adapterWatts, battery.isPluggedIn { info["watts"] = "\(watts)W" }
+            system["battery"] = info
+        }
+        system["labels"] = [
+            "memory": tr("内存"), "disk": tr("磁盘"), "network": tr("网络"), "fan": tr("风扇"), "battery": tr("电池"),
+            "cores": tr("各核心占用"), "user": tr("用户"), "system": tr("系统"), "processes": tr("高占用进程"),
+        ]
+
         let history: [String: Any] = [
             "cpu": samples.map(\.cpu),
             "mem": samples.map(\.memory),
+            "gpu": samples.map(\.gpu),
+            "fan": samples.map(\.fan),
             "netDown": samples.map(\.totalDown),
             "netUp": samples.map(\.totalUp),
             "time": samples.map(\.time),
@@ -247,20 +331,36 @@ public final class DashboardController {
         return (try? JSONSerialization.data(withJSONObject: payload)) ?? Data("{}".utf8)
     }
 
-    /// 当前用户的进程里 CPU 前六名；CPU 口径与活动监视器一致（单核满载为 100%）。
+    private static func name(_ tone: Tone) -> String {
+        switch tone {
+        case .neutral: "neutral"
+        case .primary: "primary"
+        case .success: "success"
+        case .warning: "warning"
+        case .error: "error"
+        }
+    }
+
+    /// 当前用户的进程里 CPU 最高的几个，条数跟「设置 · 通用」的排行显示数量（默认 6）；
+    /// CPU 的口径（单核 / 整机）与着色都和应用里的“高占用进程”一致。
     /// 主窗口停在进程页时采样会带上系统进程，这里按 isOwned 筛掉，榜单不随本机在看什么而变
     private func topProcesses() -> [[String: Any]] {
         let total = Double(store.memory?.total ?? 0)
+        let cores = Double(max(1, store.topology.logicalCores))
         return store.processes
             .filter(\.isOwned)
             .sorted { $0.cpu > $1.cpu }
-            .prefix(6)
+            .prefix(settings.rankingRows(default: 6))
             .map { process in
-                [
+                let share = process.cpu / cores
+                return [
                     "pid": process.pid,
-                    "name": process.name,
+                    "name": process.displayName,
                     "cpu": (process.cpu * 100).rounded() / 100,
                     "mem": total > 0 ? (Double(process.memory) / total * 100 * 10).rounded() / 10 : 0,
+                    "cpuText": settings.cpuSharePerCore ? Format.coreShare(process.cpu) : Format.machineShare(process.cpu),
+                    "memText": Format.bytes(process.memory),
+                    "tone": share >= 0.5 ? "error" : share >= 0.25 ? "warning" : "neutral",
                 ] as [String: Any]
             }
     }

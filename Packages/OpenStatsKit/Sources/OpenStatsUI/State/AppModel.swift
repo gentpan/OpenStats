@@ -107,7 +107,7 @@ public final class AppModel {
         let showing = { (page: PanelTab, item: MenuBarItem) in (window && tab == page) || popover == item }
         // 监控大屏在服务时，它的页面数据要一直采；监听失败了就不必再为它采
         let dashboard = self.dashboard.isServing
-        demand.gpu = overview || (window && tab == .system) || menu.contains(.gpu) || showing(.gpu, .gpu)
+        demand.gpu = overview || (window && tab == .system) || menu.contains(.gpu) || showing(.gpu, .gpu) || dashboard
         demand.disk = overview || (window && [.system, .cleaner, .disk].contains(tab)) || menu.contains(.disk) || popover == .disk || dashboard
         demand.diskDetail = showing(.disk, .disk)
         demand.battery = overview || (window && tab == .keepAwake) || keepAwake.lidClosedActive
@@ -117,7 +117,8 @@ public final class AppModel {
         demand.systemProcesses = window && tab == .processes
 
         var groups = Set<TemperatureGroup>()
-        if overview { groups.formUnion([.cpu, .gpu]) }
+        // 大屏和主窗口的仪表盘显示同样的内容，要的读数也一样
+        if overview || dashboard { groups.formUnion([.cpu, .gpu]) }
         if (window && tab == .thermal) || thermalPopover { groups.formUnion(TemperatureGroup.allCases) }
         if menu.contains(.temperature) || fans.mode != .automatic || showing(.cpu, .cpu) { groups.insert(.cpu) }
         if showing(.gpu, .gpu) { groups.insert(.gpu) }
@@ -130,7 +131,7 @@ public final class AppModel {
         demand.gpuFrequency = showing(.gpu, .gpu)
         demand.cpuFrequency = showing(.cpu, .cpu)
         demand.fans = overview || (window && tab == .thermal) || menu.contains(.fan)
-            || fans.mode != .automatic || thermalPopover
+            || fans.mode != .automatic || thermalPopover || dashboard
         // 只有菜单栏要风扇时只读转速；页面上要显示模式、目标转速、起步状态，或正在手动调速时读全部
         demand.fanDetail = overview || (window && tab == .thermal) || fans.mode != .automatic || thermalPopover
         return demand
