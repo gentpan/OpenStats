@@ -23,11 +23,11 @@ echo "内容指纹 v=$STAMP"
 /usr/bin/sed -i '' -E "s/\?v=[A-Za-z0-9]+/?v=$STAMP/g" web/index.html web/privacy.html
 
 # 目录归部署用户所有，Caddy 只需读取
-"${SSH[@]}" "$HOST" "sudo mkdir -p $ROOT && sudo chown -R \$(id -un):\$(id -gn) $ROOT"
+"${SSH[@]}" "$HOST" "\$([ \$(id -u) = 0 ] || echo sudo) mkdir -p $ROOT && \$([ \$(id -u) = 0 ] || echo sudo) chown -R \$(id -un):\$(id -gn) $ROOT"
 # geoip/ 由服务器上的定时任务生成，download/ 是 publish_release.sh 上传的安装包，都不在 web/ 里——
 # 排除掉，否则 --delete 会把它们删了
 rsync -az --delete --exclude /geoip/ --exclude /download/ -e "${SSH[*]}" web/ "$HOST:$ROOT/"
-"${SSH[@]}" "$HOST" "sudo chmod -R a+rX $ROOT"
+"${SSH[@]}" "$HOST" "\$([ \$(id -u) = 0 ] || echo sudo) chmod -R a+rX $ROOT"
 echo "已同步到 $HOST:$ROOT"
 
 # 校验公网：Cloudflare 上拿到的文件大小与本地一致，首页引用的是新指纹

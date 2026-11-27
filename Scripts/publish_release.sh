@@ -43,7 +43,7 @@ for chip in "${CHIPS[@]}"; do
 done
 
 # 上传：先传临时名再改名，下载中途不会拿到半个文件
-"${SSH[@]}" "sudo install -d -o \$(id -un) -m 755 $ROOT/download"
+"${SSH[@]}" "\$([ \$(id -u) = 0 ] || echo sudo) install -d -o \$(id -un) -m 755 $ROOT/download"
 upload() {
   local name
   name="$(basename "$1")"
