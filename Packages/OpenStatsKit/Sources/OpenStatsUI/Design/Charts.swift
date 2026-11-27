@@ -375,13 +375,14 @@ struct CoreHeatmap: View {
     nonisolated private static let warnLevel = Int.max
 
     var body: some View {
+        // 先把属性复制成局部量：后面的闭包只捕获这两个值
+        let columns = columns, rowHeight = rowHeight
         let clusters = topology.clusters.sorted { $0.id < $1.id }
         let height = clusters.reduce(CGFloat(0)) { $0 + CGFloat($1.coreIndices.count) * (rowHeight + Self.gap) }
             + CGFloat(max(0, clusters.count - 1)) * Self.groupGap
         // 每组核心自上而下的顺序，与左侧标签一致
         let rows = clusters.map { Array($0.coreIndices.reversed()) }
         let recent = Array(history.suffix(columns))
-        let columns = columns, rowHeight = rowHeight
         let levels = Self.levels(rows: rows, recent: recent, columns: columns)
 
         HStack(alignment: .top, spacing: DS.Space.s2) {
