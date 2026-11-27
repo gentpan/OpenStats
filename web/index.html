@@ -335,6 +335,19 @@
       <!-- 由 Scripts/sync_changelog.py 从 CHANGELOG.md 生成，请勿手改。 -->
       <div class="log">
         <article class="log__day">
+          <div class="log__head"><time datetime="2026-11-27">2026-11-27</time><span class="log__tag">0.7.5</span></div>
+          <p class="log__counts">新增 2 · 调整 2 · 修复 3</p>
+          <ul class="log__list">
+            <li><span class="log__kind">新增</span>监控大屏新增亮色配色：页脚的按钮在“深色 / 亮色 / 跟随系统”之间切换，选择记在看大屏的那台设备上；网址后面加 <code>?theme=light</code>、<code>?theme=dark</code> 或 <code>?theme=auto</code> 也可以指定，方便没法点按钮的挂墙屏。默认仍是深色。</li>
+            <li><span class="log__kind">新增</span>监控大屏补上 GPU 占用、CPU 与 GPU 温度、内存压力、风扇转速、电池状态与健康度、健康分，各核心占用按性能档分组。</li>
+            <li><span class="log__kind">调整</span>监控大屏的样式改成和主窗口的仪表盘一致：同样的卡片、配色和图表（CPU 柱状历史、网络上传绿下载蓝），文字跟随应用的语言、温度单位和 CPU 口径设置，进程条数跟随“排行显示数量”；字号随屏幕大小整体缩放，宽屏时进程表排在右侧。</li>
+            <li><span class="log__kind">调整</span>监控大屏的动效跟着真实数据走：风扇图标按实际转速旋转，图表在两次采样之间平滑滚动，数字渐变到新值，进程排名变化时行会滑到新位置；系统开启“减弱动态效果”时全部关闭。</li>
+            <li><span class="log__kind">修复</span>修复长时间运行时采样不断累积 Mach 端口引用的问题：CPU、内存与进程数的采样现在复用同一个 host 端口，取到的处理器集端口用完归还。</li>
+            <li><span class="log__kind">修复</span>修复手动调节风扇后辅助工具异常退出、重启时不会把风扇交还给系统的问题：调速前先把“风扇已接管”记到状态文件，调速失败时当场交还。</li>
+            <li><span class="log__kind">修复</span>修复关闭合盖防休眠时如果恢复系统睡眠失败，界面显示已关闭、系统却一直禁止睡眠的问题：现在会自动重试直到恢复，辅助工具重新连上时也会立刻补发。</li>
+          </ul>
+        </article>
+        <article class="log__day">
           <div class="log__head"><time datetime="2026-11-20">2026-11-20</time><span class="log__tag">0.7.4</span></div>
           <p class="log__counts">新增 3</p>
           <ul class="log__list">
@@ -364,6 +377,8 @@
             </ul>
           </details>
         </article>
+        <details class="log__older">
+          <summary>更早的更新（29 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-11-06">2026-11-06</time><span class="log__tag">0.7.4</span></div>
           <p class="log__counts">新增 4 · 调整 1</p>
@@ -375,8 +390,6 @@
             <li><span class="log__kind">调整</span>要读取其他应用容器的项目（设备备份、邮件附件、Docker 磁盘、UTM 虚拟机）只在拿到“完全磁盘访问权限”后才扫描，没有权限时显示“需要完全磁盘访问权限”，不会让系统逐个弹出授权框。</li>
           </ul>
         </article>
-        <details class="log__older">
-          <summary>更早的更新（28 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-11-04">2026-11-04</time><span class="log__tag">0.7.4</span></div>
           <p class="log__counts">新增 1</p>
