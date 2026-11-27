@@ -34,15 +34,20 @@ private final class ControlledUninstallScan: @unchecked Sendable {
     }
 }
 
+/// 逐个运行：被控制的扫描在放行前会占住线程池里的一个线程
 @MainActor
-@Suite struct UninstallerScanTests {
+@Suite(.serialized) struct UninstallerScanTests {
     private func app(at root: URL) -> InstalledApp {
         InstalledApp(url: root.appendingPathComponent("Applications/Probe Editor.app"), name: "Probe Editor",
                      bundleIdentifier: "com.example.scan-probe", version: nil, teamIdentifier: nil)
     }
 
     private func wait(_ semaphore: DispatchSemaphore) async -> Bool {
-        await Task.detached { Self.waitSynchronously(semaphore) }.value
+        // 在 GCD 的线程上等，不占 Swift 并发的线程池：池子的线程数等于核心数，
+        // 核心少的机器上阻塞等待会把被等的那个扫描任务也饿死
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global().async { continuation.resume(returning: Self.waitSynchronously(semaphore)) }
+        }
     }
 
     private nonisolated static func waitSynchronously(_ semaphore: DispatchSemaphore) -> Bool {
