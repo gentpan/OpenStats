@@ -89,6 +89,9 @@ public final class KeepAwakeController {
         await Task.detached { BatterySampler.powerState() }.value
     }
     @ObservationIgnored private var batteryWatch: Task<Void, Never>?
+    /// 关闭合盖运行时没能恢复系统睡眠，之后每隔多久再试一次；用完后按最后一个间隔一直试到成功
+    @ObservationIgnored var restoreRetryDelays: [Swift.Duration] = [.seconds(2), .seconds(5), .seconds(15), .seconds(30), .seconds(60)]
+    @ObservationIgnored private var restoreRetry: Task<Void, Never>?
     @ObservationIgnored private var isLoweringLidMode = false
 
     init(helper: HelperClient, settings: AppSettings) {
@@ -129,21 +132,54 @@ public final class KeepAwakeController {
         endDate = nil
         expiryTask?.cancel()
         releaseAssertion()
-        if lidClosedActive {
-            if let error = await setSleepDisabled(false) {
-                show(tr("恢复系统睡眠失败：\(error)"), isError: true)
-                return
-            }
-            lidClosedActive = false
-            syncBatteryWatch()
+        if let error = await restoreSleepIfStale() {
+            // 界面已经显示关闭，系统却还禁止睡眠：合上盖子会一直运行，必须接着试到恢复为止
+            show(tr("恢复系统睡眠失败：\(error)"), isError: true)
+            scheduleRestoreRetry()
+            return
         }
         if let reason { show(reason, isError: false) }
+    }
+
+    /// 已经不需要合盖运行、系统睡眠却还关着时把它恢复，返回错误说明
+    private func restoreSleepIfStale() async -> String? {
+        guard lidClosedActive, !(isActive && lidClosedRequested) else { return nil }
+        if let error = await setSleepDisabled(false) { return error }
+        lidClosedActive = false
+        syncBatteryWatch()
+        // 等待期间用户可能又打开了合盖运行，刚才那次恢复把它关掉了，重新下发
+        if isActive, lidClosedRequested { await applyLidMode() }
+        return nil
+    }
+
+    private func scheduleRestoreRetry() {
+        guard restoreRetry == nil else { return }
+        restoreRetry = Task { [weak self] in
+            var attempt = 0
+            while !Task.isCancelled {
+                guard let self, self.lidClosedActive, !(self.isActive && self.lidClosedRequested),
+                      let delay = self.restoreRetryDelays.isEmpty ? nil
+                        : self.restoreRetryDelays[min(attempt, self.restoreRetryDelays.count - 1)] else { break }
+                attempt += 1
+                try? await Task.sleep(for: delay, tolerance: delay / 6)
+                guard !Task.isCancelled else { return }
+                if await self.restoreSleepIfStale() == nil, !self.lidClosedActive {
+                    self.show(tr("系统睡眠已恢复"), isError: false)
+                    break
+                }
+            }
+            self?.restoreRetry = nil
+        }
     }
 
     /// 辅助工具重启或重连后重新下发合盖设置。新的辅助工具进程启动时会先把睡眠设置恢复成系统默认，
     /// 这边记着的“已生效”已经过时，不能拿它当作不用再发：先清掉再下发，否则界面一直显示合盖运行、实际合盖就睡
     func reapply() async {
-        guard isActive, lidClosedRequested else { return }
+        guard isActive, lidClosedRequested else {
+            // 防休眠已经关了、上次却没能恢复系统睡眠：辅助工具回来了，立刻补发，不等下一次重试
+            _ = await restoreSleepIfStale()
+            return
+        }
         lidClosedActive = false
         await applyLidMode()
     }

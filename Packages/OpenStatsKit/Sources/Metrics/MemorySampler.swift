@@ -5,7 +5,7 @@ public struct MemorySampler {
     private let total = ProcessInfo.processInfo.physicalMemory
     private let pageSize: UInt64 = {
         var size: vm_size_t = 0
-        host_page_size(mach_host_self(), &size)
+        host_page_size(hostPort, &size)
         return UInt64(size)
     }()
 
@@ -16,7 +16,7 @@ public struct MemorySampler {
         var count = mach_msg_type_number_t(MemoryLayout<vm_statistics64_data_t>.stride / MemoryLayout<integer_t>.stride)
         let kr = withUnsafeMutablePointer(to: &stats) {
             $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
-                host_statistics64(mach_host_self(), HOST_VM_INFO64, $0, &count)
+                host_statistics64(hostPort, HOST_VM_INFO64, $0, &count)
             }
         }
         guard kr == KERN_SUCCESS else { return nil }

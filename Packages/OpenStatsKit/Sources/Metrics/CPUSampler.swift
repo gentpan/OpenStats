@@ -43,7 +43,7 @@ public struct CPUSampler {
         var cpuCount: natural_t = 0
         var info: processor_info_array_t?
         var infoCount: mach_msg_type_number_t = 0
-        let kr = host_processor_info(mach_host_self(), PROCESSOR_CPU_LOAD_INFO, &cpuCount, &info, &infoCount)
+        let kr = host_processor_info(hostPort, PROCESSOR_CPU_LOAD_INFO, &cpuCount, &info, &infoCount)
         guard kr == KERN_SUCCESS, let info else { return nil }
         // 内核分配的数组必须归还，否则每次采样都会泄漏
         defer {
@@ -105,10 +105,8 @@ public struct CPUTicks: Sendable, Codable, Equatable {
     public static func read() -> CPUTicks? {
         var info = host_cpu_load_info()
         var count = mach_msg_type_number_t(MemoryLayout<host_cpu_load_info>.stride / MemoryLayout<integer_t>.stride)
-        let host = mach_host_self()
-        defer { mach_port_deallocate(mach_task_self_, host) }
         let result = withUnsafeMutablePointer(to: &info) {
-            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) { host_statistics(host, HOST_CPU_LOAD_INFO, $0, &count) }
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) { host_statistics(hostPort, HOST_CPU_LOAD_INFO, $0, &count) }
         }
         guard result == KERN_SUCCESS else { return nil }
         var boot = timeval()

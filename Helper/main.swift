@@ -73,12 +73,20 @@ final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProto
         queue.async { [self] in
             guard let fans else { return reply("无法访问 SMC") }
             guard (0..<fans.fanCount).contains(fan), rpm.isFinite, rpm > 0 else { return reply("无效的风扇参数") }
+            // 先记到状态文件再动硬件：写到一半被杀掉，重启后也知道要把风扇交还给系统
+            let newlyTaken = manualFans.insert(fan).inserted
+            if newlyTaken { persist() }
             do {
                 try fans.setManual(fan: fan, rpm: rpm)
-                manualFans.insert(fan)
                 reply(nil)
             } catch {
                 log.error("设置风扇 \(fan) 失败：\(String(describing: error), privacy: .public)")
+                // 这次才接管的风扇可能已经解锁了手动模式却没写进目标转速：交还给系统；
+                // 交不回去就留着标记，断开或重启时再恢复。原本就在手动的风扇保持上一次的转速不动
+                if newlyTaken, (try? fans.setAutomatic(fan: fan)) != nil {
+                    manualFans.remove(fan)
+                    if manualFans.isEmpty { _ = resetFans() } else { persist() }
+                }
                 reply("设置风扇失败：\(error)")
             }
         }
@@ -90,7 +98,10 @@ final class HelperService: NSObject, NSXPCListenerDelegate, OpenStatsHelperProto
             guard (0..<fans.fanCount).contains(fan) else { return reply("无效的风扇编号") }
             do {
                 try fans.setAutomatic(fan: fan)
-                manualFans.remove(fan)
+                if manualFans.remove(fan) != nil {
+                    // 手上已经没有接管的风扇：连同热控接管标志一起复位；复位不成状态文件留着，重启时再恢复
+                    if manualFans.isEmpty { _ = resetFans() } else { persist() }
+                }
                 reply(nil)
             } catch {
                 log.error("恢复风扇 \(fan) 失败：\(String(describing: error), privacy: .public)")

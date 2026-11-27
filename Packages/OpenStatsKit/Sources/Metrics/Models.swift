@@ -201,7 +201,9 @@ public struct SystemCounts: Sendable, Equatable {
 
     public static func read() -> SystemCounts? {
         var set: processor_set_name_t = 0
-        guard processor_set_default(mach_host_self(), &set) == KERN_SUCCESS else { return nil }
+        guard processor_set_default(hostPort, &set) == KERN_SUCCESS else { return nil }
+        // 每次调用都会拿到一个新的端口引用，用完归还
+        defer { mach_port_deallocate(mach_task_self_, set) }
         var load = processor_set_load_info()
         var count = mach_msg_type_number_t(MemoryLayout<processor_set_load_info>.size / MemoryLayout<integer_t>.size)
         let result = withUnsafeMutablePointer(to: &load) {

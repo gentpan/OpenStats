@@ -605,4 +605,38 @@ struct ProcessRowIDTests {
         #expect(sleepSwitch.calls.isEmpty)
         await controller.stop(reason: nil)
     }
+
+    @Test func stopRetriesUntilSystemSleepIsRestored() async {
+        let (controller, sleepSwitch) = makeController()
+        controller.restoreRetryDelays = [.milliseconds(10)]
+        await controller.start()
+        await controller.setLidClosed(true)
+
+        // 关闭时辅助工具恰好不可用：界面已是关闭，系统睡眠还禁着，必须自己接着试
+        sleepSwitch.failure = "辅助工具未响应"
+        await controller.stop(reason: nil)
+        #expect(!controller.isActive)
+        #expect(controller.lidClosedActive)
+        #expect(controller.noticeIsError)
+
+        await waitUntil { !controller.lidClosedActive }
+        #expect(!controller.lidClosedActive)
+        #expect(!controller.noticeIsError)
+        #expect(sleepSwitch.calls == [true, false, false])
+    }
+
+    @Test func reapplyRestoresSleepLeftDisabledByAFailedStop() async {
+        let (controller, sleepSwitch) = makeController()
+        controller.restoreRetryDelays = [.seconds(60)]
+        await controller.start()
+        await controller.setLidClosed(true)
+        sleepSwitch.failure = "辅助工具未响应"
+        await controller.stop(reason: nil)
+        #expect(controller.lidClosedActive)
+
+        // 辅助工具重连：防休眠已关，也要把没恢复成功的系统睡眠补上，不等下一次重试
+        await controller.reapply()
+        #expect(!controller.lidClosedActive)
+        #expect(sleepSwitch.calls == [true, false, false])
+    }
 }

@@ -565,6 +565,7 @@ npm 缓存	npm Cache
 总占用	Total
 总览	Overview
 恢复系统睡眠失败：{}	Failed to restore system sleep: {}
+系统睡眠已恢复	System sleep restored
 我的	Mine
 截图已输出到 {}	Snapshots saved to {}
 所属应用：{}（{}）	App: {} ({})
