@@ -289,7 +289,9 @@ import Testing
         #expect((system["battery"] as? [String: Any])?["level"] as? Double == 0.55)
         #expect(system["cpuUser"] as? String == Format.percent(0.3))
         #expect(processes.first?["memText"] as? String == Format.bytes(UInt64(1 << 30)))
-        #expect(processes.first?["tone"] as? String == "neutral")
+        // 颜色按“占整机的比例”分档，整机核心数取自运行测试的这台机器
+        let share = 1.5 / Double(max(1, store.topology.logicalCores))
+        #expect(processes.first?["tone"] as? String == (share >= 0.5 ? "error" : share >= 0.25 ? "warning" : "neutral"))
         // 这次采样没有 GPU、温度和风扇读数：对应的键不出现，页面显示占位
         #expect(system["gpu"] == nil)
         #expect(system["cpuTemp"] == nil)

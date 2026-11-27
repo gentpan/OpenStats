@@ -26,7 +26,7 @@ private final class ControlledUninstallScan: @unchecked Sendable {
         lock.unlock()
         if current == 1 {
             firstStarted.signal()
-            _ = releaseFirst.wait(timeout: .now() + 3)
+            _ = releaseFirst.wait(timeout: .now() + 30)
             firstReturned.signal()
             return first
         }
@@ -46,11 +46,11 @@ private final class ControlledUninstallScan: @unchecked Sendable {
     }
 
     private nonisolated static func waitSynchronously(_ semaphore: DispatchSemaphore) -> Bool {
-        semaphore.wait(timeout: .now() + 3) == .success
+        semaphore.wait(timeout: .now() + 30) == .success
     }
 
     private func waitForScan(_ controller: UninstallerController) async -> Bool {
-        let deadline = Date().addingTimeInterval(3)
+        let deadline = Date().addingTimeInterval(30)
         while controller.isScanning && Date() < deadline {
             try? await Task.sleep(for: .milliseconds(5))
         }

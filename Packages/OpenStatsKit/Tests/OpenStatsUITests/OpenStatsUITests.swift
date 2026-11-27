@@ -538,7 +538,8 @@ struct ProcessRowIDTests {
         await controller.stop(reason: nil)
     }
 
-    private func waitUntil(timeout: Duration = .seconds(3), _ condition: @MainActor () -> Bool) async {
+    /// 超时留得宽：CI 的机器核心少、测试并行跑，主线程可能被占住好几秒；条件一满足就返回，本机不会变慢
+    private func waitUntil(timeout: Duration = .seconds(30), _ condition: @MainActor () -> Bool) async {
         let clock = ContinuousClock()
         let deadline = clock.now + timeout
         while !condition(), clock.now < deadline { try? await Task.sleep(for: .milliseconds(10)) }

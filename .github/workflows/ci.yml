@@ -26,8 +26,12 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
+      # The tests assert the app's Chinese strings; the app picks its language
+      # from the global AppleLanguages, which is English on the hosted image.
       - name: Test
-        run: make test
+        run: |
+          defaults write -g AppleLanguages -array zh-Hans
+          make test
 
       - name: Build app
         run: make build CONFIG=Release BUMP=0 INSTALL=0
