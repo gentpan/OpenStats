@@ -216,8 +216,8 @@ public enum AppUninstaller {
         var unreadable: [URL] = []
         let installed = installedApps(home: home, unreadable: &unreadable)
         return scan(for: app, home: home, identity: AppUninstallIdentity(app: app),
-                    installed: installed, userCache: userCacheDirectory(home: home), unreadableInstallations: unreadable,
-                    systemRoot: systemRoot)
+                    installed: installed, userCache: userCacheDirectory(home: home), userTemp: userTempDirectory(home: home),
+                    unreadableInstallations: unreadable, systemRoot: systemRoot)
     }
 
     public static func otherInstalledCopies(of app: InstalledApp, home: String = NSHomeDirectory()) -> [URL] {
@@ -244,7 +244,7 @@ public enum AppUninstaller {
     }
 
     static func scan(for app: InstalledApp, home: String, identity: AppUninstallIdentity,
-                     installed: [InstalledApp], userCache: URL?, unreadableInstallations: [URL] = [],
+                     installed: [InstalledApp], userCache: URL?, userTemp: URL? = nil, unreadableInstallations: [URL] = [],
                      systemRoot: String = "/") -> AppUninstallScan {
         let library = URL(fileURLWithPath: home).appendingPathComponent("Library")
         let manager = FileManager.default
@@ -314,7 +314,7 @@ public enum AppUninstaller {
                 return
             }
             do {
-                try validateLeftover(url, for: app, home: home, userCache: userCache, identity: identity)
+                try validateLeftover(url, for: app, home: home, userCache: userCache, userTemp: userTemp, identity: identity)
             } catch {
                 reject(path, redirectionFailure(url, home: home) ?? "未通过路径检查（不在允许扫描的目录里，或名字属于共享目录）")
                 return
@@ -555,6 +555,22 @@ public enum AppUninstaller {
                 unreadable.insert(userCache)
             }
         }
+        // 临时目录（/var/folders/…/T）：应用用 mkstemp 之类建的文件常是“.包名.随机后缀”，去掉开头的点再按包名认领
+        if let userTemp {
+            if isDirectoryWithoutSymlink(userTemp) {
+                for entry in children(userTemp, base: userTemp.path) {
+                    let stem = temporaryStem(entry.lastPathComponent)
+                    guard matches(stem) else { continue }
+                    if let owner = ownerAmongOtherInstalledApps(stem) {
+                        reject(entry.standardizedFileURL.path, "属于另一个已安装的应用：\(owner.name)（\(owner.bundleIdentifier)）")
+                        continue
+                    }
+                    add(entry, .caches, review: auxiliaryMatch(stem), evidence: identifierEvidence(stem))
+                }
+            } else if manager.fileExists(atPath: userTemp.path) {
+                unreadable.insert(userTemp)
+            }
+        }
 
         // 系统级残留：只读预览。需要管理员权限，这里不删除，只告诉用户它们在哪里
         let systemRootURL = URL(fileURLWithPath: systemRoot)
@@ -663,23 +679,26 @@ public enum AppUninstaller {
 
     /// 在扫描和回收前重查：只允许固定目录内的应用条目，拒绝共享根及 home 以下的符号链接重定向。
     public static func validateLeftover(_ url: URL, for app: InstalledApp, home: String = NSHomeDirectory()) throws {
-        try validateLeftover(url, for: app, home: home, userCache: userCacheDirectory(home: home))
+        try validateLeftover(url, for: app, home: home, userCache: userCacheDirectory(home: home), userTemp: userTempDirectory(home: home))
     }
 
     /// 保留扫描时从真实 bundle 收集的组件身份；本体已移入废纸篓后仍可重试这些候选。
     public static func validateLeftover(_ url: URL, for app: InstalledApp, scan: AppUninstallScan, home: String = NSHomeDirectory()) throws {
-        try validateLeftover(url, for: app, scan: scan, home: home, userCache: userCacheDirectory(home: home))
+        try validateLeftover(url, for: app, scan: scan, home: home, userCache: userCacheDirectory(home: home),
+                             userTemp: userTempDirectory(home: home))
     }
 
-    static func validateLeftover(_ url: URL, for app: InstalledApp, scan: AppUninstallScan, home: String, userCache: URL?) throws {
+    static func validateLeftover(_ url: URL, for app: InstalledApp, scan: AppUninstallScan, home: String, userCache: URL?,
+                                 userTemp: URL? = nil) throws {
         guard scan.applicationURL.standardizedFileURL.path == app.url.standardizedFileURL.path,
               scan.items.contains(where: { $0.url.standardizedFileURL.path == url.standardizedFileURL.path }) else {
             throw AppUninstallError.unsafePath(url.path)
         }
-        try validateLeftover(url, for: app, home: home, userCache: userCache, identity: scan.identity)
+        try validateLeftover(url, for: app, home: home, userCache: userCache, userTemp: userTemp, identity: scan.identity)
     }
 
-    static func validateLeftover(_ url: URL, for app: InstalledApp, home: String, userCache: URL?, identity: AppUninstallIdentity? = nil) throws {
+    static func validateLeftover(_ url: URL, for app: InstalledApp, home: String, userCache: URL?, userTemp: URL? = nil,
+                                 identity: AppUninstallIdentity? = nil) throws {
         let path = url.standardizedFileURL.path
         guard !url.pathComponents.contains(".."), !path.unicodeScalars.contains(where: { $0.properties.generalCategory == .control }) else {
             throw AppUninstallError.unsafePath(path)
@@ -693,6 +712,13 @@ public enum AppUninstaller {
            isDirectoryWithoutSymlink(userCache),
            isUnredirected(url, home: userCache.path),
            (identity ?? AppUninstallIdentity(app: app)).identifiers.contains(where: { matchesIdentifier(url.lastPathComponent, $0) }) {
+            return
+        }
+        if let userTemp, url.deletingLastPathComponent().standardizedFileURL.path == userTemp.standardizedFileURL.path,
+           isDirectoryWithoutSymlink(userTemp),
+           isUnredirected(url, home: userTemp.path),
+           (identity ?? AppUninstallIdentity(app: app)).identifiers
+               .contains(where: { matchesIdentifier(temporaryStem(url.lastPathComponent), $0) }) {
             return
         }
         guard path.hasPrefix(base + "/"), isUnredirected(url, home: home) else { throw AppUninstallError.unsafePath(path) }
@@ -743,12 +769,26 @@ public enum AppUninstaller {
 
     /// 由系统提供当前用户的 /var/folders/.../C 路径；不扫描其他用户或整个临时根。
     private static func userCacheDirectory(home: String) -> URL? {
+        darwinUserDirectory(_CS_DARWIN_USER_CACHE_DIR, named: "C", home: home)
+    }
+
+    /// 当前用户的 /var/folders/.../T：不在沙盒里的进程共用的临时目录
+    private static func userTempDirectory(home: String) -> URL? {
+        darwinUserDirectory(_CS_DARWIN_USER_TEMP_DIR, named: "T", home: home)
+    }
+
+    /// 临时文件的名字去掉开头的点：“.com.example.app.y62PA3” 按 “com.example.app.y62PA3” 匹配包名
+    static func temporaryStem(_ name: String) -> String {
+        name.hasPrefix(".") ? String(name.dropFirst()) : name
+    }
+
+    private static func darwinUserDirectory(_ key: Int32, named name: String, home: String) -> URL? {
         guard URL(fileURLWithPath: home).resolvingSymlinksInPath().path
             == URL(fileURLWithPath: NSHomeDirectory()).resolvingSymlinksInPath().path else { return nil }
-        let length = confstr(_CS_DARWIN_USER_CACHE_DIR, nil, 0)
+        let length = confstr(key, nil, 0)
         guard length > 1, length < 4096 else { return nil }
         var buffer = [CChar](repeating: 0, count: length)
-        guard confstr(_CS_DARWIN_USER_CACHE_DIR, &buffer, length) == length else { return nil }
+        guard confstr(key, &buffer, length) == length else { return nil }
         let directory = buffer.withUnsafeBufferPointer { pointer in
             pointer.baseAddress.map { URL(fileURLWithPath: String(cString: $0)).standardizedFileURL }
         }
@@ -761,7 +801,7 @@ public enum AppUninstaller {
             canonical = directory
         }
         let anchor = URL(fileURLWithPath: "/private/var/folders")
-        guard canonical.lastPathComponent == "C", canonical.path.hasPrefix(anchor.path + "/"),
+        guard canonical.lastPathComponent == name, canonical.path.hasPrefix(anchor.path + "/"),
               isDirectoryWithoutSymlink(anchor),
               isUnredirected(canonical, home: anchor.path) else { return nil }
         var information = stat()

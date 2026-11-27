@@ -49,10 +49,11 @@ import Testing
             return url
         }
 
-        func scan(_ app: InstalledApp, installed: [InstalledApp] = [], userCache: URL? = nil,
+        func scan(_ app: InstalledApp, installed: [InstalledApp] = [], userCache: URL? = nil, userTemp: URL? = nil,
                   unreadableInstallations: [URL] = []) -> AppUninstallScan {
             AppUninstaller.scan(for: app, home: home.path, identity: AppUninstallIdentity(app: app),
-                                installed: installed, userCache: userCache, unreadableInstallations: unreadableInstallations,
+                                installed: installed, userCache: userCache, userTemp: userTemp,
+                                unreadableInstallations: unreadableInstallations,
                                 systemRoot: home.appendingPathComponent("__system").path)
         }
     }
@@ -231,6 +232,50 @@ import Testing
         #expect(redirected.items.map { $0.url.path } == [app.url.path])
         #expect(redirected.unreadableDirectories.contains { $0.path == userCache.path })
         #expect(throws: AppUninstallError.self) { try AppUninstaller.validateLeftover(owned, for: app, home: fixture.home.path, userCache: userCache, identity: identity) }
+    }
+
+    /// Issue #4：百度网盘在 /var/folders/…/T 里留下 “.包名.随机后缀” 的临时文件
+    @Test func darwinUserTempSelectsIdentifierNamedEntriesIncludingHiddenOnes() throws {
+        let fixture = try Fixture()
+        defer { fixture.remove() }
+        let app = try fixture.app()
+        let userTemp = fixture.root.appendingPathComponent("T")
+        try FileManager.default.createDirectory(at: userTemp, withIntermediateDirectories: true)
+        let hidden = userTemp.appendingPathComponent("." + app.bundleIdentifier + ".y62PA3")
+        let plain = userTemp.appendingPathComponent(app.bundleIdentifier)
+        let neighbor = userTemp.appendingPathComponent("." + app.bundleIdentifier + "plus.y62PA3")
+        let unrelated = userTemp.appendingPathComponent("TemporaryItems")
+        for file in [hidden, neighbor] { try Data("fixture".utf8).write(to: file) }
+        for directory in [plain, unrelated] { try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true) }
+        let identity = AppUninstallIdentity(app: app)
+        let result = fixture.scan(app, userTemp: userTemp)
+
+        #expect(Set(result.items.map { $0.url.path }) == [app.url.path, hidden.path, plain.path])
+        #expect(result.items.first { $0.url.path == hidden.path }?.requiresReview == false)
+        #expect(throws: Never.self) {
+            try AppUninstaller.validateLeftover(hidden, for: app, home: fixture.home.path, userCache: nil, userTemp: userTemp, identity: identity)
+        }
+        for rejected in [userTemp, neighbor, unrelated] {
+            #expect(throws: AppUninstallError.self) {
+                try AppUninstaller.validateLeftover(rejected, for: app, home: fixture.home.path, userCache: nil, userTemp: userTemp, identity: identity)
+            }
+        }
+        // 没有把临时目录交给扫描时，同一个文件不被认领
+        #expect(fixture.scan(app).items.map { $0.url.path } == [app.url.path])
+        #expect(throws: AppUninstallError.self) {
+            try AppUninstaller.validateLeftover(hidden, for: app, home: fixture.home.path, userCache: nil, identity: identity)
+        }
+
+        // 临时目录在扫描后被换成链接：不认领链接目标里的文件
+        let relocated = fixture.root.appendingPathComponent("RelocatedTemp")
+        try FileManager.default.moveItem(at: userTemp, to: relocated)
+        try FileManager.default.createSymbolicLink(at: userTemp, withDestinationURL: relocated)
+        let redirected = fixture.scan(app, userTemp: userTemp)
+        #expect(redirected.items.map { $0.url.path } == [app.url.path])
+        #expect(redirected.unreadableDirectories.contains { $0.path == userTemp.path })
+        #expect(throws: AppUninstallError.self) {
+            try AppUninstaller.validateLeftover(hidden, for: app, home: fixture.home.path, userCache: nil, userTemp: userTemp, identity: identity)
+        }
     }
 
     @Test func unreadableInstallationDirectoryKeepsAllResidualDataUntilCopyStatusIsKnown() throws {
