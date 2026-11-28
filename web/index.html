@@ -335,6 +335,13 @@
       <!-- 由 Scripts/sync_changelog.py 从 CHANGELOG.md 生成，请勿手改。 -->
       <div class="log">
         <article class="log__day">
+          <div class="log__head"><time datetime="2026-11-27">2026-11-27</time><span class="log__tag">0.7.6</span></div>
+          <p class="log__counts">修复 1</p>
+          <ul class="log__list">
+            <li><span class="log__kind">修复</span>卸载应用时补查当前用户的临时目录（<code>/var/folders/…/T</code>）：名字是包名、包名加后缀，或前面多一个点的隐藏文件（如 <code>.com.example.app.y62PA3</code>）都会列为缓存；内嵌组件的临时文件默认不勾选，属于另一个已安装应用的不认领。跟进 <a href="https://github.com/gentpan/OpenStats/issues/4">Issue #4</a>。</li>
+          </ul>
+        </article>
+        <article class="log__day">
           <div class="log__head"><time datetime="2026-11-27">2026-11-27</time><span class="log__tag">0.7.5</span></div>
           <p class="log__counts">新增 2 · 调整 2 · 修复 3</p>
           <ul class="log__list">
@@ -356,6 +363,8 @@
             <li><span class="log__kind">新增</span>「设置 · 通用」新增“排行显示数量”：CPU、内存弹窗的“按应用汇总”与仪表盘的“高占用进程”可以改成 10 条或 15 条；默认仍分别是 6 条和 5 条。</li>
           </ul>
         </article>
+        <details class="log__older">
+          <summary>更早的更新（30 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-11-08">2026-11-08</time><span class="log__tag">0.7.4</span></div>
           <p class="log__counts">新增 4 · 调整 6</p>
@@ -377,8 +386,6 @@
             </ul>
           </details>
         </article>
-        <details class="log__older">
-          <summary>更早的更新（29 天）</summary>
         <article class="log__day">
           <div class="log__head"><time datetime="2026-11-06">2026-11-06</time><span class="log__tag">0.7.4</span></div>
           <p class="log__counts">新增 4 · 调整 1</p>

@@ -62,9 +62,18 @@ system language by default; switch it in Settings → General → Language.
 <!-- changelog:start -->
 <!-- Generated from CHANGELOG.md by Scripts/sync_changelog.py. Do not edit by hand. -->
 
-Latest release **0.7.5** (2026-11-27) · [full changelog](CHANGELOG.md) (kept in Chinese)
+Latest release **0.7.6** (2026-11-27) · [full changelog](CHANGELOG.md) (kept in Chinese)
 
 <details open>
+<summary><b>2026-11-27</b> · 0.7.6 · 1 fixed</summary>
+
+**Fixed**
+
+- 卸载应用时补查当前用户的临时目录（`/var/folders/…/T`）：名字是包名、包名加后缀，或前面多一个点的隐藏文件（如 `.com.example.app.y62PA3`）都会列为缓存；内嵌组件的临时文件默认不勾选，属于另一个已安装应用的不认领。跟进 [Issue #4](https://github.com/gentpan/OpenStats/issues/4)。
+
+</details>
+
+<details>
 <summary><b>2026-11-27</b> · 0.7.5 · 2 added · 2 changed · 3 fixed</summary>
 
 **Added**
@@ -93,27 +102,6 @@ Latest release **0.7.5** (2026-11-27) · [full changelog](CHANGELOG.md) (kept in
 - 菜单栏的温度与风扇可以合并成一个双行项目：上面温度、下面风扇转速，不带标签，比两项分开更省宽度。在「设置 · 菜单栏 · 其他」里打开“温度与风扇合并显示”，两项都开启时生效；每项独立时风扇不再单独占一个图标，点合并后的图标打开温度详情。
 - 菜单栏温度可以选“最高”或“平均”：最高是最热的 CPU 核心，某个核心瞬时升温就会跳；平均是各核心的平均值，更平稳。默认仍是最高，弹窗、仪表盘与过热提醒不受影响。
 - 「设置 · 通用」新增“排行显示数量”：CPU、内存弹窗的“按应用汇总”与仪表盘的“高占用进程”可以改成 10 条或 15 条；默认仍分别是 6 条和 5 条。
-
-</details>
-
-<details>
-<summary><b>2026-11-08</b> · 0.7.4 · 4 added · 6 changed</summary>
-
-**Added**
-
-- 外观新增“深色磨砂”：深色配色之上，弹窗与主窗口的底板换成透出桌面的毛玻璃，卡片半透明，强调色是白色，图表与进度条用绿色。
-- 清理新增“系统数据”一栏，只分析不删除：按所属应用列出 Application Support、沙盒容器和共享容器里超过 200 MB 的目录，再列出资源库、家目录隐藏目录和“共享”文件夹里超过 500 MB、没有归类的目录。这些目录里可能有聊天记录、项目和登录状态，删不删由你在访达里决定。
-- 清理新增“过期的临时文件”：用户临时目录里 3 天以上没有改动的条目，正在运行的应用和系统进程的条目不动。
-- 开发者类别新增 Maven 本地仓库（默认不勾选），以及只提示的 Go 模块缓存、Android 模拟器与系统镜像；本地 AI 模型加上 PyTorch Hub 下载的权重。
-
-**Changed**
-
-- 弹窗顶栏换成 OpenStats 的脉搏线标志加当前项名称；风扇与防休眠从底部的两块快捷开关挪到顶栏右侧的小圆钮：风扇点一下换下一档，防休眠点一下选时长。
-- 网络弹窗顶部改成下载、上传并排两列同样大的数字；累计流量并成一行；流量图上半是下载、下半是上传，两半用同一个比例尺，高低可以直接比较。磁盘读写图同样处理。
-- 公网 IP 前面显示国旗，国旗改成带细边的正方形；IP 纯净度只留“原生 / 广播”和 IP 类型两个徽章，风险评分与风险标记不再列出，细节到 cleanip.io 看完整报告。运营商优先显示 ASN 登记名，与 cleanip.io 网站一致。
-- 释放内存改成顶栏里的一颗图标圆钮，进行中转圈，完成后短暂显示对勾或警告。
-- 辅助工具随应用自动登记，只需在系统“登录项”里批准一次；设置里不再有单独的“辅助工具”页。
-- 侧边栏选中项改成一块滑动的圆角底块，切换页面时新页面淡入；开关、按钮与分段控件改为自绘，三个主题样子一致，不再使用 macOS 26 的液态玻璃。
 
 </details>
 
